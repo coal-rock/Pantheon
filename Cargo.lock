@@ -3,5 +3,23 @@
 version = 3
 
 [[package]]
-name = "pantheon"
+name = "athena"
 version = "0.1.0"
+
+[[package]]
+name = "hermes"
+version = "0.1.0"
+dependencies = [
+ "talaria",
+]
+
+[[package]]
+name = "talaria"
+version = "0.1.0"
+
+[[package]]
+name = "tartarus"
+version = "0.1.0"
+dependencies = [
+ "talaria",
+]

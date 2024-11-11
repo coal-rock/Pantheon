@@ -1,8 +1,3 @@
-[package]
-name = "pantheon"
-version = "0.1.0"
-edition = "2021"
-
 [workspace]
 members = [
     "athena",
@@ -10,5 +5,4 @@ members = [
     "hermes",
     "talaria"
 ]
-
-
+resolver = "2"
