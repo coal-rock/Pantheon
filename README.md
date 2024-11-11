@@ -1,9 +1,4 @@
-______           _   _                      
-| ___ \         | | | |                     
-| |_/ /_ _ _ __ | |_| |__   ___  ___  _ __  
-|  __/ _` | '_ \| __| '_ \ / _ \/ _ \| '_ \ 
-| | | (_| | | | | |_| | | |  __/ (_) | | | |
-\_|  \__,_|_| |_|\__|_| |_|\___|\___/|_| |_|
+Pantheon
 
 C2 sever in development by the Cyber Defense Organization (CDO) from University at Albany                                
 
