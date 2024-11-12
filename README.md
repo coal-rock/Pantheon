@@ -55,3 +55,14 @@ And all packages can be built by simply running:
 cargo build
 ```
 in the root directory 
+
+
+
+
+you can now create and log into a tartarus console by running
+```
+cargo run --bin tartarus console
+
+```
+
+this is still a work in progress. need to have the responses run in the background of the custom console. At the moment they cut off your commands. Also the agent and server connection shows the agent id based on the connection made, but im not able to have the console register this for some reason. TODO!
