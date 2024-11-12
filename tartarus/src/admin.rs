@@ -1,8 +1,9 @@
+use lazy_static::lazy_static;
 use rocket::serde::json::Json;
 use serde::Serialize;
 use std::sync::Mutex;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct AgentStatus {
     id: String,
     os: String,

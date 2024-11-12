@@ -31,6 +31,7 @@ pub enum AgentInstructionBody {
         args: Vec<String>,
     },
     RequestHeartbeat,
+    Ok,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

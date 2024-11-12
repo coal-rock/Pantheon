@@ -10,7 +10,7 @@ use tokio::time::sleep;
 async fn main() {
     // let backend_server_addr =
     //     env::var("BACKEND_SERVER_ADDR").expect("BACKEND_SERVER_ADDR must be set in .env");
-    let backend_server_addr = "localhost:5000";
+    let backend_server_addr = "http://127.0.0.1:8000";
 
     let mut agent = Agent::new(backend_server_addr.to_string());
 
