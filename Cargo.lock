@@ -198,6 +198,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "either"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -384,7 +390,11 @@ checksum = "3a9bfc1af68b1726ea47d3d5109de126281def866b33970e10fbab11b5dafab3"
 name = "hermes"
 version = "0.1.0"
 dependencies = [
+ "dotenv",
+ "serde",
+ "serde_json",
  "talaria",
+ "tokio",
 ]
 
 [[package]]
@@ -898,6 +908,7 @@ dependencies = [
  "rocket_codegen",
  "rocket_http",
  "serde",
+ "serde_json",
  "state",
  "tempfile",
  "time",
@@ -1130,7 +1141,10 @@ name = "tartarus"
 version = "0.1.0"
 dependencies = [
  "rocket",
+ "serde",
+ "serde_json",
  "talaria",
+ "tokio",
 ]
 
 [[package]]
@@ -1197,6 +1211,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
