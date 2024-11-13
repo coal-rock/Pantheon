@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate rocket;
+extern crate log;
 
 mod admin;
 mod agent;
@@ -44,6 +45,9 @@ async fn launch_rocket(shared_state: SharedState) -> Result<Rocket<Ignite>, rock
 
 #[tokio::main]
 async fn main() -> Result<(), rocket::Error> {
+    // Initialize logger
+    env_logger::init();
+
     // Initialize shared state
     let shared_state = Arc::new(RwLock::new(ActiveListeners::default()));
 
