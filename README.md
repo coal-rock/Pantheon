@@ -66,3 +66,14 @@ cargo run --bin tartarus console
 ```
 
 this is still a work in progress. need to have the responses run in the background of the custom console. At the moment they cut off your commands. Also the agent and server connection shows the agent id based on the connection made, but im not able to have the console register this for some reason. TODO!
+
+
+in the console one created with cargo you can now see agent registration
+this will allow you to be able to identify and see all of your agents based on a unique id created for each one
+![image](https://github.com/user-attachments/assets/e8ffa773-ac81-4d5b-b434-8e3a0d4e7670)
+
+
+
+also here is a side by side view showing the agent making a connection to the backend server
+
+![image](https://github.com/user-attachments/assets/3e8f465e-6801-49a0-bb6f-136b543f293b)
