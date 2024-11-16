@@ -52,15 +52,25 @@ async fn make_request(agent: &mut Agent, request: AgentResponse) -> Option<Agent
 pub async fn handle_response(agent: &mut Agent, response: AgentInstruction) {
     match response.instruction {
         talaria::AgentInstructionBody::Command {
-            command,
-            command_id,
-            args,
-        } => {}
-        talaria::AgentInstructionBody::RequestHeartbeat => {}
-        talaria::AgentInstructionBody::Ok => {}
-    };
+            ref command,
+            ref command_id,
+            ref args,
+        } => {
+            println!(
+                "Executing Command: {:?}, ID: {:?}, Args: {:?}",
+                command, command_id, args
+            );
+            // Placeholder for actual command execution logic
+        }
+        talaria::AgentInstructionBody::RequestHeartbeat => {
+            println!("Received heartbeat request from server.");
+        }
+        talaria::AgentInstructionBody::Ok => {
+            println!("Server acknowledged previous operation.");
+        }
+    }
 
-    println!("response: {:#?}", response);
+    println!("Processed Response: {:#?}", response);
 }
 
 pub async fn send_heartbeat(agent: &mut Agent) -> Option<AgentInstruction> {

@@ -25,11 +25,11 @@ pub fn list_agents() -> Vec<AgentStatus> {
 pub fn add_agent(agent: AgentStatus) {
     let mut agents = AGENTS.lock().unwrap();
     agents.push(agent.clone());
-    println!("Agent {} registered.", agent.id);  // Now prints without error
+    println!("Agent {} registered.", agent.id);
 }
 
 // Rocket route to get agents
-#[get("/agents")]
+#[get("/api/agents")]
 pub fn get_agents() -> Json<Vec<AgentStatus>> {
     Json(list_agents())
 }
