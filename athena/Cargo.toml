@@ -5,4 +5,13 @@ edition = "2021"
 
 
 [dependencies]
-yew = { git = "https://github.com/yewstack/yew/", features = ["csr"] }
+patternfly-yew = "0.6.3"
+yew = { version = "0.21", features = ["csr"] }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "HtmlElement",
+    "HtmlInputElement",
+    "MediaQueryList"
+]
