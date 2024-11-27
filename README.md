@@ -43,10 +43,18 @@ Often carrying out communication between the gods, Heres serves as the agent for
 The trusty winged sandals worn by Hermes, representing speed, agility, and reliability.
 Talaria allows for Hermes to carry out messages between the rest of the gods, serving as the networking library for Pantheon.
 
+## Dependencies
+`trunk` and the WASM build target are required by `yew` which is used in `athena`.
+
+```
+cargo install trunk
+rustup target add wasm32-unknown-unknown
+```
+
 ## ----Running/Development----
 Individual applications can be ran using:
 ```
-cargo run -p athena
+cd athena && trunk serve
 cargo run -p tartarus
 cargo run -p hermes
 ```
