@@ -1,30 +1,51 @@
-use crate::admin::{add_agent, list_agents, AgentStatus};
-use talaria::{AgentInstruction, AgentInstructionBody, AgentResponse, PacketHeader, AgentResponseBody};
+use serde::Serialize;
 use std::time::SystemTime;
+use talaria::{
+    AgentInstruction, AgentInstructionBody, AgentResponse, AgentResponseBody, PacketHeader,
+};
 
-fn register_agent_if_needed(agent_id: u64, os: &str, ip: &str) {
-    let agent_id_str = agent_id.to_string();
+use crate::SharedState;
 
-    let agents = list_agents();
-    if !agents.iter().any(|agent| agent.id == agent_id_str) {
-        add_agent(AgentStatus {
-            id: agent_id_str.clone(),
-            os: os.to_string(),
-            ip: ip.to_string(),
-            active: true,
-        });
+#[derive(Serialize, Clone, Debug)]
+pub struct Agent {
+    id: u64,
+    os: Option<String>,
+    ip: Option<String>,
+    last_ping: u64,
+}
+
+impl From<PacketHeader> for Agent {
+    fn from(header: PacketHeader) -> Self {
+        Agent {
+            id: header.agent_id,
+            os: header.os,
+            ip: header.ip,
+            last_ping: header.timestamp,
+        }
+    }
+}
+
+async fn register_agent_if_needed(state: &rocket::State<SharedState>, agent: Agent) {
+    let agents = state.read().await.agents.clone();
+
+    if !agents.iter().any(|agent| agent.id == agent.id) {
+        state.write().await.agents.push(agent.clone());
     }
 
-    log::info!("Heartbeat received from Agent {} at {}", agent_id, ip);
+    log::info!(
+        "Heartbeat received from Agent {} at {:?}",
+        agent.id,
+        agent.ip
+    );
 }
 
 #[post("/monolith", data = "<input>")]
-fn monolith(input: Vec<u8>) -> Vec<u8> {
+pub async fn monolith(state: &rocket::State<SharedState>, input: Vec<u8>) -> Vec<u8> {
     let response = AgentResponse::deserialize(&input);
 
-    match response.response {
+    match response.packet_body {
         AgentResponseBody::Heartbeat => {
-            register_agent_if_needed(response.packet_header.agent_id, "OS Placeholder", "IP Placeholder");
+            register_agent_if_needed(state, Agent::from(response.packet_header.clone())).await;
         }
         _ => println!("{:#?}", response),
     }
@@ -39,6 +60,8 @@ fn monolith(input: Vec<u8>) -> Vec<u8> {
             agent_id: response.packet_header.agent_id,
             timestamp: time,
             packet_id: response.packet_header.packet_id,
+            os: None,
+            ip: None,
         },
         instruction: AgentInstructionBody::Ok,
     })

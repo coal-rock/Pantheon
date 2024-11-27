@@ -2,7 +2,7 @@ use crate::admin;
 use crate::SharedState;
 use std::io::{self, Write};
 
-pub async fn start_console(shared_state: SharedState) {
+pub async fn start_console(shared_state: &SharedState) {
     println!("========================================");
     println!("         Tartarus Command Console       ");
     println!("========================================");
@@ -39,6 +39,7 @@ fn show_help() {
 
 async fn show_status(shared_state: &SharedState) {
     let listeners = shared_state.read().await;
+
     if listeners.listeners.is_empty() {
         println!("No active listeners.");
     } else {
@@ -49,8 +50,8 @@ async fn show_status(shared_state: &SharedState) {
     }
 }
 
-async fn list_agents(_shared_state: &SharedState) {
-    let agents = admin::list_agents();
+async fn list_agents(shared_state: &SharedState) {
+    let agents = shared_state.read().await.agents.clone();
 
     if agents.is_empty() {
         println!("No registered agents.");

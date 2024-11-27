@@ -15,10 +15,7 @@ pub enum AgentResponseBody {
     Ok {
         packet_id: u32,
     },
-    SystemInfo {
-        os: String,
-        ip: String,
-    },
+    SystemInfo {},
     Heartbeat,
     Error,
 }
@@ -39,6 +36,8 @@ pub struct PacketHeader {
     pub agent_id: u64,
     pub timestamp: u64,
     pub packet_id: u32,
+    pub os: Option<String>,
+    pub ip: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -60,7 +59,7 @@ impl AgentInstruction {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AgentResponse {
     pub packet_header: PacketHeader,
-    pub response: AgentResponseBody,
+    pub packet_body: AgentResponseBody,
 }
 
 impl AgentResponse {

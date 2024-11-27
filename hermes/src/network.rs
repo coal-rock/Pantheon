@@ -76,7 +76,7 @@ pub async fn handle_response(agent: &mut Agent, response: AgentInstruction) {
 pub async fn send_heartbeat(agent: &mut Agent) -> Option<AgentInstruction> {
     let response = talaria::AgentResponse {
         packet_header: agent.generate_packet_header(),
-        response: AgentResponseBody::Heartbeat,
+        packet_body: AgentResponseBody::Heartbeat,
     };
 
     return make_request(agent, response).await;
