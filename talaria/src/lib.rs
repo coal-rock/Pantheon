@@ -37,7 +37,6 @@ pub struct PacketHeader {
     pub timestamp: u64,
     pub packet_id: u32,
     pub os: Option<String>,
-    pub ip: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -61,6 +61,7 @@ impl Agent {
             agent_id: self.agent_id,
             timestamp: Agent::get_timestamp(),
             packet_id: self.gen_id(),
+            os: Some(sys_info::os_type().unwrap()),
         }
     }
 
