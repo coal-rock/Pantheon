@@ -1,20 +1,12 @@
-use actix_web::{App, HttpServer, web};
-use tera::Tera;
+use yew::prelude::*;
 
-mod handlers;
-mod models;
-mod routes;
+#[function_component(App)]
+fn app() -> Html {
+    html! {
+        <h1>{ "Hello World" }</h1>
+    }
+}
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let tera = Tera::new("templates/**/*").expect("Failed to initialize Tera templates");
-
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(tera.clone())) // Updated to app_data
-            .configure(routes::configure_routes)
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+fn main() {
+    yew::Renderer::<App>::new().render();
 }

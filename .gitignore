@@ -1,1 +1,4 @@
 /target
+/athena/node_modules
+/athena/pkg
+/athena/dist

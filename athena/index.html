@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PatternFly Yew Quickstart</title>
+
+  <link data-trunk rel="icon" href="/assets/images/Favicon-Light.png">
+  <link data-trunk rel="icon" type="image/png" sizes="16x16" href="/assets/images/Favicon-Light-16x16.png">
+  <link data-trunk rel="icon" type="image/png" sizes="32x32" href="/assets/images/Favicon-Light-32x32.png">
+  <link data-trunk rel="icon" type="image/png" sizes="48x48" href="/assets/images/Favicon-Light-48x48.png">
+
+  <link data-trunk rel="scss" href="assets/style.scss">
+  <!-- This path needs to be here, otherwise icons won't render correctly -->
+  <link data-trunk rel="copy-dir" href="node_modules/@patternfly/patternfly/assets" data-target-path="assets/">
+  <link data-trunk rel="copy-dir" href="assets/images">
+
+  <!-- include when using the icons-far or icons-fab feature -->
+  <!-- also requires includes in the assets/styles.scss file -->
+  <link data-trunk rel="copy-dir" href="node_modules/@fortawesome/fontawesome-free/webfonts">
+
+  <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z" data-initializer="assets/initializer.mjs"/>
+
+  <base data-trunk-public-url/>
+</head>
+
+<body>
+</body>
+
+</html>
