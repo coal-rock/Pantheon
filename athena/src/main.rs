@@ -1,50 +1,54 @@
+mod components;
+
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
+use components::agent_table::AgentTable;
+
 #[function_component(App)]
 fn app() -> Html {
+    let brand = html! (
+        <MastheadBrand>
+            <Title size={Size::XXXXLarge}>
+                { "Athena" }
+            </Title>
+        </MastheadBrand>
+    );
+
+    let sidebar = html_nested! {
+        <PageSidebar>
+            <Nav>
+                <NavLink>{"Main Panel"}</NavLink>
+                <NavExpandable title="Agents">
+                </NavExpandable>
+                <NavLink>{"Settings"}</NavLink>
+                <NavLink>{"About"}</NavLink>
+            </Nav>
+        </PageSidebar>
+    };
+
+    let tools = html!(
+        <Toolbar full_height=true>
+            <ToolbarContent>
+                <ToolbarGroup
+                    modifiers={ToolbarElementModifier::Right.all()}
+                >
+                    <ToolbarItem>
+                        <h5>
+                        {"v0.0.1"}
+                        </h5>
+                    </ToolbarItem>
+                </ToolbarGroup>
+            </ToolbarContent>
+        </Toolbar>
+    );
+
     html! {
     <>
-        <PageSectionGroup>
-            <PageSection
-                r#type={PageSectionType::Default}
-                variant={PageSectionVariant::Light}
-                limit_width=true
-                sticky={[PageSectionSticky::Top]}
-            >
-                <Content>
-                    <Title size={Size::XXXXLarge}>
-                        { "Athena" }
-                    </Title>
-                </Content>
-            </PageSection>
-        </PageSectionGroup>
 
-        <div style="padding: 32px;">
-        <Flex>
-            <FlexItem>
-                <Card>
-                    <CardTitle>{"Agents"}</CardTitle>
-
-                    <CardBody>
-                        <TextInputGroup>
-                            <TextInputGroupMain
-                                placeholder="agent name"
-                                icon={Icon::Search}
-                            />
-                            <TextInputGroupUtilities>
-                                <Button icon={Icon::Times} variant={ButtonVariant::Plain} />
-                            </TextInputGroupUtilities>
-                        </TextInputGroup>
-                        <Divider r#type={DividerType::Hr} />
-                    </CardBody>
-                </Card>
-            </FlexItem>
-        </Flex>
-        </div>
-
-        <Content>
-        </Content>
+        <Page {brand} {sidebar} {tools}>
+            <AgentTable/>
+        </Page>
     </>
 
     }

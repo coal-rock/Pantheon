@@ -9,6 +9,7 @@ use crate::SharedState;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Agent {
+    nickname: Option<String>,
     id: u64,
     os: Option<String>,
     ip: SocketAddr,
@@ -55,6 +56,7 @@ async fn register_or_update(
 
     // else add new agent
     let agent = Agent {
+        nickname: None,
         id: header.agent_id,
         os: header.os,
         ip: addr,
