@@ -1,56 +1,42 @@
 mod components;
+mod pages;
 
-use patternfly_yew::prelude::*;
+use pages::{about::About, agent::Agent, home::Home, settings::Settings};
+
 use yew::prelude::*;
+use yew_router::prelude::*;
 
-use components::agent_table::AgentTable;
+#[derive(Clone, Routable, PartialEq)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[at("/agent/:id")]
+    Agent { id: String },
+    #[at("/settings")]
+    Settings,
+    #[at("/about")]
+    About,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
+
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <Home /> },
+        Route::Agent { id } => html! { <Agent /> },
+        Route::Settings => html! { <Settings /> },
+        Route::About => html! { <About /> },
+        Route::NotFound => html! { <h1>{ "404 - Page not found" }</h1> },
+    }
+}
 
 #[function_component(App)]
 fn app() -> Html {
-    let brand = html! (
-        <MastheadBrand>
-            <Title size={Size::XXXXLarge}>
-                { "Athena" }
-            </Title>
-        </MastheadBrand>
-    );
-
-    let sidebar = html_nested! {
-        <PageSidebar>
-            <Nav>
-                <NavLink>{"Main Panel"}</NavLink>
-                <NavExpandable title="Agents">
-                </NavExpandable>
-                <NavLink>{"Settings"}</NavLink>
-                <NavLink>{"About"}</NavLink>
-            </Nav>
-        </PageSidebar>
-    };
-
-    let tools = html!(
-        <Toolbar full_height=true>
-            <ToolbarContent>
-                <ToolbarGroup
-                    modifiers={ToolbarElementModifier::Right.all()}
-                >
-                    <ToolbarItem>
-                        <h5>
-                        {"v0.0.1"}
-                        </h5>
-                    </ToolbarItem>
-                </ToolbarGroup>
-            </ToolbarContent>
-        </Toolbar>
-    );
-
     html! {
-    <>
-
-        <Page {brand} {sidebar} {tools}>
-            <AgentTable/>
-        </Page>
-    </>
-
+        <BrowserRouter>
+            <Switch<Route> render={switch} /> // <- must be child of <BrowserRouter>
+        </BrowserRouter>
     }
 }
 
