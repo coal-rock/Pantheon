@@ -1,7 +1,7 @@
 mod components;
 mod pages;
 
-use pages::{about::About, agent::Agent, home::Home, settings::Settings};
+use pages::{about::About, agent::Agent, home::Home, settings::Settings, downloads::Downloads};
 
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -16,6 +16,8 @@ enum Route {
     Settings,
     #[at("/about")]
     About,
+    #[at("/downloads")]
+    Downloads,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -27,6 +29,7 @@ fn switch(routes: Route) -> Html {
         Route::Agent { id } => html! { <Agent /> },
         Route::Settings => html! { <Settings /> },
         Route::About => html! { <About /> },
+        Route::Downloads => html! { <Downloads /> },
         Route::NotFound => html! { <h1>{ "404 - Page not found" }</h1> },
     }
 }

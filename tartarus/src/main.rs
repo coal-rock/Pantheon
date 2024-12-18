@@ -5,12 +5,15 @@ extern crate log;
 mod admin;
 mod agent;
 mod console;
+mod served_files;
 
 use crate::console::start_console;
 use rocket::tokio::sync::RwLock;
 use rocket::{Build, Ignite, Rocket};
 use std::sync::Arc;
 use talaria::api::*;
+use served_files::serve_compiled_file;
+
 
 // Shared state for active listeners
 #[derive(Default)]
@@ -45,6 +48,10 @@ async fn get_listeners(state: &rocket::State<SharedState>) -> String {
 // Launch the Rocket server asynchronously
 async fn launch_rocket(shared_state: SharedState) -> Result<Rocket<Ignite>, rocket::Error> {
     rocket(shared_state).launch().await
+}
+
+fn setup_static_routes() -> Rocket<Build> {
+    rocket::build().mount("/", routes![served_files::serve_compiled_file])
 }
 
 #[tokio::main]

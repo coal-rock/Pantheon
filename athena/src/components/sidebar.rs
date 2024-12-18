@@ -31,6 +31,11 @@ pub fn sidebar() -> VChild<PageSidebar> {
                 <Link<Route> to={Route::About}>
                     <NavItem>{"About"}</NavItem>
                 </Link<Route>>
+            
+                <Link<Route> to={Route::Downloads}>
+                    <NavItem>{"Downloads"}</NavItem>
+                </Link<Route>>
+            
             </Nav>
         </PageSidebar>
     }
