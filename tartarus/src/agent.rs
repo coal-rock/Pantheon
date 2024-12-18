@@ -1,22 +1,10 @@
 use serde::Serialize;
 use std::{net::SocketAddr, time::SystemTime};
 use talaria::{
-    AgentInstruction, AgentInstructionBody, AgentResponse, AgentResponseBody, PacketHeader,
+    Agent, AgentInstruction, AgentInstructionBody, AgentResponse, AgentResponseBody, PacketHeader,
 };
 
 use crate::SharedState;
-
-#[derive(Serialize, Clone, Debug)]
-pub struct Agent {
-    pub nickname: Option<String>,
-    pub id: u64,
-    pub os: Option<String>,
-    pub ip: SocketAddr,
-    pub last_response_send: u64,
-    pub last_response_recv: u64,
-    pub instruction_history: Vec<AgentInstruction>,
-    pub response_history: Vec<AgentResponse>,
-}
 
 // Register or update agent in the state
 async fn register_or_update(
@@ -62,8 +50,15 @@ pub async fn monolith(
 
     // Generate an instruction based on the received response
     let instruction = match packet_body {
-        AgentResponseBody::CommandResult { stdout, stderr } => {
+        AgentResponseBody::CommandResponse {
+            command: _,
+            command_id: _,
+            status_code: _,
+            stdout,
+            stderr,
+        } => {
             log::info!("Command Output:\nstdout: {}\nstderr: {}", stdout, stderr);
+
             AgentInstruction {
                 packet_header: PacketHeader {
                     agent_id: response.packet_header.agent_id,

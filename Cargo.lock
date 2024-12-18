@@ -85,6 +85,7 @@ name = "athena"
 version = "0.1.0"
 dependencies = [
  "patternfly-yew",
+ "talaria",
  "web-sys",
  "yew",
  "yew-router",

@@ -1,7 +1,7 @@
 mod agent;
 mod network;
 
-use agent::Agent;
+use agent::AgentContext;
 use std::env;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -12,7 +12,7 @@ async fn main() {
     //     env::var("BACKEND_SERVER_ADDR").expect("BACKEND_SERVER_ADDR must be set in .env");
     let backend_server_addr = "http://127.0.0.1:8000";
 
-    let mut agent = Agent::new(backend_server_addr.to_string());
+    let mut agent = AgentContext::new(backend_server_addr.to_string());
 
     loop {
         match network::send_heartbeat(&mut agent).await {

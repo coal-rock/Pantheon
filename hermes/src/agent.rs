@@ -20,20 +20,20 @@ use reqwest::Client;
 use sha2::{Digest, Sha256};
 use std::time::SystemTime;
 use sys_info;
-use talaria::{AgentInstruction, AgentResponse, PacketHeader};
+use talaria::PacketHeader;
 
-pub struct Agent {
+pub struct AgentContext {
     pub server_addr: String,
     pub agent_id: u64,
     pub polling_interval_millis: u64,
-    pub rec_log: Vec<Result<AgentInstruction, reqwest::Error>>,
-    pub send_log: Vec<AgentResponse>,
+    // pub rec_log: Vec<Result<AgentInstruction, reqwest::Error>>, // I fear logs should be handled server side
+    // pub send_log: Vec<AgentResponse>,
     pub http_client: Client,
     rand: rand::rngs::ThreadRng,
     used_ids: Vec<u32>,
 }
 
-impl Agent {
+impl AgentContext {
     // Mashes together a bunch of staticish system information,
     // Takes the Sha256 hash of aformentioned data,
     // Returns the first 64 bits of the aformentioned hash
@@ -59,7 +59,7 @@ impl Agent {
     pub fn generate_packet_header(&mut self) -> PacketHeader {
         PacketHeader {
             agent_id: self.agent_id,
-            timestamp: Agent::get_timestamp(),
+            timestamp: AgentContext::get_timestamp(),
             packet_id: self.gen_id(),
             os: Some(sys_info::os_type().unwrap()),
         }
@@ -85,13 +85,13 @@ impl Agent {
             .as_secs()
     }
 
-    pub fn new(server_addr: String) -> Agent {
-        Agent {
+    pub fn new(server_addr: String) -> AgentContext {
+        AgentContext {
             server_addr,
-            agent_id: Agent::generate_deterministic_uuid(),
+            agent_id: AgentContext::generate_deterministic_uuid(),
             polling_interval_millis: 10000,
-            send_log: vec![],
-            rec_log: vec![],
+            // send_log: vec![],
+            // rec_log: vec![],
             http_client: Client::new(),
             rand: rand::thread_rng(),
             used_ids: vec![],

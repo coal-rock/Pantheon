@@ -6,11 +6,11 @@ mod admin;
 mod agent;
 mod console;
 
-use crate::agent::Agent;
 use crate::console::start_console;
 use rocket::tokio::sync::RwLock;
 use rocket::{Build, Ignite, Rocket};
 use std::sync::Arc;
+use talaria::Agent;
 
 // Shared state for active listeners
 #[derive(Default)]
