@@ -20,7 +20,7 @@ use reqwest::Client;
 use sha2::{Digest, Sha256};
 use std::time::SystemTime;
 use sys_info;
-use talaria::PacketHeader;
+use talaria::protocol::*;
 
 pub struct AgentContext {
     pub server_addr: String,

@@ -1,7 +1,7 @@
 use rocket::serde::json::Json;
 
 use crate::SharedState;
-use talaria::{Agent, AgentInfo};
+use talaria::api::*;
 
 // gets all information about agents
 #[get("/api/agents")]

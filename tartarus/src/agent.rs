@@ -1,8 +1,8 @@
 use serde::Serialize;
 use std::{net::SocketAddr, time::SystemTime};
-use talaria::{
-    Agent, AgentInstruction, AgentInstructionBody, AgentResponse, AgentResponseBody, PacketHeader,
-};
+
+use talaria::api::*;
+use talaria::protocol::*;
 
 use crate::SharedState;
 

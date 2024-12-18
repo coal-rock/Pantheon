@@ -1,7 +1,7 @@
 use crate::SharedState;
 use std::io::{self, Write};
-use talaria::{AgentInstruction, AgentInstructionBody, PacketHeader};
 use std::time::SystemTime;
+use talaria::protocol::*;
 
 pub async fn start_console(shared_state: &SharedState) {
     println!("========================================");
@@ -53,10 +53,7 @@ async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &st
     let mut state = shared_state.write().await;
 
     if let Some(agent) = state.agents.iter_mut().find(|a| a.id == agent_id) {
-        println!(
-            "Executing command '{}' on Agent {}...",
-            command, agent_id
-        );
+        println!("Executing command '{}' on Agent {}...", command, agent_id);
 
         let instruction = AgentInstruction {
             packet_header: PacketHeader {

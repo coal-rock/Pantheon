@@ -1,8 +1,6 @@
-use std::process::{Command, Output};
-
-use talaria::{AgentInstruction, AgentResponse, AgentResponseBody, PacketHeader};
-
 use crate::agent::AgentContext;
+use std::process::{Command, Output};
+use talaria::protocol::*;
 
 async fn make_request(
     agent: &mut AgentContext,
@@ -34,7 +32,7 @@ async fn make_request(
 
 pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) {
     match response.instruction {
-        talaria::AgentInstructionBody::Command {
+        AgentInstructionBody::Command {
             ref command,
             ref command_id,
             ref args,
@@ -65,10 +63,10 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
 
             make_request(agent, agent_response).await;
         }
-        talaria::AgentInstructionBody::RequestHeartbeat => {
+        AgentInstructionBody::RequestHeartbeat => {
             println!("Received heartbeat request from server.");
         }
-        talaria::AgentInstructionBody::Ok => {
+        AgentInstructionBody::Ok => {
             println!("Server acknowledged previous operation.");
         }
     }
@@ -77,7 +75,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
 }
 
 pub async fn send_heartbeat(agent: &mut AgentContext) -> Option<AgentInstruction> {
-    let response = talaria::AgentResponse {
+    let response = AgentResponse {
         packet_header: agent.generate_packet_header(),
         packet_body: AgentResponseBody::Heartbeat,
     };

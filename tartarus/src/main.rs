@@ -10,7 +10,7 @@ use crate::console::start_console;
 use rocket::tokio::sync::RwLock;
 use rocket::{Build, Ignite, Rocket};
 use std::sync::Arc;
-use talaria::Agent;
+use talaria::api::*;
 
 // Shared state for active listeners
 #[derive(Default)]
