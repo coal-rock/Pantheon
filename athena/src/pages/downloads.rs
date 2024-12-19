@@ -6,9 +6,8 @@ use crate::components::full_page::FullPage;
 pub fn downloads() -> Html {
     // Static list of files for download
     let files = vec![
-        "file1.txt",
-        "file2.zip",
-        "file3.pdf",
+        "Hermes linux-agent",
+        "Hermes Windows-agent",
     ];
 
     html! {
@@ -17,7 +16,7 @@ pub fn downloads() -> Html {
             <ul>
                 { for files.iter().map(|file| html! {
                     <li>
-                        <a href={format!("/api/download/{}", file)} target="_blank">
+                        <a href={format!("/compiled/{}", file)} target="_blank">
                             { format!("Download {}", file) }
                         </a>
                     </li>
