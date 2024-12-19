@@ -74,6 +74,8 @@ cargo run --bin tartarus console
 ```
 
 this is still a work in progress. need to have the responses run in the background of the custom console. At the moment they cut off your commands. Also the agent and server connection shows the agent id based on the connection made, but im not able to have the console register this for some reason. TODO!
+^^^^
+this has been fixed the heartbeat no longer pushes out to the console
 
 
 in the console one created with cargo you can now see agent registration
@@ -85,3 +87,23 @@ this will allow you to be able to identify and see all of your agents based on a
 also here is a side by side view showing the agent making a connection to the backend server
 
 ![image](https://github.com/user-attachments/assets/3e8f465e-6801-49a0-bb6f-136b543f293b)
+
+
+
+
+UPDATE!!!!!
+
+now you are able to execute commands through the console to the agents. although the agents do not reponde yet the messages are sent in the heartbeat 
+![image](https://github.com/user-attachments/assets/450bd897-ba4e-4e7d-9eae-dab274f505cb)
+
+also develeopment on a frontend has started here are some proof of concept images
+![image](https://github.com/user-attachments/assets/8c12c2d6-2d76-421a-8a60-5ebab572f3af)
+
+also a static mapping of binaries was created on the downloads page. this allows the user to simply curl and download from the servers frontend
+![image](https://github.com/user-attachments/assets/3aadd3df-7f0b-47d6-80d5-c658c77da593)
+
+//TODO
+will be implementing a copy paste bar so that the user can simply copy and paste a default script to curl the binary and hide it on the system
+
+
+
