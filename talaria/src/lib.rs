@@ -88,7 +88,7 @@ pub mod api {
         pub response_history: Vec<AgentResponse>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
     pub struct AgentInfo {
         pub name: String,
         pub id: u64,

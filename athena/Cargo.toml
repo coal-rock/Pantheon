@@ -11,6 +11,9 @@ yew-router = "0.18.0"
 talaria = { path = "../talaria" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+gloo-net = "0.6.0"
+wasm-bindgen-futures = "0.4.49"
+gloo-timers = "0.3.0"
 
 [dependencies.web-sys]
 version = "0.3"

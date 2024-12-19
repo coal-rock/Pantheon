@@ -1,4 +1,10 @@
+use std::{borrow::Borrow, time::Duration};
+
+use gloo_net::http::Request;
+use gloo_timers;
 use patternfly_yew::prelude::*;
+use talaria::api::*;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 #[function_component(AgentTable)]
@@ -47,30 +53,15 @@ enum Column {
     Action,
 }
 
-#[derive(Clone)]
-struct Agent {
-    name: String,
-    id: String,
-    ip: String,
-    status: Status,
-    ping: i32,
-}
-
-#[derive(Clone)]
-enum Status {
-    Online,
-    Offline,
-}
-
-impl TableEntryRenderer<Column> for Agent {
+impl TableEntryRenderer<Column> for AgentInfo {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
             Column::Name => html!(&self.name).into(),
             Column::ID => html!(&self.id).into(),
             Column::IP => html!(&self.ip).into(),
             Column::Status => match self.status {
-                Status::Online => html!(<Label label="Online" color={Color::Green}/>).into(),
-                Status::Offline => html!(<Label label="Offline" color={Color::Red}/>).into(),
+                true => html!(<Label label="Online" color={Color::Green}/>).into(),
+                false => html!(<Label label="Offline" color={Color::Red}/>).into(),
             },
             Column::Ping => html!({ self.ping.to_string() + "ms" }).into(),
             Column::Action => html!(<Button> {"Interact"} </Button>).into(),
@@ -80,26 +71,31 @@ impl TableEntryRenderer<Column> for Agent {
 
 #[function_component(Example)]
 pub fn example() -> Html {
-    let entries = use_memo((), |()| {
-        vec![
-            Agent {
-                name: "coal".into(),
-                id: "alksdjaslkdj".into(),
-                ip: "192.168.0.1".into(),
-                status: Status::Online,
-                ping: 64,
-            },
-            Agent {
-                name: "fortnite".into(),
-                id: "aslkdajsdlkj".into(),
-                ip: "127.0.0.1".into(),
-                status: Status::Offline,
-                ping: 69,
-            },
-        ]
-    });
+    let data = use_state(|| vec![]);
+    {
+        let data = data.clone();
+        use_effect_with((), move |_| {
+            let interval = gloo_timers::callback::Interval::new(5000, move || {
+                let data = data.clone();
+                spawn_local(async move {
+                    let fetched_data: Vec<AgentInfo> =
+                        gloo_net::http::Request::get("/admin/api/list_agents")
+                            .send()
+                            .await
+                            .unwrap()
+                            .json()
+                            .await
+                            .unwrap();
 
-    let (entries, _) = use_table_data(MemoizedTableModel::new(entries));
+                    data.set(fetched_data);
+                });
+            });
+
+            move || {
+                interval.cancel();
+            }
+        });
+    }
 
     let header = html_nested! {
        <TableHeader<Column>>
@@ -112,10 +108,12 @@ pub fn example() -> Html {
        </TableHeader<Column>>
     };
 
-    html! (
-      <Table<Column, UseTableData<Column, MemoizedTableModel<Agent>>>
+    let (entries, _) = use_table_data(MemoizedTableModel::new((*data).clone().into()));
+
+    html! {
+      <Table<Column, UseTableData<Column, MemoizedTableModel<AgentInfo>>>
         {header}
         {entries}
       />
-    )
+    }
 }
