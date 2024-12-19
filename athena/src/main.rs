@@ -1,7 +1,7 @@
 mod components;
 mod pages;
 
-use pages::{about::About, agent::Agent, home::Home, settings::Settings, downloads::Downloads};
+use pages::{about::About, agent::Agent, downloads::Downloads, home::Home, settings::Settings};
 
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -11,7 +11,7 @@ enum Route {
     #[at("/")]
     Home,
     #[at("/agent/:id")]
-    Agent { id: String },
+    Agent { id: u64 },
     #[at("/settings")]
     Settings,
     #[at("/about")]
@@ -26,7 +26,7 @@ enum Route {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home => html! { <Home /> },
-        Route::Agent { id } => html! { <Agent /> },
+        Route::Agent { id } => html! { <Agent agent_id = {id}/> },
         Route::Settings => html! { <Settings /> },
         Route::About => html! { <About /> },
         Route::Downloads => html! { <Downloads /> },

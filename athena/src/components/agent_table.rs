@@ -1,7 +1,4 @@
-use std::{borrow::Borrow, time::Duration};
-
-use gloo_net::http::Request;
-use gloo_timers;
+use gloo_timers::{self, callback::Interval};
 use patternfly_yew::prelude::*;
 use talaria::api::*;
 use wasm_bindgen_futures::spawn_local;
@@ -33,7 +30,7 @@ pub fn agent_table() -> Html {
 
 
                 <Divider r#type={DividerType::Hr} />
-                <Example/>
+                <AgentTableInner/>
 
             </CardBody>
         </Card>
@@ -69,14 +66,17 @@ impl TableEntryRenderer<Column> for AgentInfo {
     }
 }
 
-#[function_component(Example)]
-pub fn example() -> Html {
+#[function_component(AgentTableInner)]
+pub fn agent_table_inner() -> Html {
     let data = use_state(|| vec![]);
     {
         let data = data.clone();
-        use_effect_with((), move |_| {
-            let interval = gloo_timers::callback::Interval::new(5000, move || {
+
+        let fetch_and_update = {
+            let data = data.clone();
+            move || {
                 let data = data.clone();
+
                 spawn_local(async move {
                     let fetched_data: Vec<AgentInfo> =
                         gloo_net::http::Request::get("/admin/api/list_agents")
@@ -89,9 +89,15 @@ pub fn example() -> Html {
 
                     data.set(fetched_data);
                 });
-            });
+            }
+        };
 
-            move || {
+        use_effect_with((), {
+            let fetch_and_update = fetch_and_update.clone();
+
+            move |_| {
+                fetch_and_update();
+                let interval = Interval::new(5000, move || fetch_and_update());
                 interval.cancel();
             }
         });
