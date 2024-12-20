@@ -20,3 +20,12 @@ list agents
 grep
 exit
 historyu
+list agents
+exec 4189257816344296299 ls
+exit
+list agents
+exec 4189257816344296299 ls
+list agents
+exec 4189257816344296299 ls
+list agents
+exec 4189257816344296299 ls

