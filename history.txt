@@ -1,0 +1,22 @@
+#V2
+help
+list agents
+exec
+history
+help
+history
+exit
+history
+push
+help
+push ls
+push ls -ls
+history
+exec 
+exec shgdashd 1
+exec  1 ls
+push ls
+list agents
+grep
+exit
+historyu

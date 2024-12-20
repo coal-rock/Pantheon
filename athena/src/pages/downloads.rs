@@ -22,6 +22,13 @@ pub fn downloads() -> Html {
                     </li>
                 }) }
             </ul>
+            <pre>
+            <code>
+            function helloWorld() {
+            console.log("Hello, World!");
+            }
+            </code>
+            </pre>
         </FullPage>
     }
 }
