@@ -5,10 +5,7 @@ use crate::components::full_page::FullPage;
 #[function_component(Downloads)]
 pub fn downloads() -> Html {
     // Static list of files for download
-    let files = vec![
-        "Hermes linux-agent",
-        "Hermes Windows-agent",
-    ];
+    let files = vec!["Hermes linux-agent", "Hermes Windows-agent"];
 
     html! {
         <FullPage>
@@ -23,10 +20,11 @@ pub fn downloads() -> Html {
                 }) }
             </ul>
             <pre>
-            <code>
+            <code> {r#"
             function helloWorld() {
             console.log("Hello, World!");
             }
+            "#}
             </code>
             </pre>
         </FullPage>
