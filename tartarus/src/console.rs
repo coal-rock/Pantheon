@@ -1,10 +1,10 @@
-use crate::SharedState;
-use std::time::SystemTime;
-use rustyline::{error::ReadlineError, Editor};
-use rustyline::history::FileHistory;
-use talaria::protocol::*;
 use crate::rocket::yansi::Paint;
+use crate::SharedState;
+use rustyline::history::FileHistory;
 use rustyline::history::History;
+use rustyline::{error::ReadlineError, Editor};
+use std::time::SystemTime;
+use talaria::protocol::*;
 
 pub async fn start_console(shared_state: &SharedState) {
     println!("=============================================================================================================================================");
@@ -20,8 +20,6 @@ ___________              __                                                     
     );
     println!("=============================================================================================================================================");
     println!("Type 'help' for a list of commands.\n");
-
-
 
     let mut rl = Editor::<(), FileHistory>::new().unwrap();
 
@@ -95,7 +93,9 @@ fn show_help() {
     println!("  history      - Show the current history of run commands");
     println!("  list agents  - List all registered agents");
     println!("  push         - Execute a command to every agent");
-    println!("  exec         - Execute a command on a specific agent (Usage: exec <agent_id> <command>)");
+    println!(
+        "  exec         - Execute a command on a specific agent (Usage: exec <agent_id> <command>)"
+    );
     println!("  exit         - Exit the Tartarus Console");
     println!("  help         - Show this help message");
 }
@@ -103,7 +103,7 @@ fn show_help() {
 async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &str) {
     let mut state = shared_state.write().await;
 
-    if let Some(agent) = state.agents.iter_mut().find(|a| a.id == agent_id) {
+    if let Some(agent) = state.agents.get_mut(&agent_id) {
         println!("Executing command '{}' on Agent {}...", command, agent_id);
 
         let instruction = AgentInstruction {
@@ -120,11 +120,11 @@ async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &st
             },
         };
 
-        agent.instruction_history.push(instruction);
+        agent.push_instruction(&instruction);
 
         // Simulate fetching response
         println!("Waiting for response from Agent {}...", agent_id);
-        if let Some(response) = agent.response_history.last() {
+        if let Some(response) = agent.get_response_history().last() {
             match &response.packet_body {
                 AgentResponseBody::CommandResponse {
                     stdout,
@@ -152,12 +152,11 @@ async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &st
     }
 }
 
-
 async fn push_command(shared_state: &SharedState, command: &str) {
     let mut state = shared_state.write().await;
     //iterate through every agent to execute commands
 
-    for agent in &mut state.agents {
+    for (_, agent) in &mut state.agents {
         println!("Executing command '{}' on Agents...", command);
 
         let instruction = AgentInstruction {
@@ -174,9 +173,9 @@ async fn push_command(shared_state: &SharedState, command: &str) {
             },
         };
 
-        agent.instruction_history.push(instruction);
+        agent.push_instruction(&instruction);
         println!("Command sent successfully to all agents.");
-}
+    }
 }
 
 async fn show_status(shared_state: &SharedState) {
@@ -210,13 +209,13 @@ async fn list_agents(shared_state: &SharedState) {
         println!("No registered agents.");
     } else {
         println!("Registered agents:");
-        for agent in agents {
+        for (_, agent) in agents {
             println!(
                 "  - ID: {}, OS: {:?}, IP: {}, Last Response: {}s ago",
                 agent.id,
                 agent.os,
                 agent.ip,
-                current_time() - agent.last_response_recv
+                current_time() - agent.last_packet_recv
             );
         }
     }

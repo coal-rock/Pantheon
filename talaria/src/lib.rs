@@ -77,15 +77,60 @@ pub mod api {
     use std::net::SocketAddr;
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub enum NetworkHistoryEntry {
+        AgentInstruction { instruction: AgentInstruction },
+        AgentResponse { response: AgentResponse },
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct Agent {
         pub nickname: Option<String>,
         pub id: u64,
         pub os: Option<String>,
         pub ip: SocketAddr,
-        pub last_response_send: u64,
-        pub last_response_recv: u64,
-        pub instruction_history: Vec<AgentInstruction>,
-        pub response_history: Vec<AgentResponse>,
+        pub last_packet_send: u64,
+        pub last_packet_recv: u64,
+        pub network_history: Vec<NetworkHistoryEntry>,
+    }
+
+    impl Agent {
+        // appends a response to the network history, used for logging
+        pub fn push_response(&mut self, response: &AgentResponse) {
+            self.network_history
+                .push(NetworkHistoryEntry::AgentResponse {
+                    response: response.clone(),
+                })
+        }
+
+        // appends an instruction to the network history, used for logging
+        pub fn push_instruction(&mut self, instruction: &AgentInstruction) {
+            self.network_history
+                .push(NetworkHistoryEntry::AgentInstruction {
+                    instruction: instruction.clone(),
+                })
+        }
+
+        pub fn get_response_history(&self) -> Vec<AgentResponse> {
+            self.network_history
+                .iter()
+                .filter_map(|x| match x {
+                    NetworkHistoryEntry::AgentInstruction { instruction: _ } => None,
+                    NetworkHistoryEntry::AgentResponse { response } => Some(response.clone()),
+                })
+                .collect()
+        }
+
+        pub fn get_instruction_history(&self) -> Vec<AgentInstruction> {
+            self.network_history
+                .iter()
+                .filter_map(|x| match x {
+                    NetworkHistoryEntry::AgentInstruction { instruction } => {
+                        Some(instruction.clone())
+                    }
+                    NetworkHistoryEntry::AgentResponse { response: _ } => None,
+                })
+                .collect()
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]

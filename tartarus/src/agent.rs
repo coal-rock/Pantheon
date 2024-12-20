@@ -13,29 +13,40 @@ async fn register_or_update(
     instruction: &AgentInstruction,
     addr: SocketAddr,
 ) {
-    let mut agents = state.write().await;
-    for agent in agents.agents.iter_mut() {
-        if agent.id == response.packet_header.agent_id {
-            log::info!("Updated Agent {} at {:?}", agent.id, addr);
-            agent.last_response_send = response.packet_header.timestamp;
-            agent.last_response_recv = current_time();
-            agent.response_history.push(response.clone());
-            agent.instruction_history.push(instruction.clone());
-            return;
-        }
-    }
+    let mut state = state.write().await;
+    let agent_id = response.packet_header.agent_id;
 
-    // Add new agent if not found
-    agents.agents.push(Agent {
-        nickname: None,
-        id: response.packet_header.agent_id,
-        os: response.packet_header.os.clone(),
-        ip: addr,
-        last_response_send: response.packet_header.timestamp,
-        last_response_recv: current_time(),
-        instruction_history: vec![instruction.clone()],
-        response_history: vec![response.clone()],
-    });
+    if state.agents.contains_key(&agent_id) {
+        // update agent if found
+        let agent = state.agents.get_mut(&agent_id).unwrap();
+        log::info!("Updated Agent {} at {:?}", agent.id, addr);
+        agent.last_packet_send = response.packet_header.timestamp;
+        agent.last_packet_recv = current_time();
+        agent.push_response(response);
+        agent.push_instruction(instruction);
+        return;
+    } else {
+        // add new agent if not found
+        state.agents.insert(
+            response.packet_header.agent_id,
+            Agent {
+                nickname: None,
+                id: response.packet_header.agent_id,
+                os: response.packet_header.os.clone(),
+                ip: addr,
+                last_packet_send: response.packet_header.timestamp,
+                last_packet_recv: current_time(),
+                network_history: vec![
+                    NetworkHistoryEntry::AgentResponse {
+                        response: response.clone(),
+                    },
+                    NetworkHistoryEntry::AgentInstruction {
+                        instruction: instruction.clone(),
+                    },
+                ],
+            },
+        );
+    }
 }
 
 // Route to handle agent responses and issue instructions
@@ -87,7 +98,7 @@ pub async fn monolith(
     // Update agent state
     register_or_update(state, &response, &instruction, remote_addr).await;
 
-    // Send instruction back to agent
+    // respond to agent with instruction
     AgentInstruction::serialize(&instruction)
 }
 

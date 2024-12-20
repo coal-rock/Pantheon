@@ -10,16 +10,16 @@ mod served_files;
 use crate::console::start_console;
 use rocket::tokio::sync::RwLock;
 use rocket::{Build, Ignite, Rocket};
+use served_files::serve_compiled_file;
+use std::collections::HashMap;
 use std::sync::Arc;
 use talaria::api::*;
-use served_files::serve_compiled_file;
-
 
 // Shared state for active listeners
 #[derive(Default)]
 struct State {
     listeners: Vec<String>,
-    agents: Vec<Agent>,
+    agents: HashMap<u64, Agent>,
 }
 
 // Wrap in Arc and RwLock for safe concurrent access

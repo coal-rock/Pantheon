@@ -40,8 +40,8 @@ pub fn console() -> Html {
             <style>
                 {r#"
                 .console {
-                    height: 300px;
-                    width: 800px;
+                    height: 100%;
+                    width: 100%;
                     margin: 0;
                     background-color: black;
                     color: white;
@@ -69,8 +69,8 @@ pub fn console() -> Html {
                     <input
                         type="text"
                         style="background-color: black; color: white; border: none; width: 100%; font-family: monospace; overflow: scroll; outline: none;"
+                        value={"> "}
                         onkeydown={onkeydown}
-                        input={"> "}
                     />
                 </div>
             </div>
