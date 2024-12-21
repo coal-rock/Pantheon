@@ -19,11 +19,13 @@ pub fn console() -> Html {
                 let input: web_sys::HtmlInputElement = e.target_unchecked_into();
                 let value = input.value();
 
-                let mut temp = (*console_history).clone();
-                temp.push(value);
+                if value.starts_with("> ") {
+                    let mut temp = (*console_history).clone();
+                    temp.push(value);
 
-                console_history.set(temp.to_vec());
-                input.set_value("> "); // Clear the input field if needed
+                    console_history.set(temp.to_vec());
+                    input.set_value("> "); // Clear the input field if needed
+                }
             }
 
             let input: web_sys::HtmlInputElement = e.target_unchecked_into();
@@ -54,7 +56,7 @@ pub fn console() -> Html {
                     width: 800px;
                     height: 400px;
                     overflow: scroll;
-                    -ms-overflow-style: none;  /* IE and Edge */
+                    -ms-overflow-style: none;  /* IE (ew) and Edge */
                     scrollbar-width: none;  /* Firefox */
                 }
                 
