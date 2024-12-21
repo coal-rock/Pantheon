@@ -92,13 +92,14 @@ pub fn agent_table_inner() -> Html {
             }
         };
 
-        use_effect_with((), {
-            let fetch_and_update = fetch_and_update.clone();
+        let fetch_and_update = fetch_and_update.clone();
 
+        use_effect_with((), {
             move |_| {
                 fetch_and_update();
                 let interval = Interval::new(5000, move || fetch_and_update());
-                interval.cancel();
+
+                move || drop(interval)
             }
         });
     }

@@ -1,4 +1,6 @@
 pub mod protocol {
+    use core::fmt;
+
     use bincode;
     use serde::{Deserialize, Serialize};
 
@@ -19,6 +21,43 @@ pub mod protocol {
         Error,
     }
 
+    impl AgentResponseBody {
+        pub fn variant(&self) -> &str {
+            match self {
+                AgentResponseBody::CommandResponse {
+                    command: _,
+                    command_id: _,
+                    status_code: _,
+                    stdout: _,
+                    stderr: _,
+                } => "CommandResponse",
+                AgentResponseBody::Ok { packet_id: _ } => "Ok",
+                AgentResponseBody::SystemInfo {} => "SystemInfo",
+                AgentResponseBody::Heartbeat => "Heartbeat",
+                AgentResponseBody::Error => "Error",
+            }
+        }
+
+        pub fn inner_value(&self) -> String {
+            match self {
+                AgentResponseBody::CommandResponse {
+                    command,
+                    command_id,
+                    status_code,
+                    stdout,
+                    stderr,
+                } => format!(
+                    "Command: {}\nCommand ID: {}\nStatus Code: {}\nstdout: {}\nstderr: {}",
+                    command, command_id, status_code, stdout, stderr
+                ),
+                AgentResponseBody::Ok { packet_id } => format!("Packet ID: {}", packet_id),
+                AgentResponseBody::SystemInfo {} => String::from("None"),
+                AgentResponseBody::Heartbeat => String::from("None"),
+                AgentResponseBody::Error => String::from("None"),
+            }
+        }
+    }
+
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
         Command {
@@ -28,6 +67,35 @@ pub mod protocol {
         },
         RequestHeartbeat,
         Ok,
+    }
+
+    impl AgentInstructionBody {
+        pub fn variant(&self) -> &str {
+            match self {
+                AgentInstructionBody::Command {
+                    command: _,
+                    command_id: _,
+                    args: _,
+                } => "Command",
+                AgentInstructionBody::RequestHeartbeat => "RequestHeartbeat",
+                AgentInstructionBody::Ok => "Ok",
+            }
+        }
+
+        pub fn inner_value(&self) -> String {
+            match self {
+                AgentInstructionBody::Command {
+                    command,
+                    command_id,
+                    args,
+                } => format!(
+                    "Command: {}\nCommand ID: {}\nArgs: {:#?}",
+                    command, command_id, args
+                ),
+                AgentInstructionBody::RequestHeartbeat => String::from("None"),
+                AgentInstructionBody::Ok => String::from("None"),
+            }
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -41,7 +109,7 @@ pub mod protocol {
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
         pub packet_header: PacketHeader,
-        pub instruction: AgentInstructionBody,
+        pub packet_body: AgentInstructionBody,
     }
 
     impl AgentInstruction {

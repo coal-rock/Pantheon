@@ -77,7 +77,7 @@ pub async fn monolith(
                     packet_id: response.packet_header.packet_id,
                     os: None,
                 },
-                instruction: AgentInstructionBody::Ok,
+                packet_body: AgentInstructionBody::Ok,
             }
         }
         _ => AgentInstruction {
@@ -87,7 +87,7 @@ pub async fn monolith(
                 packet_id: response.packet_header.packet_id,
                 os: None,
             },
-            instruction: AgentInstructionBody::Command {
+            packet_body: AgentInstructionBody::Command {
                 command_id: 1, // Example command_id; replace with logic for unique IDs
                 command: "echo".into(),
                 args: vec!["Hello from server!".into()],

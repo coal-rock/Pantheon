@@ -25,7 +25,7 @@ pub fn agent(&AgentProps { agent_id }: &AgentProps) -> Html {
                 }
                 .box {
                     margin: 8px;
-                    height: 400px;
+                    height: 500px;
                 }
                 "#}
             </style>
@@ -42,7 +42,7 @@ pub fn agent(&AgentProps { agent_id }: &AgentProps) -> Html {
                 <Card class="box">
                     <CardTitle> {"Network Log"} </CardTitle>
                     <CardBody>
-                        <NetworkLog/>
+                        <NetworkLog agent_id={agent_id}/>
                     </CardBody>
                 </Card>
                 <Card class="box"></Card>

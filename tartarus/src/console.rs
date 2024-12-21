@@ -113,7 +113,7 @@ async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &st
                 packet_id: 0, // TODO: Generate a unique packet ID
                 os: None,
             },
-            instruction: AgentInstructionBody::Command {
+            packet_body: AgentInstructionBody::Command {
                 command: command.into(),
                 command_id: 0, // TODO: Replace with unique ID generation logic
                 args: vec![],
@@ -166,7 +166,7 @@ async fn push_command(shared_state: &SharedState, command: &str) {
                 packet_id: 0, // TODO: Generate a unique packet ID
                 os: None,
             },
-            instruction: AgentInstructionBody::Command {
+            packet_body: AgentInstructionBody::Command {
                 command_id: 0, // TODO: Replace with unique ID generation logic
                 command: command.into(),
                 args: vec![],

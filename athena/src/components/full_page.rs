@@ -45,7 +45,8 @@ pub fn full_page(props: &FullPageProps) -> Html {
             move |_| {
                 fetch_and_update();
                 let interval = Interval::new(5000, move || fetch_and_update());
-                interval.cancel();
+
+                move || drop(interval)
             }
         });
     }

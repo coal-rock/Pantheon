@@ -11,6 +11,19 @@ pub async fn get_agents(state: &rocket::State<SharedState>) -> Json<HashMap<u64,
     Json(state.read().await.agents.clone())
 }
 
+#[get("/api/<agent_id>/network_history")]
+pub async fn get_agent_history(
+    state: &rocket::State<SharedState>,
+    agent_id: u64,
+) -> Option<Json<Vec<NetworkHistoryEntry>>> {
+    let agents = state.read().await.agents.clone();
+
+    match agents.get(&agent_id) {
+        Some(agent) => Some(Json(agent.network_history.clone())),
+        None => None,
+    }
+}
+
 // gets basic info about agents (name, id, ip, status, ping)
 #[get("/api/list_agents")]
 pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
@@ -32,5 +45,5 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
 
 // Route registration
 pub fn routes() -> Vec<rocket::Route> {
-    rocket::routes![get_agents, list_agents]
+    rocket::routes![get_agents, list_agents, get_agent_history]
 }

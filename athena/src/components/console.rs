@@ -46,11 +46,13 @@ pub fn console() -> Html {
                     background-color: black;
                     color: white;
                     font-family: monospace;
+                    border-radius: 8px;
+                    padding: 8px;
                 }
 
                 .console-history {
                     width: 800px;
-                    height: 300px;
+                    height: 400px;
                     overflow: scroll;
                     -ms-overflow-style: none;  /* IE and Edge */
                     scrollbar-width: none;  /* Firefox */
@@ -68,7 +70,7 @@ pub fn console() -> Html {
                     { for console_history.iter().map(|i| html!{<p> {i} </p>} )}
                     <input
                         type="text"
-                        style="background-color: black; color: white; border: none; width: 100%; font-family: monospace; overflow: scroll; outline: none;"
+                        style="background-color: black; color: white; border: none; width: 100%; font-family: monospace; overflow: scroll; outline: none; border-radius: 8px;"
                         value={"> "}
                         onkeydown={onkeydown}
                     />
