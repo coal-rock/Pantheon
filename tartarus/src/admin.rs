@@ -18,8 +18,18 @@ pub async fn get_agent_history(
 ) -> Option<Json<Vec<NetworkHistoryEntry>>> {
     let agents = state.read().await.agents.clone();
 
+    // FIXME: slow and evil
     match agents.get(&agent_id) {
-        Some(agent) => Some(Json(agent.network_history.clone())),
+        Some(agent) => Some(Json(
+            agent
+                .network_history
+                .clone()
+                .iter()
+                .rev()
+                .take(100)
+                .map(|x| x.clone())
+                .collect::<Vec<NetworkHistoryEntry>>(),
+        )),
         None => None,
     }
 }
@@ -36,7 +46,7 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
             id: agent.id,
             ip: agent.ip.to_string(),
             status: true,
-            ping: agent.last_packet_send - agent.last_packet_recv,
+            ping: agent.last_packet_send - agent.last_packet_recv, // FIXME: unsafe,
         });
     }
 

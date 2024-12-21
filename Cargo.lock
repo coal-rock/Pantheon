@@ -84,6 +84,7 @@ dependencies = [
 name = "athena"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "gloo-net 0.6.0",
  "gloo-timers 0.3.0",
  "patternfly-yew",

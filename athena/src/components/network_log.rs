@@ -1,10 +1,10 @@
+use crate::pages::agent::AgentProps;
+use chrono::prelude::*;
 use gloo_timers::callback::Interval;
 use patternfly_yew::prelude::*;
 use talaria::api::*;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-
-use crate::pages::agent::AgentProps;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum Column {
@@ -20,10 +20,10 @@ impl TableEntryRenderer<Column> for NetworkHistoryEntry {
         match context.column {
             Column::PacketType => match self {
                 NetworkHistoryEntry::AgentInstruction { instruction: _ } => {
-                    html!("Instruction").into()
+                    html!(<Label label={"Instruction"}/>).into()
                 }
                 NetworkHistoryEntry::AgentResponse { response: _ } => {
-                    html!("Response").into() // padding so that rustfmt doesn't kill me
+                    html!(<Label label={"Response"}/>).into() // padding so that rustfmt doesn't kill me
                 }
             },
             Column::PacketId => match self {
@@ -36,23 +36,29 @@ impl TableEntryRenderer<Column> for NetworkHistoryEntry {
             },
             Column::PacketName => match self {
                 NetworkHistoryEntry::AgentInstruction { instruction } => {
-                    html!(instruction.packet_body.variant()).into()
+                    let variant = instruction.packet_body.variant();
+                    html!(<Chip text = {variant.to_string()}/>).into()
                 }
                 NetworkHistoryEntry::AgentResponse { response } => {
-                    html!(response.packet_body.variant()).into()
+                    let variant = response.packet_body.variant();
+                    html!(<Chip text = {variant.to_string()}/>).into()
                 }
             },
             Column::PacketData => match self {
                 NetworkHistoryEntry::AgentInstruction { instruction } => {
-                    html!(<div style="white-space: pre-wrap;">{instruction.packet_body.inner_value()}</div>).into()
+                    html!(<CodeBlock><div style="white-space: pre-wrap;">{instruction.packet_body.inner_value()}</div></CodeBlock>).into()
                 }
                 NetworkHistoryEntry::AgentResponse { response } => {
-                    html!(<div style="white-space: pre-wrap;">{response.packet_body.inner_value()}</div>).into()
+                    html!(<CodeBlock><div style="white-space: pre-wrap;">{response.packet_body.inner_value()}</div></CodeBlock>).into()
                 },
             },
-            Column::Timestamp => match self {
-                NetworkHistoryEntry::AgentInstruction { instruction } => html!(instruction.packet_header.timestamp).into(),
-                NetworkHistoryEntry::AgentResponse { response } => html!(response.packet_header.timestamp).into(),
+            Column::Timestamp => {
+                let time: u64 = Local::now().timestamp() as u64;
+
+                match self {
+                    NetworkHistoryEntry::AgentInstruction { instruction } => html!(format!("{} seconds ago", time - instruction.packet_header.timestamp)).into(),
+                    NetworkHistoryEntry::AgentResponse { response } => html!(format!("{} seconds ago", time - response.packet_header.timestamp)).into(),
+                }
             },
         }
     }
@@ -112,7 +118,14 @@ pub fn network_log(props: &AgentProps) -> Html {
     let (entries, _) = use_table_data(MemoizedTableModel::new((*data).clone().into()));
 
     html! {
-    <div style="width: 800px; height: 400px; overflow: scroll;">
+    <div style="width: 850px; height: 400px; overflow: scroll;">
+        <style>
+        {r#"
+        .pf-v5-c-chip__content {
+            font-size: 16px !important;
+        }
+        "#}
+        </style>
       <Table<Column, UseTableData<Column, MemoizedTableModel<NetworkHistoryEntry>>>
         {header}
         {entries}
