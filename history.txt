@@ -29,3 +29,12 @@ list agents
 exec 4189257816344296299 ls
 list agents
 exec 4189257816344296299 ls
+history
+list agents
+help
+status
+list agents
+exec 13225528007192652817 ls
+list agents
+exit
+list agents
