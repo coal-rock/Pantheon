@@ -3,6 +3,7 @@ members = [
     "athena",
     "tartarus",
     "hermes",
-    "talaria"
+    "talaria",
+    "Mnemosyne"
 ]
 resolver = "2"
