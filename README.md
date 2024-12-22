@@ -106,4 +106,6 @@ also a static mapping of binaries was created on the downloads page. this allows
 will be implementing a copy paste bar so that the user can simply copy and paste a default script to curl the binary and hide it on the system
 
 
+mock execution drwaing from backend/frontend to agent 
+![image](https://github.com/user-attachments/assets/f72ef4c3-de35-4c94-aa86-56118453ab80)
 

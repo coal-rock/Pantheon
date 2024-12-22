@@ -1,6 +1,4 @@
 pub mod protocol {
-    use core::fmt;
-
     use bincode;
     use serde::{Deserialize, Serialize};
 
@@ -208,5 +206,138 @@ pub mod api {
         pub ip: String,
         pub status: bool,
         pub ping: u64,
+    }
+}
+
+pub mod console {
+    // refers to agent via name or id, ex:
+    // connect agent1
+    // connect 12390122898
+    pub enum AgentIdentifier {
+        Nickname { nickname: String },
+        ID { id: u64 },
+    }
+
+    // refers to group of agents or single agent
+    pub enum TargetIdentifier {
+        Group { group: String },
+        Agent { agent: AgentIdentifier },
+    }
+
+    pub enum Command {
+        Connect {
+            agents: Vec<TargetIdentifier>,
+        },
+        Disconnect,
+        CreateGroup {
+            group_name: String,
+            agents: Vec<AgentIdentifier>,
+        },
+        DeleteGroup {
+            group_name: String,
+        },
+        AddAgentsToGroup {
+            group_name: String,
+            agents: Vec<AgentIdentifier>,
+        },
+        RemoveAgentsFromGroup {
+            group_name: String,
+            agents: Vec<AgentIdentifier>,
+        },
+        Exec {
+            command: String,
+        },
+        ListAgents,
+        Ping {
+            agents: Option<Vec<TargetIdentifier>>,
+        },
+        Status {
+            agents: Option<Vec<TargetIdentifier>>,
+        },
+        Nickname {
+            agent: Option<AgentIdentifier>,
+        },
+    }
+
+    pub enum CommandError {}
+
+    pub enum Token {
+        CommandName { command_name: String },
+        AgentID { id: u64 },
+        AgentNickname { nickname: String },
+        GroupIdentifier { identifier: String },
+    }
+
+    pub struct Tokenizer {
+        source: Vec<char>,
+        tokens: Vec<String>,
+    }
+
+    pub struct Console {
+        history: Vec<Command>,
+        current_target: Option<TargetIdentifier>,
+    }
+
+    impl Console {
+        pub fn new(current_target: Option<TargetIdentifier>) -> Console {
+            Console {
+                history: vec![],
+                current_target,
+            }
+        }
+
+        pub fn tokenize(source: String) -> Vec<String> {
+            let source: Vec<char> = source.chars().collect();
+            let mut tokens: Vec<String> = vec![];
+            let mut in_quotes = false;
+            let mut escape_next = false;
+            let mut current_token: Vec<char> = vec![];
+
+            for char in source.clone() {
+                // if last char was "\", escape the next character and ignore the "\"
+                if escape_next {
+                    current_token.push(char);
+                    escape_next = false;
+                }
+                // if current char is a backslash, escape the next char
+                else if char == '\\' {
+                    escape_next = true;
+                }
+                // if we're currently in qoutes, and the current char is a quote,
+                // add the token buffer to the list of tokens, if not, add the current char
+                // to the token buffer
+                else if in_quotes {
+                    if char == '"' {
+                        in_quotes = false;
+                        tokens.push(current_token.iter().collect());
+                        current_token.clear();
+                    } else {
+                        current_token.push(char);
+                    }
+                } else {
+                    // if token is '"', then we start a new token buffer and add the old one to the
+                    // list of tokens
+                    if char == '"' {
+                        in_quotes = true;
+
+                        if current_token.len() > 0 {
+                            tokens.push(current_token.iter().collect());
+                            current_token.clear();
+                        }
+                    }
+                    // break tokens on space
+                    else if char == ' ' {
+                        if current_token.len() > 0 {
+                            tokens.push(current_token.iter().collect());
+                            current_token.clear();
+                        }
+                    } else {
+                        current_token.push(char);
+                    }
+                }
+            }
+
+            tokens
+        }
     }
 }

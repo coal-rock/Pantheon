@@ -5,6 +5,14 @@ use rustyline::history::History;
 use rustyline::{error::ReadlineError, Editor};
 use std::time::SystemTime;
 use talaria::protocol::*;
+use talaria::console::{state, SharedState};
+use talaria::console::push_command;
+use talaria::console::execute_command;
+use talaria::console::list_agents;
+use talaria::console::show_history;
+use talaria::console::show_status;
+use crate::RwLock;
+use crate::Arc;
 
 pub async fn start_console(shared_state: &SharedState) {
     println!("=============================================================================================================================================");
@@ -51,7 +59,7 @@ ___________              __                                                     
                     }
                     cmd if cmd.starts_with("push ") => {
                         let parts: Vec<&str> = cmd.splitn(2, ' ').collect();
-                        if parts.len() < 3 {
+                        if parts.len() < 2 {
                             println!("Usage: push <command>");
                         } else {
                             let command = parts[1];
@@ -98,127 +106,6 @@ fn show_help() {
     );
     println!("  exit         - Exit the Tartarus Console");
     println!("  help         - Show this help message");
-}
-
-async fn execute_command(shared_state: &SharedState, agent_id: u64, command: &str) {
-    let mut state = shared_state.write().await;
-
-    if let Some(agent) = state.agents.get_mut(&agent_id) {
-        println!("Executing command '{}' on Agent {}...", command, agent_id);
-
-        let instruction = AgentInstruction {
-            packet_header: PacketHeader {
-                agent_id,
-                timestamp: current_time(),
-                packet_id: 0, // TODO: Generate a unique packet ID
-                os: None,
-            },
-            packet_body: AgentInstructionBody::Command {
-                command: command.into(),
-                command_id: 0, // TODO: Replace with unique ID generation logic
-                args: vec![],
-            },
-        };
-
-        agent.push_instruction(&instruction);
-
-        // Simulate fetching response
-        println!("Waiting for response from Agent {}...", agent_id);
-        if let Some(response) = agent.get_response_history().last() {
-            match &response.packet_body {
-                AgentResponseBody::CommandResponse {
-                    stdout,
-                    stderr,
-                    status_code,
-                    ..
-                } => {
-                    // Command output is available here
-                    println!("Command Output:\n{}\n", stdout);
-                    if !stderr.is_empty() {
-                        println!("Command Errors:\n{}\n", stderr);
-                    }
-                    println!("Status Code: {}", status_code);
-                }
-                _ => {
-                    // If the response is not of type CommandResponse
-                    println!("Unhandled response variant from Agent {}.", agent_id);
-                }
-            }
-        } else {
-            println!("No response received from Agent {}.", agent_id);
-        }
-    } else {
-        println!("Agent with ID {} not found.", agent_id);
-    }
-}
-
-async fn push_command(shared_state: &SharedState, command: &str) {
-    let mut state = shared_state.write().await;
-    //iterate through every agent to execute commands
-
-    for (_, agent) in &mut state.agents {
-        println!("Executing command '{}' on Agents...", command);
-
-        let instruction = AgentInstruction {
-            packet_header: PacketHeader {
-                agent_id: agent.id,
-                timestamp: current_time(),
-                packet_id: 0, // TODO: Generate a unique packet ID
-                os: None,
-            },
-            packet_body: AgentInstructionBody::Command {
-                command_id: 0, // TODO: Replace with unique ID generation logic
-                command: command.into(),
-                args: vec![],
-            },
-        };
-
-        agent.push_instruction(&instruction);
-        println!("Command sent successfully to all agents.");
-    }
-}
-
-async fn show_status(shared_state: &SharedState) {
-    let listeners = shared_state.read().await;
-
-    if listeners.listeners.is_empty() {
-        println!("No active listeners.");
-    } else {
-        println!("Active listeners:");
-        for listener in listeners.listeners.iter() {
-            println!("  - {}", listener);
-        }
-    }
-}
-
-pub async fn show_history(rl: &Editor<(), FileHistory>) {
-    let history = rl.history();
-    if history.len() == 0 {
-        println!("No active history.");
-    } else {
-        println!("History:");
-        for entry in history.iter() {
-            println!("  - {}", entry);
-        }
-    }
-}
-async fn list_agents(shared_state: &SharedState) {
-    let agents = shared_state.read().await.agents.clone();
-
-    if agents.is_empty() {
-        println!("No registered agents.");
-    } else {
-        println!("Registered agents:");
-        for (_, agent) in agents {
-            println!(
-                "  - ID: {}, OS: {:?}, IP: {}, Last Response: {}s ago",
-                agent.id,
-                agent.os,
-                agent.ip,
-                current_time() - agent.last_packet_recv
-            );
-        }
-    }
 }
 
 fn current_time() -> u64 {
