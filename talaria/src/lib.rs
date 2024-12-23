@@ -226,7 +226,7 @@ pub mod console {
 
     pub enum Command {
         Connect {
-            agents: Vec<TargetIdentifier>,
+            agent: TargetIdentifier,
         },
         Disconnect,
         CreateGroup {
@@ -245,21 +245,29 @@ pub mod console {
             agents: Vec<AgentIdentifier>,
         },
         Exec {
+            agents: Option<TargetIdentifier>,
             command: String,
         },
         ListAgents,
         Ping {
-            agents: Option<Vec<TargetIdentifier>>,
+            agents: Option<TargetIdentifier>,
         },
         Status {
-            agents: Option<Vec<TargetIdentifier>>,
+            agents: Option<TargetIdentifier>,
         },
         Nickname {
             agent: Option<AgentIdentifier>,
         },
     }
 
-    pub enum CommandError {}
+    pub enum CommandError {
+        UnknownCommand { command_name: String },
+        InvalidAgentId,
+        InvalidAgentNickname,
+        GroupMustStartWithPound,
+        InvalidAgentIdentifier,
+        ExpectedNArgs { args: u64 },
+    }
 
     pub enum Token {
         CommandName { command_name: String },
@@ -268,9 +276,168 @@ pub mod console {
         GroupIdentifier { identifier: String },
     }
 
-    pub struct Tokenizer {
-        source: Vec<char>,
-        tokens: Vec<String>,
+    pub struct Parser {
+        source: Vec<String>,
+        pos: usize,
+    }
+
+    impl Parser {
+        pub fn new(source: Vec<String>) -> Parser {
+            Parser { source, pos: 0 }
+        }
+
+        pub fn consume(&mut self) -> &str {
+            self.pos += 1;
+            &self.source[self.pos - 1]
+        }
+
+        pub fn peek(&mut self) -> &str {
+            &self.source[self.pos]
+        }
+
+        pub fn is_at_end(&self) -> bool {
+            self.pos == self.source.len()
+        }
+
+        pub fn parse_target_ident(&mut self) -> Result<TargetIdentifier, CommandError> {
+            let token = self.peek();
+
+            // match on first char
+            match token.chars().next().unwrap() {
+                '#' => {
+                    return Ok(TargetIdentifier::Group {
+                        group: self.parse_group_ident()?,
+                    })
+                }
+                _ => {
+                    return Ok(TargetIdentifier::Agent {
+                        agent: self.parse_agent_ident()?,
+                    })
+                }
+            };
+        }
+
+        pub fn parse_group_ident(&mut self) -> Result<String, CommandError> {
+            let token = self.consume();
+
+            if token.starts_with("#") {
+                return Ok(token[1..token.len()].to_string());
+            }
+
+            return Err(CommandError::GroupMustStartWithPound);
+        }
+
+        pub fn parse_agent_ident(&mut self) -> Result<AgentIdentifier, CommandError> {
+            let token = self.peek();
+
+            match token.chars().next().unwrap() {
+                '0'..='9' => Ok(AgentIdentifier::ID {
+                    id: self.parse_agent_id()?,
+                }),
+                'a'..='z' | 'A'..='Z' => Ok(AgentIdentifier::Nickname {
+                    nickname: self.parse_agent_nickname()?,
+                }),
+                _ => Err(CommandError::InvalidAgentIdentifier),
+            }
+        }
+
+        pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
+            let token = self.consume();
+
+            match token.chars().next().unwrap() {
+                '0'..='9' => {
+                    let id = token.parse::<u64>();
+
+                    match id {
+                        Ok(id) => Ok(id),
+                        Err(_) => Err(CommandError::InvalidAgentId),
+                    }
+                }
+                _ => Err(CommandError::InvalidAgentId),
+            }
+        }
+
+        pub fn parse_agent_nickname(&mut self) -> Result<String, CommandError> {
+            let token = self.consume();
+
+            match token.chars().next().unwrap() {
+                'a'..='z' | 'A'..='Z' => Ok(token.to_string()),
+                _ => Err(CommandError::InvalidAgentNickname),
+            }
+        }
+
+        pub fn parse(&mut self) -> Result<Command, CommandError> {
+            let command = self.consume().to_string();
+
+            match self.consume() {
+                "connect" => {
+                    let target_ident = self.parse_target_ident()?;
+
+                    if self.is_at_end() {
+                        Ok(Command::Connect {
+                            agent: target_ident,
+                        })
+                    } else {
+                        Err(CommandError::ExpectedNArgs { args: 1 })
+                    }
+                }
+                "disconnect" => {
+                    if self.is_at_end() {
+                        Ok(Command::Disconnect)
+                    } else {
+                        Err(CommandError::ExpectedNArgs { args: 0 })
+                    }
+                }
+                "create_group" => {
+                    let group_name = self.parse_group_ident()?;
+                    let mut agents: Vec<AgentIdentifier> = vec![];
+
+                    while !self.is_at_end() {
+                        agents.push(self.parse_agent_ident()?);
+                    }
+
+                    Ok(Command::CreateGroup { group_name, agents })
+                }
+                "delete_group" => {
+                    let group_name = self.parse_group_ident()?;
+
+                    match self.is_at_end() {
+                        false => Err(CommandError::ExpectedNArgs { args: 1 }),
+                        true => Ok(Command::DeleteGroup { group_name }),
+                    }
+                }
+                "add_to_group" => {
+                    let group_name = self.parse_group_ident()?;
+                    let mut agents: Vec<AgentIdentifier> = vec![];
+
+                    while !self.is_at_end() {
+                        agents.push(self.parse_agent_ident()?);
+                    }
+
+                    Ok(Command::AddAgentsToGroup { group_name, agents })
+                }
+                "remove_from_group" => {
+                    let mut group_name = self.parse_group_ident()?;
+                    let mut agents: Vec<AgentIdentifier> = vec![];
+
+                    while !self.is_at_end() {
+                        agents.push(self.parse_agent_ident()?);
+                    }
+
+                    Ok(Command::RemoveAgentsFromGroup { group_name, agents })
+                }
+                "exec" => {}
+                "list" => {}
+                "ping" => {}
+                "status" => {}
+                "nickname" => {}
+                _ => {
+                    return Err(CommandError::UnknownCommand {
+                        command_name: command.to_string(),
+                    });
+                }
+            }
+        }
     }
 
     pub struct Console {
