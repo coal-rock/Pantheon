@@ -210,6 +210,8 @@ pub mod api {
 }
 
 pub mod console {
+    use rocket::form::validate::Len;
+
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
@@ -257,6 +259,7 @@ pub mod console {
         },
         Nickname {
             agent: Option<AgentIdentifier>,
+            new_name: String,
         },
     }
 
@@ -267,6 +270,7 @@ pub mod console {
         GroupMustStartWithPound,
         InvalidAgentIdentifier,
         ExpectedNArgs { args: u64 },
+        ExpectedAOrBArgs { args1: u64, args2: u64 },
     }
 
     pub enum Token {
@@ -426,16 +430,49 @@ pub mod console {
 
                     Ok(Command::RemoveAgentsFromGroup { group_name, agents })
                 }
-                "exec" => {}
-                "list" => {}
-                "ping" => {}
-                "status" => {}
-                "nickname" => {}
-                _ => {
-                    return Err(CommandError::UnknownCommand {
-                        command_name: command.to_string(),
-                    });
-                }
+                "exec" => match self.source.len() {
+                    2 => Ok(Command::Exec {
+                        agents: None,
+                        command: self.consume().to_string(),
+                    }),
+                    3 => Ok(Command::Exec {
+                        agents: Some(self.parse_target_ident()?),
+                        command: self.consume().to_string(),
+                    }),
+                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
+                },
+                "list" => match self.is_at_end() {
+                    true => Ok(Command::ListAgents),
+                    false => Err(CommandError::ExpectedNArgs { args: 0 }),
+                },
+                "ping" => match self.source.len() {
+                    1 => Ok(Command::Ping { agents: None }),
+                    2 => Ok(Command::Ping {
+                        agents: Some(self.parse_target_ident()?),
+                    }),
+                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 0, args2: 1 }),
+                },
+                "status" => match self.source.len() {
+                    1 => Ok(Command::Status { agents: None }),
+                    2 => Ok(Command::Status {
+                        agents: Some(self.parse_target_ident()?),
+                    }),
+                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 0, args2: 1 }),
+                },
+                "nickname" => match self.source.len() {
+                    2 => Ok(Command::Nickname {
+                        agent: None,
+                        new_name: self.consume().to_string(),
+                    }),
+                    3 => Ok(Command::Nickname {
+                        agent: Some(self.parse_agent_ident()?),
+                        new_name: self.consume().to_string(),
+                    }),
+                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
+                },
+                _ => Err(CommandError::UnknownCommand {
+                    command_name: command,
+                }),
             }
         }
     }
