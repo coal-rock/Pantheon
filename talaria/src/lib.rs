@@ -215,17 +215,20 @@ pub mod console {
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
+    #[derive(Clone)]
     pub enum AgentIdentifier {
         Nickname { nickname: String },
         ID { id: u64 },
     }
 
     // refers to group of agents or single agent
+    #[derive(Clone)]
     pub enum TargetIdentifier {
         Group { group: String },
         Agent { agent: AgentIdentifier },
     }
 
+    #[derive(Clone)]
     pub enum Command {
         Connect {
             agent: TargetIdentifier,
@@ -263,6 +266,7 @@ pub mod console {
         },
     }
 
+    #[derive(Clone)]
     pub enum CommandError {
         UnknownCommand { command_name: String },
         InvalidAgentId,
@@ -271,6 +275,24 @@ pub mod console {
         InvalidAgentIdentifier,
         ExpectedNArgs { args: u64 },
         ExpectedAOrBArgs { args1: u64, args2: u64 },
+    }
+
+    impl CommandError {
+        pub fn to_string(&self) -> String {
+            match self {
+                CommandError::UnknownCommand { command_name } => {
+                    format!("unknown command: \"{}\"", command_name)
+                }
+                CommandError::InvalidAgentId => "invalid agent id".to_string(),
+                CommandError::InvalidAgentNickname => "invalid agent nickname".to_string(),
+                CommandError::GroupMustStartWithPound => "group must start with: #".to_string(),
+                CommandError::InvalidAgentIdentifier => "invalid agent identifier".to_string(),
+                CommandError::ExpectedNArgs { args } => format!("expected {} arguments", args),
+                CommandError::ExpectedAOrBArgs { args1, args2 } => {
+                    format!("expected {} or {} args", args1, args2)
+                }
+            }
+        }
     }
 
     pub enum Token {
@@ -288,6 +310,60 @@ pub mod console {
     impl Parser {
         pub fn new(source: Vec<String>) -> Parser {
             Parser { source, pos: 0 }
+        }
+
+        pub fn tokenize(source: String) -> Vec<String> {
+            let source: Vec<char> = source.chars().collect();
+            let mut tokens: Vec<String> = vec![];
+            let mut in_quotes = false;
+            let mut escape_next = false;
+            let mut current_token: Vec<char> = vec![];
+
+            for char in source.clone() {
+                // if last char was "\", escape the next character and ignore the "\"
+                if escape_next {
+                    current_token.push(char);
+                    escape_next = false;
+                }
+                // if current char is a backslash, escape the next char
+                else if char == '\\' {
+                    escape_next = true;
+                }
+                // if we're currently in qoutes, and the current char is a quote,
+                // add the token buffer to the list of tokens, if not, add the current char
+                // to the token buffer
+                else if in_quotes {
+                    if char == '"' {
+                        in_quotes = false;
+                        tokens.push(current_token.iter().collect());
+                        current_token.clear();
+                    } else {
+                        current_token.push(char);
+                    }
+                } else {
+                    // if token is '"', then we start a new token buffer and add the old one to the
+                    // list of tokens
+                    if char == '"' {
+                        in_quotes = true;
+
+                        if current_token.len() > 0 {
+                            tokens.push(current_token.iter().collect());
+                            current_token.clear();
+                        }
+                    }
+                    // break tokens on space
+                    else if char == ' ' {
+                        if current_token.len() > 0 {
+                            tokens.push(current_token.iter().collect());
+                            current_token.clear();
+                        }
+                    } else {
+                        current_token.push(char);
+                    }
+                }
+            }
+
+            tokens
         }
 
         pub fn consume(&mut self) -> &str {
@@ -421,7 +497,7 @@ pub mod console {
                     Ok(Command::AddAgentsToGroup { group_name, agents })
                 }
                 "remove_from_group" => {
-                    let mut group_name = self.parse_group_ident()?;
+                    let group_name = self.parse_group_ident()?;
                     let mut agents: Vec<AgentIdentifier> = vec![];
 
                     while !self.is_at_end() {
@@ -477,8 +553,13 @@ pub mod console {
         }
     }
 
+    pub struct ConsoleResponse {
+        command: Result<Command, CommandError>,
+        send_command: bool,
+    }
+
     pub struct Console {
-        history: Vec<Command>,
+        history: Vec<String>,
         current_target: Option<TargetIdentifier>,
     }
 
@@ -490,58 +571,33 @@ pub mod console {
             }
         }
 
-        pub fn tokenize(source: String) -> Vec<String> {
-            let source: Vec<char> = source.chars().collect();
-            let mut tokens: Vec<String> = vec![];
-            let mut in_quotes = false;
-            let mut escape_next = false;
-            let mut current_token: Vec<char> = vec![];
+        pub fn handle_command(&mut self, source: String) -> ConsoleResponse {
+            let tokens = Parser::tokenize(source);
 
-            for char in source.clone() {
-                // if last char was "\", escape the next character and ignore the "\"
-                if escape_next {
-                    current_token.push(char);
-                    escape_next = false;
-                }
-                // if current char is a backslash, escape the next char
-                else if char == '\\' {
-                    escape_next = true;
-                }
-                // if we're currently in qoutes, and the current char is a quote,
-                // add the token buffer to the list of tokens, if not, add the current char
-                // to the token buffer
-                else if in_quotes {
-                    if char == '"' {
-                        in_quotes = false;
-                        tokens.push(current_token.iter().collect());
-                        current_token.clear();
-                    } else {
-                        current_token.push(char);
-                    }
-                } else {
-                    // if token is '"', then we start a new token buffer and add the old one to the
-                    // list of tokens
-                    if char == '"' {
-                        in_quotes = true;
+            let mut parser = Parser::new(tokens);
+            let command = parser.parse();
 
-                        if current_token.len() > 0 {
-                            tokens.push(current_token.iter().collect());
-                            current_token.clear();
-                        }
+            let mut send_command = true;
+
+            match command.clone() {
+                Ok(command) => match command {
+                    Command::Connect { agent } => {
+                        self.current_target = Some(agent);
+                        send_command = false;
                     }
-                    // break tokens on space
-                    else if char == ' ' {
-                        if current_token.len() > 0 {
-                            tokens.push(current_token.iter().collect());
-                            current_token.clear();
-                        }
-                    } else {
-                        current_token.push(char);
+                    Command::Disconnect => {
+                        self.current_target = None;
+                        send_command = false;
                     }
-                }
+                    _ => {}
+                },
+                Err(_) => todo!(),
             }
 
-            tokens
+            ConsoleResponse {
+                command,
+                send_command,
+            }
         }
     }
 }
