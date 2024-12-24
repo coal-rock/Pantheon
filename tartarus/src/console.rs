@@ -1,18 +1,7 @@
-use crate::rocket::yansi::Paint;
 use crate::SharedState;
-use rustyline::history::FileHistory;
-use rustyline::history::History;
-use rustyline::{error::ReadlineError, Editor};
+use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use std::time::SystemTime;
-use talaria::protocol::*;
-use talaria::console::{state, SharedState};
-use talaria::console::push_command;
-use talaria::console::execute_command;
-use talaria::console::list_agents;
-use talaria::console::show_history;
-use talaria::console::show_status;
-use crate::RwLock;
-use crate::Arc;
+use talaria::console::*;
 
 pub async fn start_console(shared_state: &SharedState) {
     println!("=============================================================================================================================================");
@@ -36,42 +25,19 @@ ___________              __                                                     
         println!("No previous history.");
     }
 
+    let mut console = Console::new(None);
+
     loop {
-        let readline = rl.readline("tartarus> ");
+        let readline = rl.readline(&console.status_line());
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
                 let command = line.trim();
+                let command = console.handle_command(command.to_string());
 
                 match command {
-                    "status" => show_status(shared_state).await,
-                    "history" => show_history(&rl).await,
-                    "list agents" => list_agents(shared_state).await,
-                    cmd if cmd.starts_with("exec ") => {
-                        let parts: Vec<&str> = cmd.splitn(3, ' ').collect();
-                        if parts.len() < 3 {
-                            println!("Usage: exec <agent_id> <command>");
-                        } else {
-                            let agent_id: u64 = parts[1].parse().unwrap_or(0);
-                            let command = parts[2];
-                            execute_command(shared_state, agent_id, command).await;
-                        }
-                    }
-                    cmd if cmd.starts_with("push ") => {
-                        let parts: Vec<&str> = cmd.splitn(2, ' ').collect();
-                        if parts.len() < 2 {
-                            println!("Usage: push <command>");
-                        } else {
-                            let command = parts[1];
-                            push_command(shared_state, command).await;
-                        }
-                    }
-                    "exit" => {
-                        println!("Exiting Tartarus Console.");
-                        break;
-                    }
-                    "help" => show_help(),
-                    _ => println!("Unknown command. Type 'help' for a list of commands."),
+                    Ok(response) => println!("{:#?}", response),
+                    Err(error) => println!("{}", error.to_string()),
                 }
             }
             Err(ReadlineError::Interrupted) => {

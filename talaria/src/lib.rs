@@ -215,20 +215,20 @@ pub mod console {
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub enum AgentIdentifier {
         Nickname { nickname: String },
         ID { id: u64 },
     }
 
     // refers to group of agents or single agent
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub enum TargetIdentifier {
         Group { group: String },
         Agent { agent: AgentIdentifier },
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub enum Command {
         Connect {
             agent: TargetIdentifier,
@@ -264,15 +264,17 @@ pub mod console {
             agent: Option<AgentIdentifier>,
             new_name: String,
         },
+        Clear,
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub enum CommandError {
         UnknownCommand { command_name: String },
         InvalidAgentId,
         InvalidAgentNickname,
         GroupMustStartWithPound,
         InvalidAgentIdentifier,
+        ExpectedArgument,
         ExpectedNArgs { args: u64 },
         ExpectedAOrBArgs { args1: u64, args2: u64 },
     }
@@ -291,6 +293,7 @@ pub mod console {
                 CommandError::ExpectedAOrBArgs { args1, args2 } => {
                     format!("expected {} or {} args", args1, args2)
                 }
+                CommandError::ExpectedArgument => format!("expected an argument"),
             }
         }
     }
@@ -314,6 +317,7 @@ pub mod console {
 
         pub fn tokenize(source: String) -> Vec<String> {
             let source: Vec<char> = source.chars().collect();
+
             let mut tokens: Vec<String> = vec![];
             let mut in_quotes = false;
             let mut escape_next = false;
@@ -363,6 +367,10 @@ pub mod console {
                 }
             }
 
+            if current_token.len() > 0 {
+                tokens.push(current_token.iter().collect());
+            }
+
             tokens
         }
 
@@ -371,8 +379,12 @@ pub mod console {
             &self.source[self.pos - 1]
         }
 
-        pub fn peek(&mut self) -> &str {
-            &self.source[self.pos]
+        pub fn peek(&mut self) -> Result<&str, CommandError> {
+            if !self.is_at_end() {
+                return Ok(&self.source[self.pos]);
+            }
+
+            Err(CommandError::ExpectedArgument)
         }
 
         pub fn is_at_end(&self) -> bool {
@@ -380,7 +392,7 @@ pub mod console {
         }
 
         pub fn parse_target_ident(&mut self) -> Result<TargetIdentifier, CommandError> {
-            let token = self.peek();
+            let token = self.peek()?;
 
             // match on first char
             match token.chars().next().unwrap() {
@@ -408,7 +420,7 @@ pub mod console {
         }
 
         pub fn parse_agent_ident(&mut self) -> Result<AgentIdentifier, CommandError> {
-            let token = self.peek();
+            let token = self.peek()?;
 
             match token.chars().next().unwrap() {
                 '0'..='9' => Ok(AgentIdentifier::ID {
@@ -447,9 +459,9 @@ pub mod console {
         }
 
         pub fn parse(&mut self) -> Result<Command, CommandError> {
-            let command = self.consume().to_string();
+            let command = self.consume();
 
-            match self.consume() {
+            match command {
                 "connect" => {
                     let target_ident = self.parse_target_ident()?;
 
@@ -521,6 +533,10 @@ pub mod console {
                     true => Ok(Command::ListAgents),
                     false => Err(CommandError::ExpectedNArgs { args: 0 }),
                 },
+                "clear" => match self.is_at_end() {
+                    true => Ok(Command::Clear),
+                    false => Err(CommandError::ExpectedNArgs { args: 0 }),
+                },
                 "ping" => match self.source.len() {
                     1 => Ok(Command::Ping { agents: None }),
                     2 => Ok(Command::Ping {
@@ -547,7 +563,7 @@ pub mod console {
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },
                 _ => Err(CommandError::UnknownCommand {
-                    command_name: command,
+                    command_name: command.to_string(),
                 }),
             }
         }
@@ -587,6 +603,7 @@ pub mod console {
             self.history.push(source.clone());
 
             let tokens = Parser::tokenize(source);
+            println!("{:#?}", tokens);
 
             let mut parser = Parser::new(tokens);
             parser.parse()

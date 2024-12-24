@@ -1,0 +1,12 @@
+#V2
+help
+connect 
+connect 1
+connect "nick"
+connect nick
+help
+exit 
+ls 
+"ls"
+"ls" 
+"connect" "ls"
