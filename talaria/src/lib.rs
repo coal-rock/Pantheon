@@ -553,11 +553,6 @@ pub mod console {
         }
     }
 
-    pub struct ConsoleResponse {
-        command: Result<Command, CommandError>,
-        send_command: bool,
-    }
-
     pub struct Console {
         history: Vec<String>,
         current_target: Option<TargetIdentifier>,
@@ -571,33 +566,30 @@ pub mod console {
             }
         }
 
-        pub fn handle_command(&mut self, source: String) -> ConsoleResponse {
+        pub fn status_line(&self) -> String {
+            match &self.current_target {
+                Some(target) => match target {
+                    TargetIdentifier::Group { group } => format!("#{} > ", group),
+                    TargetIdentifier::Agent { agent } => match agent {
+                        AgentIdentifier::Nickname { nickname } => format!("@{} > ", nickname),
+                        AgentIdentifier::ID { id } => format!("@{} > ", id),
+                    },
+                },
+                None => format!("> "),
+            }
+        }
+
+        pub fn set_target(&mut self, current_target: Option<TargetIdentifier>) {
+            self.current_target = current_target;
+        }
+
+        pub fn handle_command(&mut self, source: String) -> Result<Command, CommandError> {
+            self.history.push(source.clone());
+
             let tokens = Parser::tokenize(source);
 
             let mut parser = Parser::new(tokens);
-            let command = parser.parse();
-
-            let mut send_command = true;
-
-            match command.clone() {
-                Ok(command) => match command {
-                    Command::Connect { agent } => {
-                        self.current_target = Some(agent);
-                        send_command = false;
-                    }
-                    Command::Disconnect => {
-                        self.current_target = None;
-                        send_command = false;
-                    }
-                    _ => {}
-                },
-                Err(_) => todo!(),
-            }
-
-            ConsoleResponse {
-                command,
-                send_command,
-            }
+            parser.parse()
         }
     }
 }
