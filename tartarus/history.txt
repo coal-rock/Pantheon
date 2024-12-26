@@ -10,3 +10,6 @@ ls
 "ls"
 "ls" 
 "connect" "ls"
+help 
+connect  
+connect 123

@@ -14,12 +14,15 @@ use served_files::serve_compiled_file;
 use std::collections::HashMap;
 use std::sync::Arc;
 use talaria::api::*;
+use talaria::console::*;
 
 // Shared state for active listeners
 #[derive(Default)]
 struct State {
     listeners: Vec<String>,
     agents: HashMap<u64, Agent>,
+    nicknames: HashMap<String, u64>,
+    groups: HashMap<String, Vec<AgentIdentifier>>,
 }
 
 // Wrap in Arc and RwLock for safe concurrent access
