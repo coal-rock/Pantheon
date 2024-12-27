@@ -630,8 +630,16 @@ pub mod console {
     }
 
     #[derive(Debug, Serialize, Deserialize)]
+    pub enum NewTarget {
+        NoTarget,
+        Target { target: TargetIdentifier },
+        NoChange,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct ConsoleResponse {
         pub success: bool,
         pub output: String,
+        pub new_target: NewTarget,
     }
 }

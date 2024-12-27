@@ -15,3 +15,14 @@ connect
 connect 123
 connect fortite 
 exit 
+list_agents 
+list
+list 
+ilst 
+list 
+connect 16997889695821924545
+list 
+connect 16997889695821924545
+ls 
+list 
+disconnect 

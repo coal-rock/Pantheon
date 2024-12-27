@@ -49,6 +49,14 @@ ___________              __                                                     
                         )
                         .await;
 
+                        match output.new_target {
+                            NewTarget::NoTarget => console.set_target(None),
+                            NewTarget::Target { ref target } => {
+                                console.set_target(Some(target.clone()))
+                            }
+                            NewTarget::NoChange => {}
+                        }
+
                         println!("{:#?}", output);
                     }
                     Err(error) => println!("{}", error.to_string()),
