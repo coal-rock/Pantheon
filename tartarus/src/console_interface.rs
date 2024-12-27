@@ -1,3 +1,4 @@
+use crate::console_lib;
 use crate::SharedState;
 use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use std::time::SystemTime;
@@ -32,20 +33,21 @@ ___________              __                                                     
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
-                let command = line.trim();
-                let command = console.handle_command(command.to_string());
+                let command_str = line.trim();
+                let command = console.handle_command(command_str.to_string());
 
                 match command {
                     Ok(command) => {
                         println!("{:#?}", command);
 
-                        let output = match command {
-                            Command::Connect { agent } => connect(shared_state, agent).await,
-                            _ => ConsoleResponse {
-                                success: false,
-                                output: format!("Command not implemented"),
+                        let output = console_lib::evaluate_command(
+                            shared_state,
+                            CommandContext {
+                                command,
+                                current_target: console.get_target(),
                             },
-                        };
+                        )
+                        .await;
 
                         println!("{:#?}", output);
                     }
@@ -71,60 +73,6 @@ ___________              __                                                     
     rl.save_history("history.txt").unwrap_or_else(|err| {
         eprintln!("Failed to save history: {:?}", err);
     });
-}
-
-#[derive(Debug)]
-pub struct ConsoleResponse {
-    success: bool,
-    output: String,
-}
-
-async fn connect(state: &SharedState, target: TargetIdentifier) -> ConsoleResponse {
-    let mut state = state.write().await;
-
-    let mut success = false;
-    let mut message = String::new();
-
-    match target {
-        TargetIdentifier::Group { group } => {
-            if state.groups.contains_key(&group) {
-                success = true;
-                message = format!("Successfully connected to group: {}", group);
-            } else {
-                success = false;
-                message = format!("Group {} not found", group);
-            }
-        }
-        TargetIdentifier::Agent { agent } => match agent {
-            AgentIdentifier::Nickname { nickname } => {
-                if state.nicknames.contains_key(&nickname) {
-                    success = true;
-                    message = format!(
-                        "Succesfully connected to agent: {} [{}]",
-                        nickname,
-                        state.nicknames.get(&nickname).unwrap()
-                    )
-                } else {
-                    success = false;
-                    message = format!("Agent with nickname \"{}\" not found", nickname);
-                }
-            }
-            AgentIdentifier::ID { id } => {
-                if state.agents.contains_key(&id) {
-                    success = true;
-                    message = format!("Succesfully connected to agent: {}", id);
-                } else {
-                    success = false;
-                    message = format!("Agent {} not found", id);
-                }
-            }
-        },
-    }
-
-    ConsoleResponse {
-        success,
-        output: message,
-    }
 }
 
 fn show_help() {

@@ -1,17 +1,15 @@
-use std::collections::HashMap;
-
-use rocket::serde::json::Json;
-
 use crate::SharedState;
+use rocket::serde::json::Json;
+use std::collections::HashMap;
 use talaria::api::*;
 
 // gets all information about agents
-#[get("/api/agents")]
+#[get("/agents")]
 pub async fn get_agents(state: &rocket::State<SharedState>) -> Json<HashMap<u64, Agent>> {
     Json(state.read().await.agents.clone())
 }
 
-#[get("/api/<agent_id>/network_history")]
+#[get("/<agent_id>/network_history")]
 pub async fn get_agent_history(
     state: &rocket::State<SharedState>,
     agent_id: u64,
@@ -35,7 +33,7 @@ pub async fn get_agent_history(
 }
 
 // gets basic info about agents (name, id, ip, status, ping)
-#[get("/api/list_agents")]
+#[get("/list_agents")]
 pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
     let agents: HashMap<u64, Agent> = state.read().await.agents.clone();
     let mut agent_info: Vec<AgentInfo> = vec![];

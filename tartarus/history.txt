@@ -13,3 +13,5 @@ ls
 help 
 connect  
 connect 123
+connect fortite 
+exit 

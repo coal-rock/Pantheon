@@ -4,13 +4,14 @@ extern crate log;
 
 mod admin;
 mod agent;
-mod console;
+mod console_interface;
+mod console_lib;
+mod console_net;
 mod served_files;
 
-use crate::console::start_console;
+use crate::console_interface::start_console;
 use rocket::tokio::sync::RwLock;
 use rocket::{Build, Ignite, Rocket};
-use served_files::serve_compiled_file;
 use std::collections::HashMap;
 use std::sync::Arc;
 use talaria::api::*;
@@ -32,6 +33,7 @@ type SharedState = Arc<RwLock<State>>;
 fn rocket(shared_state: SharedState) -> Rocket<Build> {
     rocket::build()
         .mount("/admin", admin::routes()) // Admin routes for agent management
+        .mount("/console", console_net::routes()) // Routes for console protocol
         .mount("/agent", agent::routes()) // Agent-specific routes
         .manage(shared_state) // Shared state for listeners
         .mount("/listeners", routes![get_listeners]) // Endpoint to fetch listeners

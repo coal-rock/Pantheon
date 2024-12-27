@@ -210,25 +210,25 @@ pub mod api {
 }
 
 pub mod console {
-    use rocket::form::validate::Len;
+    use serde::{Deserialize, Serialize};
 
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub enum AgentIdentifier {
         Nickname { nickname: String },
         ID { id: u64 },
     }
 
     // refers to group of agents or single agent
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub enum TargetIdentifier {
         Group { group: String },
         Agent { agent: AgentIdentifier },
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub enum Command {
         Connect {
             agent: TargetIdentifier,
@@ -267,7 +267,7 @@ pub mod console {
         Clear,
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub enum CommandError {
         UnknownCommand { command_name: String },
         InvalidAgentId,
@@ -599,6 +599,10 @@ pub mod console {
             self.current_target = current_target;
         }
 
+        pub fn get_target(&self) -> Option<TargetIdentifier> {
+            self.current_target.clone()
+        }
+
         pub fn handle_command(&mut self, source: String) -> Result<Command, CommandError> {
             self.history.push(source.clone());
 
@@ -606,7 +610,28 @@ pub mod console {
             println!("{:#?}", tokens);
 
             let mut parser = Parser::new(tokens);
+
             parser.parse()
         }
+
+        pub fn handle_command_response(
+            &mut self,
+            command_context: CommandContext,
+            command_response: ConsoleResponse,
+        ) -> String {
+            String::new()
+        }
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct CommandContext {
+        pub command: Command,
+        pub current_target: Option<TargetIdentifier>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ConsoleResponse {
+        pub success: bool,
+        pub output: String,
     }
 }
