@@ -13,8 +13,10 @@ pub async fn evaluate_command(
         Command::CreateGroup { group_name, agents } => {
             create_group(state, group_name, agents).await
         }
-        Command::DeleteGroup { group_name } => todo!(),
-        Command::AddAgentsToGroup { group_name, agents } => todo!(),
+        Command::DeleteGroup { group_name } => delete_group(state, group_name).await,
+        Command::AddAgentsToGroup { group_name, agents } => {
+            add_agents_to_group(state, group_name, agents).await
+        }
         Command::RemoveAgentsFromGroup { group_name, agents } => todo!(),
         Command::Exec { agents, command } => todo!(),
         Command::ListAgents => list_agents(state).await,
@@ -54,28 +56,18 @@ async fn connect(
                 output = format!("group {} not found", group);
             }
         }
-        TargetIdentifier::Agent { ref agent } => match agent {
-            AgentIdentifier::Nickname { nickname } => {
-                if state.nicknames.contains_key(nickname) {
-                    success = true;
-                    output = format!(
-                        "succesfully connected to agent: {} [{}]",
-                        nickname,
-                        state.nicknames.get(nickname).unwrap()
-                    )
-                } else {
-                    success = false;
-                    output = format!("agent with nickname \"{}\" not found", nickname);
-                }
+        TargetIdentifier::Agent { ref agent } => match state.get_agent(agent.clone()) {
+            Some(agent) => {
+                success = true;
+                output = format!(
+                    "successfully connected to: {} [{}]",
+                    agent.id,
+                    agent.clone().nickname.unwrap_or("!!!".to_string())
+                )
             }
-            AgentIdentifier::ID { ref id } => {
-                if state.agents.contains_key(id) {
-                    success = true;
-                    output = format!("succesfully connected to agent: {}", id);
-                } else {
-                    success = false;
-                    output = format!("agent {} not found", id);
-                }
+            None => {
+                success = false;
+                output = format!("agent not found");
             }
         },
     }
@@ -111,7 +103,8 @@ async fn create_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> ConsoleResponse {
-    let state = state.write().await;
+    let mut state = state.write().await;
+    let mut agent_ids: Vec<u64> = vec![];
 
     if state.groups.contains_key(&group_name) {
         return ConsoleResponse {
@@ -121,28 +114,22 @@ async fn create_group(
         };
     }
 
-    for agent in agents {
-        match agent {
-            AgentIdentifier::Nickname { nickname } => {
-                if !state.nicknames.contains_key(&nickname) {
-                    return ConsoleResponse {
-                        success: false,
-                        output: format!("agent: \"{}\" not found", nickname),
-                        new_target: NewTarget::NoChange,
-                    };
-                }
-            }
-            AgentIdentifier::ID { id } => {
-                if !state.agents.contains_key(&id) {
-                    return ConsoleResponse {
-                        success: false,
-                        output: format!("agent {} not found", id),
-                        new_target: NewTarget::NoChange,
-                    };
+    for ident in &agents {
+        match state.get_agent(ident.clone()) {
+            Some(agent) => agent_ids.push(agent.id),
+            None => {
+                return ConsoleResponse {
+                    success: true,
+                    output: format!("agent {:#?} not found", ident),
+                    new_target: NewTarget::NoChange,
                 }
             }
         }
     }
+
+    agent_ids.dedup();
+
+    state.groups.insert(group_name, agent_ids);
 
     return ConsoleResponse {
         success: true,
@@ -151,12 +138,81 @@ async fn create_group(
     };
 }
 
+async fn delete_group(state: &SharedState, group_name: String) -> ConsoleResponse {
+    let mut state = state.write().await;
+
+    match state.groups.remove(&group_name) {
+        Some(_) => ConsoleResponse {
+            success: true,
+            output: format!("successfully deleted group: {}", group_name),
+            new_target: NewTarget::NoChange,
+        },
+        None => ConsoleResponse {
+            success: false,
+            output: format!("couldn't delete group {}", group_name),
+            new_target: NewTarget::NoChange,
+        },
+    }
+}
+
+async fn add_agents_to_group(
+    state: &SharedState,
+    group_name: String,
+    agents: Vec<AgentIdentifier>,
+) -> ConsoleResponse {
+    let mut state = state.write().await;
+    let mut agent_ids: Vec<u64> = vec![];
+
+    if !state.groups.contains_key(&group_name) {
+        return ConsoleResponse {
+            success: false,
+            output: format!("group not found"),
+            new_target: NewTarget::NoChange,
+        };
+    }
+
+    for ident in agents {
+        match state.get_agent(ident.clone()) {
+            Some(agent) => agent_ids.push(agent.id),
+            None => {
+                return ConsoleResponse {
+                    success: false,
+                    output: format!("agent {:#?} not found", ident),
+                    new_target: NewTarget::NoChange,
+                }
+            }
+        }
+    }
+
+    state
+        .groups
+        .get_mut(&group_name)
+        .unwrap()
+        .append(&mut agent_ids);
+
+    state.groups.get_mut(&group_name).unwrap().dedup();
+
+    ConsoleResponse {
+        success: true,
+        output: format!("successfully added agents to group"),
+        new_target: NewTarget::NoChange,
+    }
+}
+
 async fn list_agents(state: &SharedState) -> ConsoleResponse {
     let state = state.read().await;
     let mut output = String::new();
 
-    for agent in &state.agents {
-        output.push_str(&agent.0.to_string());
+    for (id, agent) in &state.agents {
+        output.push_str(
+            format!(
+                "{} - [{}]\n",
+                id,
+                agent.clone().nickname.unwrap_or(String::from("!!!"))
+            )
+            .clone()
+            .as_str(),
+        );
     }
 
     ConsoleResponse {

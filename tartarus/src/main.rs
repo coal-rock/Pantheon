@@ -22,8 +22,39 @@ use talaria::console::*;
 struct State {
     listeners: Vec<String>,
     agents: HashMap<u64, Agent>,
-    nicknames: HashMap<String, u64>,
-    groups: HashMap<String, Vec<AgentIdentifier>>,
+    groups: HashMap<String, Vec<u64>>,
+}
+
+impl State {
+    pub fn get_agent(&self, ident: AgentIdentifier) -> Option<&Agent> {
+        match ident {
+            AgentIdentifier::Nickname { nickname } => {
+                for (_, agent) in &self.agents {
+                    if agent.nickname == Some(nickname.clone()) {
+                        return Some(&agent);
+                    }
+                }
+            }
+            AgentIdentifier::ID { id } => return self.agents.get(&id),
+        }
+
+        return None;
+    }
+
+    pub fn get_agent_mut(&mut self, ident: AgentIdentifier) -> Option<&mut Agent> {
+        match ident {
+            AgentIdentifier::Nickname { nickname } => {
+                for (id, agent) in self.agents.clone() {
+                    if agent.nickname == Some(nickname.clone()) {
+                        return self.agents.get_mut(&id);
+                    }
+                }
+            }
+            AgentIdentifier::ID { id } => return self.agents.get_mut(&id),
+        }
+
+        return None;
+    }
 }
 
 // Wrap in Arc and RwLock for safe concurrent access

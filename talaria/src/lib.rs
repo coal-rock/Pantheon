@@ -197,6 +197,10 @@ pub mod api {
                 })
                 .collect()
         }
+
+        pub fn set_nickname(&mut self, nickname: Option<String>) {
+            self.nickname = nickname;
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
@@ -481,7 +485,12 @@ pub mod console {
                     }
                 }
                 "create_group" => {
+                    if self.is_at_end() {
+                        return Err(CommandError::ExpectedArgument);
+                    }
+
                     let group_name = self.parse_group_ident()?;
+
                     let mut agents: Vec<AgentIdentifier> = vec![];
 
                     while !self.is_at_end() {
@@ -491,6 +500,10 @@ pub mod console {
                     Ok(Command::CreateGroup { group_name, agents })
                 }
                 "delete_group" => {
+                    if self.is_at_end() {
+                        return Err(CommandError::ExpectedArgument);
+                    }
+
                     let group_name = self.parse_group_ident()?;
 
                     match self.is_at_end() {
@@ -499,6 +512,10 @@ pub mod console {
                     }
                 }
                 "add_to_group" => {
+                    if self.is_at_end() {
+                        return Err(CommandError::ExpectedArgument);
+                    }
+
                     let group_name = self.parse_group_ident()?;
                     let mut agents: Vec<AgentIdentifier> = vec![];
 
@@ -509,6 +526,10 @@ pub mod console {
                     Ok(Command::AddAgentsToGroup { group_name, agents })
                 }
                 "remove_from_group" => {
+                    if self.is_at_end() {
+                        return Err(CommandError::ExpectedArgument);
+                    }
+
                     let group_name = self.parse_group_ident()?;
                     let mut agents: Vec<AgentIdentifier> = vec![];
 

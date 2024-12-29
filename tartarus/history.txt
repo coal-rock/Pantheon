@@ -26,3 +26,8 @@ connect 16997889695821924545
 ls 
 list 
 disconnect 
+create_group
+add_to_GROUP
+add_to_group
+remove_from_group
+exit 
