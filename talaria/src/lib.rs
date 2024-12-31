@@ -378,9 +378,13 @@ pub mod console {
             tokens
         }
 
-        pub fn consume(&mut self) -> &str {
-            self.pos += 1;
-            &self.source[self.pos - 1]
+        pub fn consume(&mut self) -> Result<&str, CommandError> {
+            if !self.is_at_end() {
+                self.pos += 1;
+                return Ok(&self.source[self.pos - 1]);
+            }
+
+            Err(CommandError::ExpectedArgument)
         }
 
         pub fn peek(&mut self) -> Result<&str, CommandError> {
@@ -414,7 +418,7 @@ pub mod console {
         }
 
         pub fn parse_group_ident(&mut self) -> Result<String, CommandError> {
-            let token = self.consume();
+            let token = self.consume()?;
 
             if token.starts_with("#") {
                 return Ok(token[1..token.len()].to_string());
@@ -438,7 +442,7 @@ pub mod console {
         }
 
         pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
-            let token = self.consume();
+            let token = self.consume()?;
 
             match token.chars().next().unwrap() {
                 '0'..='9' => {
@@ -454,7 +458,7 @@ pub mod console {
         }
 
         pub fn parse_agent_nickname(&mut self) -> Result<String, CommandError> {
-            let token = self.consume();
+            let token = self.consume()?;
 
             match token.chars().next().unwrap() {
                 'a'..='z' | 'A'..='Z' => Ok(token.to_string()),
@@ -463,7 +467,7 @@ pub mod console {
         }
 
         pub fn parse(&mut self) -> Result<Command, CommandError> {
-            let command = self.consume();
+            let command = self.consume()?;
 
             match command {
                 "connect" => {
@@ -485,10 +489,6 @@ pub mod console {
                     }
                 }
                 "create_group" => {
-                    if self.is_at_end() {
-                        return Err(CommandError::ExpectedArgument);
-                    }
-
                     let group_name = self.parse_group_ident()?;
 
                     let mut agents: Vec<AgentIdentifier> = vec![];
@@ -500,10 +500,6 @@ pub mod console {
                     Ok(Command::CreateGroup { group_name, agents })
                 }
                 "delete_group" => {
-                    if self.is_at_end() {
-                        return Err(CommandError::ExpectedArgument);
-                    }
-
                     let group_name = self.parse_group_ident()?;
 
                     match self.is_at_end() {
@@ -512,10 +508,6 @@ pub mod console {
                     }
                 }
                 "add_to_group" => {
-                    if self.is_at_end() {
-                        return Err(CommandError::ExpectedArgument);
-                    }
-
                     let group_name = self.parse_group_ident()?;
                     let mut agents: Vec<AgentIdentifier> = vec![];
 
@@ -526,10 +518,6 @@ pub mod console {
                     Ok(Command::AddAgentsToGroup { group_name, agents })
                 }
                 "remove_from_group" => {
-                    if self.is_at_end() {
-                        return Err(CommandError::ExpectedArgument);
-                    }
-
                     let group_name = self.parse_group_ident()?;
                     let mut agents: Vec<AgentIdentifier> = vec![];
 
@@ -542,11 +530,11 @@ pub mod console {
                 "exec" => match self.source.len() {
                     2 => Ok(Command::Exec {
                         agents: None,
-                        command: self.consume().to_string(),
+                        command: self.consume()?.to_string(),
                     }),
                     3 => Ok(Command::Exec {
                         agents: Some(self.parse_target_ident()?),
-                        command: self.consume().to_string(),
+                        command: self.consume()?.to_string(),
                     }),
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },
@@ -575,11 +563,11 @@ pub mod console {
                 "nickname" => match self.source.len() {
                     2 => Ok(Command::Nickname {
                         agent: None,
-                        new_name: self.consume().to_string(),
+                        new_name: self.consume()?.to_string(),
                     }),
                     3 => Ok(Command::Nickname {
                         agent: Some(self.parse_agent_ident()?),
-                        new_name: self.consume().to_string(),
+                        new_name: self.consume()?.to_string(),
                     }),
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },

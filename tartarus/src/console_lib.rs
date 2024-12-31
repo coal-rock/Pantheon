@@ -1,6 +1,4 @@
 use crate::SharedState;
-use env_logger::Target;
-use rocket::form::validate::with;
 use talaria::console::*;
 
 pub async fn evaluate_command(
@@ -17,13 +15,15 @@ pub async fn evaluate_command(
         Command::AddAgentsToGroup { group_name, agents } => {
             add_agents_to_group(state, group_name, agents).await
         }
-        Command::RemoveAgentsFromGroup { group_name, agents } => todo!(),
+        Command::RemoveAgentsFromGroup { group_name, agents } => {
+            remove_agents_from_group(state, group_name, agents).await
+        }
         Command::Exec { agents, command } => todo!(),
         Command::ListAgents => list_agents(state).await,
         Command::Ping { agents } => todo!(),
         Command::Status { agents } => todo!(),
         Command::Nickname { agent, new_name } => todo!(),
-        Command::Clear => todo!(),
+        Command::Clear => clear().await,
     }
 }
 
@@ -184,6 +184,8 @@ async fn add_agents_to_group(
         }
     }
 
+    agent_ids.dedup();
+
     state
         .groups
         .get_mut(&group_name)
@@ -195,6 +197,67 @@ async fn add_agents_to_group(
     ConsoleResponse {
         success: true,
         output: format!("successfully added agents to group"),
+        new_target: NewTarget::NoChange,
+    }
+}
+
+async fn remove_agents_from_group(
+    state: &SharedState,
+    group_name: String,
+    agents: Vec<AgentIdentifier>,
+) -> ConsoleResponse {
+    let mut state = state.write().await;
+    let mut agent_ids: Vec<u64> = vec![];
+
+    if !state.groups.contains_key(&group_name) {
+        return ConsoleResponse {
+            success: false,
+            output: format!("group not found"),
+            new_target: NewTarget::NoChange,
+        };
+    }
+
+    for ident in agents {
+        match state.get_agent(ident.clone()) {
+            Some(agent) => agent_ids.push(agent.id),
+            None => {
+                return ConsoleResponse {
+                    success: false,
+                    output: format!("agent {:#?} not found", ident),
+                    new_target: NewTarget::NoChange,
+                }
+            }
+        }
+    }
+
+    agent_ids.dedup();
+
+    for (index, group_member) in state
+        .groups
+        .get(&group_name)
+        .unwrap()
+        .clone()
+        .into_iter()
+        .enumerate()
+    {
+        for agent_id in &agent_ids {
+            if group_member.clone() == *agent_id {
+                state.groups.get_mut(&group_name).unwrap().remove(index);
+            }
+        }
+    }
+
+    ConsoleResponse {
+        success: true,
+        output: format!("succesfully removed agents from group"),
+        new_target: NewTarget::NoChange,
+    }
+}
+
+async fn clear() -> ConsoleResponse {
+    ConsoleResponse {
+        success: true,
+        output: "\033c".to_string(),
         new_target: NewTarget::NoChange,
     }
 }
