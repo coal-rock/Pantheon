@@ -258,6 +258,7 @@ pub mod console {
             command: String,
         },
         ListAgents,
+        ListGroups,
         Ping {
             agents: Option<TargetIdentifier>,
         },
@@ -269,6 +270,7 @@ pub mod console {
             new_name: String,
         },
         Clear,
+        Help,
     }
 
     #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -527,6 +529,13 @@ pub mod console {
 
                     Ok(Command::RemoveAgentsFromGroup { group_name, agents })
                 }
+                "list_groups" => {
+                    if self.is_at_end() {
+                        Ok(Command::ListGroups)
+                    } else {
+                        Err(CommandError::ExpectedNArgs { args: 0 })
+                    }
+                }
                 "exec" => match self.source.len() {
                     2 => Ok(Command::Exec {
                         agents: None,
@@ -571,6 +580,13 @@ pub mod console {
                     }),
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },
+                "help" => {
+                    if self.is_at_end() {
+                        Ok(Command::Help)
+                    } else {
+                        Err(CommandError::ExpectedNArgs { args: 0 })
+                    }
+                }
                 _ => Err(CommandError::UnknownCommand {
                     command_name: command.to_string(),
                 }),
@@ -616,7 +632,6 @@ pub mod console {
             self.history.push(source.clone());
 
             let tokens = Parser::tokenize(source);
-            println!("{:#?}", tokens);
 
             let mut parser = Parser::new(tokens);
 

@@ -22,8 +22,12 @@ pub async fn evaluate_command(
         Command::ListAgents => list_agents(state).await,
         Command::Ping { agents } => todo!(),
         Command::Status { agents } => todo!(),
-        Command::Nickname { agent, new_name } => todo!(),
+        Command::Nickname { agent, new_name } => {
+            nickname(state, command_context.current_target, agent, new_name).await
+        }
         Command::Clear => clear().await,
+        Command::ListGroups => list_groups(state).await,
+        Command::Help => todo!(),
     }
 }
 
@@ -281,6 +285,107 @@ async fn list_agents(state: &SharedState) -> ConsoleResponse {
     ConsoleResponse {
         success: true,
         output,
+        new_target: NewTarget::NoChange,
+    }
+}
+
+async fn list_groups(state: &SharedState) -> ConsoleResponse {
+    let state = state.read().await;
+    let agents = state.agents.clone();
+    let mut output = String::new();
+
+    for (group_name, ids) in &state.groups {
+        output.push_str(&format!("#{}:\n", group_name));
+
+        for id in ids {
+            output.push_str(
+                format!(
+                    "   {} - [{}]\n",
+                    id,
+                    agents
+                        .get(id)
+                        .unwrap()
+                        .nickname
+                        .clone()
+                        .unwrap_or(String::from("!!!"))
+                )
+                .clone()
+                .as_str(),
+            );
+        }
+    }
+
+    ConsoleResponse {
+        success: true,
+        output,
+        new_target: NewTarget::NoChange,
+    }
+}
+
+async fn nickname(
+    state: &SharedState,
+    current_target: Option<TargetIdentifier>,
+    agent: Option<AgentIdentifier>,
+    nickname: String,
+) -> ConsoleResponse {
+    let mut state = state.write().await;
+
+    if agent.is_some() {
+        let agent = agent.unwrap();
+
+        match state.get_agent_mut(agent.clone()) {
+            Some(agent) => {
+                agent.nickname = Some(nickname);
+
+                return ConsoleResponse {
+                    success: true,
+                    output: format!("set agent nickname"),
+                    new_target: NewTarget::NoChange,
+                };
+            }
+            None => {
+                return ConsoleResponse {
+                    success: false,
+                    output: format!("agent {:#?} not found", agent),
+                    new_target: NewTarget::NoChange,
+                }
+            }
+        }
+    } else if current_target.is_some() {
+        let current_target = match current_target.unwrap() {
+            TargetIdentifier::Group { group: _ } => {
+                return ConsoleResponse {
+                    success: false,
+                    output: format!("must be connected to agent"),
+                    new_target: NewTarget::NoChange,
+                }
+            }
+            TargetIdentifier::Agent { agent } => agent,
+        };
+
+        match state.get_agent_mut(current_target.clone()) {
+            Some(agent) => {
+                agent.nickname = Some(nickname);
+
+                return ConsoleResponse {
+                    success: true,
+                    output: format!("set agent nickname"),
+                    new_target: NewTarget::NoChange,
+                };
+            }
+            None => {
+                return ConsoleResponse {
+                    success: false,
+                    output: format!("agent {:#?} not found", current_target),
+                    new_target: NewTarget::NoChange,
+                }
+            }
+        }
+    }
+
+    ConsoleResponse {
+        success: false,
+        output: format!("must be connected to agent, or agent must be specified"),
         new_target: NewTarget::NoChange,
     }
 }

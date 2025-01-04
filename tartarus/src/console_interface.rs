@@ -38,7 +38,7 @@ ___________              __                                                     
 
                 match command {
                     Ok(command) => {
-                        println!("{:#?}", command);
+                        // println!("{:#?}", command);
 
                         let output = console_lib::evaluate_command(
                             shared_state,
@@ -57,7 +57,7 @@ ___________              __                                                     
                             NewTarget::NoChange => {}
                         }
 
-                        println!("{:#?}", output);
+                        println!("{}", output.output);
                     }
                     Err(error) => println!("{}", error.to_string()),
                 }

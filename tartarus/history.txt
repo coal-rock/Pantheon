@@ -31,3 +31,46 @@ add_to_GROUP
 add_to_group
 remove_from_group
 exit 
+help 
+ls 
+connect 
+fortnite 
+ls 
+help 
+ls 
+connect 
+create_group
+create_group asd
+create_group #asd
+list_groups
+list_group
+groups
+create_group
+create_group a
+create_group #fortnite
+list_groups
+add_to_group fortnite 
+add_to_group #fortnite 
+add_to_group #fortnite 1232
+add_to_group #fortnite 123212312312312
+exit 
+ls 
+exit 
+connect 
+list_agents 
+list
+list 
+nickname 16997889695821924545 john
+list 
+connect jogn 
+connect john 
+disconnect 
+create_group #fortnite
+add_agent_to_group #fortnite johh
+add_agents_to_group #fortnite johh
+add__to_group #fortnite johh
+add_to_group #fortnite johh
+list 
+add_to_group #fortnite john
+list_groups 
+list 
