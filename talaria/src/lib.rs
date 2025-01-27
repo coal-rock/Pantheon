@@ -157,6 +157,7 @@ pub mod api {
         pub last_packet_send: u64,
         pub last_packet_recv: u64,
         pub network_history: Vec<NetworkHistoryEntry>,
+        pub queue: Vec<AgentInstructionBody>,
     }
 
     impl Agent {
@@ -200,6 +201,14 @@ pub mod api {
 
         pub fn set_nickname(&mut self, nickname: Option<String>) {
             self.nickname = nickname;
+        }
+
+        pub fn queue_instruction(&mut self, instruction: &AgentInstructionBody) {
+            self.queue.push(instruction.clone());
+        }
+
+        pub fn pop_instruction(&mut self) -> Option<AgentInstructionBody> {
+            self.queue.pop()
         }
     }
 

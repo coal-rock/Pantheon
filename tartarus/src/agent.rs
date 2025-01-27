@@ -44,6 +44,7 @@ async fn register_or_update(
                         instruction: instruction.clone(),
                     },
                 ],
+                queue: vec![],
             },
         );
     }
@@ -78,6 +79,36 @@ pub async fn monolith(
                     os: None,
                 },
                 packet_body: AgentInstructionBody::Ok,
+            }
+        }
+        AgentResponseBody::Heartbeat => {
+            let mut state = state.write().await;
+
+            let agent = state.agents.get_mut(&response.packet_header.agent_id);
+
+            if agent.is_none() {
+                AgentInstruction {
+                    packet_header: PacketHeader {
+                        agent_id: response.packet_header.agent_id,
+                        timestamp: current_time(),
+                        packet_id: response.packet_header.packet_id,
+                        os: None,
+                    },
+                    packet_body: AgentInstructionBody::Ok,
+                }
+            } else {
+                let agent = agent.unwrap();
+                let body = agent.pop_instruction();
+
+                AgentInstruction {
+                    packet_header: PacketHeader {
+                        agent_id: response.packet_header.agent_id,
+                        timestamp: current_time(),
+                        packet_id: response.packet_header.packet_id,
+                        os: None,
+                    },
+                    packet_body: body.unwrap_or(AgentInstructionBody::Ok),
+                }
             }
         }
         _ => AgentInstruction {

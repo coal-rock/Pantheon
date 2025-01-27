@@ -1,5 +1,5 @@
 use crate::SharedState;
-use talaria::console::*;
+use talaria::{console::*, protocol::*};
 
 pub async fn evaluate_command(
     state: &SharedState,
@@ -18,10 +18,12 @@ pub async fn evaluate_command(
         Command::RemoveAgentsFromGroup { group_name, agents } => {
             remove_agents_from_group(state, group_name, agents).await
         }
-        Command::Exec { agents, command } => todo!(),
+        Command::Exec { agents, command } => {
+            exec(state, agents, command, command_context.current_target).await
+        }
         Command::ListAgents => list_agents(state).await,
         Command::Ping { agents } => todo!(),
-        Command::Status { agents } => todo!(),
+        Command::Status { agents } => status(state, agents, command_context.current_target).await,
         Command::Nickname { agent, new_name } => {
             nickname(state, command_context.current_target, agent, new_name).await
         }
@@ -388,4 +390,120 @@ async fn nickname(
         output: format!("must be connected to agent, or agent must be specified"),
         new_target: NewTarget::NoChange,
     }
+}
+
+async fn exec(
+    state: &SharedState,
+    agents: Option<TargetIdentifier>,
+    command: String,
+    current_target: Option<TargetIdentifier>,
+) -> ConsoleResponse {
+    let mut state = state.write().await;
+
+    let agents = if agents.is_none() {
+        current_target
+    } else {
+        agents
+    };
+
+    if let Some(target) = agents {
+        match target {
+            TargetIdentifier::Group { group } => {
+                let agents_in_group = state.groups.get(&group);
+
+                if agents_in_group.is_none() {
+                    return ConsoleResponse {
+                        success: false,
+                        output: format!("group not found"),
+                        new_target: NewTarget::NoChange,
+                    };
+                }
+
+                let agents_in_group = agents_in_group.unwrap();
+
+                for agent in agents_in_group.clone() {
+                    let agent_handle = state.agents.get_mut(&agent);
+
+                    if agent_handle.is_none() {
+                        continue;
+                        // prevent failure if agent in group doesn't exist,
+                        // continue running on other agents present in group
+                    }
+
+                    let agent_handle = agent_handle.unwrap();
+
+                    let command_split = command.split(' ').collect::<Vec<&str>>();
+                    // FIXME:command arg parsing should not be
+                    // based around splitting on spaces, we should respect quotation marks
+
+                    let instruction = AgentInstructionBody::Command {
+                        command_id: 1, // FIXME: command_id should be unique, and generated
+                        command: command_split[0].to_string(),
+                        args: command_split[1..]
+                            .into_iter()
+                            .map(|x| x.to_string())
+                            .collect(),
+                    };
+
+                    agent_handle.queue_instruction(&instruction);
+
+                    return ConsoleResponse {
+                        success: true,
+                        output: format!("queued command"),
+                        new_target: NewTarget::NoChange,
+                    };
+                }
+            }
+            TargetIdentifier::Agent { agent } => {
+                let agent_handle = state.get_agent_mut(agent);
+
+                if agent_handle.is_none() {
+                    return ConsoleResponse {
+                        success: false,
+                        output: format!("agent not found"),
+                        new_target: NewTarget::NoChange,
+                    };
+                }
+
+                let agent_handle = agent_handle.unwrap();
+
+                let command_split = command.split(' ').collect::<Vec<&str>>();
+                // FIXME:command arg parsing should not be
+                // based around splitting on spaces, we should respect quotation marks
+
+                let instruction = AgentInstructionBody::Command {
+                    command_id: 1, // FIXME: command_id should be unique, and generated
+                    command: command_split[0].to_string(),
+                    args: command_split[1..]
+                        .into_iter()
+                        .map(|x| x.to_string())
+                        .collect(),
+                };
+
+                agent_handle.queue_instruction(&instruction);
+
+                return ConsoleResponse {
+                    success: true,
+                    output: format!("queued command"),
+                    new_target: NewTarget::NoChange,
+                };
+            }
+        }
+    }
+
+    ConsoleResponse {
+        success: false,
+        output: format!("must be connected to agent, or agent must be specified"),
+        new_target: NewTarget::NoChange,
+    }
+}
+
+async fn status(
+    state: &SharedState,
+    agents: Option<TargetIdentifier>,
+    current_target: Option<TargetIdentifier>,
+) -> ConsoleResponse {
+    let mut state = state.write().await;
+
+    todo!()
 }

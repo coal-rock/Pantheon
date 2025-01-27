@@ -74,3 +74,22 @@ list
 add_to_group #fortnite john
 list_groups 
 list 
+ls
+test 
+exec ls
+list 
+nick 
+nickname 2833411257688766487 coal
+connect coal 
+exec ls 
+connect coal 
+exec coal
+exec 2833411257688766487 ls 
+ls 
+list 
+connect 2833411257688766487
+ls 
+exec ls 
+ls 
+list 
+exec 2833411257688766487 ls 

