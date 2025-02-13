@@ -192,13 +192,19 @@ async fn add_agents_to_group(
 
     agent_ids.dedup();
 
-    state
-        .groups
-        .get_mut(&group_name)
-        .unwrap()
-        .append(&mut agent_ids);
+    let groups_handle = match state.groups.get_mut(&group_name) {
+        Some(groups_handle) => groups_handle,
+        None => {
+            return ConsoleResponse {
+                success: false,
+                output: format!("could not get handle to groups"),
+                new_target: NewTarget::NoChange,
+            }
+        }
+    };
 
-    state.groups.get_mut(&group_name).unwrap().dedup();
+    groups_handle.append(&mut agent_ids);
+    groups_handle.dedup();
 
     ConsoleResponse {
         success: true,
@@ -238,17 +244,21 @@ async fn remove_agents_from_group(
 
     agent_ids.dedup();
 
-    for (index, group_member) in state
-        .groups
-        .get(&group_name)
-        .unwrap()
-        .clone()
-        .into_iter()
-        .enumerate()
-    {
+    let groups_handle = match state.groups.get_mut(&group_name) {
+        Some(groups_handle) => groups_handle,
+        None => {
+            return ConsoleResponse {
+                success: false,
+                output: format!("could not get handle to groups"),
+                new_target: NewTarget::NoChange,
+            }
+        }
+    };
+
+    for (index, group_member) in groups_handle.clone().into_iter().enumerate() {
         for agent_id in &agent_ids {
             if group_member.clone() == *agent_id {
-                state.groups.get_mut(&group_name).unwrap().remove(index);
+                groups_handle.remove(index);
             }
         }
     }
@@ -300,16 +310,22 @@ async fn list_groups(state: &SharedState) -> ConsoleResponse {
         output.push_str(&format!("#{}:\n", group_name));
 
         for id in ids {
+            let agent = match agents.get(id) {
+                Some(agent) => agent,
+                None => {
+                    return ConsoleResponse {
+                        success: false,
+                        output: format!("unable to get agent with id: {}", id),
+                        new_target: NewTarget::NoChange,
+                    }
+                }
+            };
+
             output.push_str(
                 format!(
                     "   {} - [{}]\n",
                     id,
-                    agents
-                        .get(id)
-                        .unwrap()
-                        .nickname
-                        .clone()
-                        .unwrap_or(String::from("!!!"))
+                    agent.nickname.clone().unwrap_or(String::from("!!!"))
                 )
                 .clone()
                 .as_str(),
@@ -392,6 +408,7 @@ async fn nickname(
     }
 }
 
+// FIXME: the `is_none() -> unwrap()` paradigm is really scary here
 async fn exec(
     state: &SharedState,
     agents: Option<TargetIdentifier>,

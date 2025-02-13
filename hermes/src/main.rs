@@ -28,9 +28,9 @@ async fn main() {
         match network::send_heartbeat(&mut agent).await {
             Ok(instruction) => match network::handle_response(&mut agent, instruction).await {
                 Ok(_) => {}
-                Err(err) => devlog!("Failed to handle response\n {:?}", err),
+                Err(err) => devlog!("Failed to handle response\n{:?}", err),
             },
-            Err(err) => devlog!("Failed to communicate with server\n {:?}", err),
+            Err(err) => devlog!("Failed to communicate with server\n{:?}", err),
         }
 
         // FIXME: whoever wrote this does not understand the nature of async code (me [cole])

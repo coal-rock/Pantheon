@@ -57,7 +57,8 @@ pub async fn monolith(
     remote_addr: SocketAddr,
     input: Vec<u8>,
 ) -> Vec<u8> {
-    let response = AgentResponse::deserialize(&input);
+    panic!();
+    let response = AgentResponse::deserialize(&input).unwrap();
     let packet_body = response.packet_body.clone();
 
     // Generate an instruction based on the received response
@@ -130,7 +131,7 @@ pub async fn monolith(
     register_or_update(state, &response, &instruction, remote_addr).await;
 
     // respond to agent with instruction
-    AgentInstruction::serialize(&instruction)
+    AgentInstruction::serialize(&instruction).unwrap()
 }
 
 // Helper to get current time in seconds since UNIX epoch
