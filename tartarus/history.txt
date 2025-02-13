@@ -1,16 +1,4 @@
 #V2
-connect fortite 
-exit 
-list_agents 
-list
-list 
-ilst 
-list 
-connect 16997889695821924545
-list 
-connect 16997889695821924545
-ls 
-list 
 disconnect 
 create_group
 add_to_GROUP
@@ -99,3 +87,15 @@ ls
 exit 
 fg
 exit 
+ls 
+asldas
+dasd
+as
+clear 
+ls 
+hel p
+help
+list 
+list_groups 
+hep 
+help

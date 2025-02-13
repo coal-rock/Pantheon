@@ -57,7 +57,6 @@ pub async fn monolith(
     remote_addr: SocketAddr,
     input: Vec<u8>,
 ) -> Vec<u8> {
-    panic!();
     let response = AgentResponse::deserialize(&input).unwrap();
     let packet_body = response.packet_body.clone();
 

@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-lazy_static = "1.5.0"
-rocket = { version = "0.5.0-rc.1", features = ["json"] }
+lazy_static = "1.5"
+rocket = { version = "0.5", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 talaria = { path = "../talaria" }
@@ -14,7 +14,4 @@ log = "0.4"
 env_logger = "0.9"
 rustyline = "11.0"
 anyhow = "1.0"
-
-[[bin]]
-name = "tartarus"
-path = "src/main.rs"
+toml = "0.8"

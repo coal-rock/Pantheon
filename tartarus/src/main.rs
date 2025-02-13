@@ -4,107 +4,95 @@ extern crate log;
 
 mod admin;
 mod agent;
+mod binaries;
+mod config;
 mod console_interface;
 mod console_lib;
 mod console_net;
 mod served_files;
+mod state;
 
 use crate::console_interface::start_console;
-use rocket::tokio::sync::RwLock;
+use config::Config;
+use state::{SharedState, State};
 
 use rocket::{Build, Ignite, Rocket};
-use std::collections::HashMap;
-use std::sync::Arc;
-use talaria::api::*;
-use talaria::console::*;
-
-// Shared state for active listeners
-#[derive(Default)]
-struct State {
-    listeners: Vec<String>,
-    agents: HashMap<u64, Agent>,
-    groups: HashMap<String, Vec<u64>>,
-}
-
-impl State {
-    pub fn get_agent(&self, ident: AgentIdentifier) -> Option<&Agent> {
-        match ident {
-            AgentIdentifier::Nickname { nickname } => {
-                for (_, agent) in &self.agents {
-                    if agent.nickname == Some(nickname.clone()) {
-                        return Some(&agent);
-                    }
-                }
-            }
-            AgentIdentifier::ID { id } => return self.agents.get(&id),
-        }
-
-        return None;
-    }
-
-    pub fn get_agent_mut(&mut self, ident: AgentIdentifier) -> Option<&mut Agent> {
-        match ident {
-            AgentIdentifier::Nickname { nickname } => {
-                for (id, agent) in self.agents.clone() {
-                    if agent.nickname == Some(nickname.clone()) {
-                        return self.agents.get_mut(&id);
-                    }
-                }
-            }
-            AgentIdentifier::ID { id } => return self.agents.get_mut(&id),
-        }
-
-        return None;
-    }
-}
-
-// Wrap in Arc and RwLock for safe concurrent access
-type SharedState = Arc<RwLock<State>>;
+use std::{fs, path::PathBuf};
 
 // Rocket instance with shared state
-fn rocket(shared_state: SharedState) -> Rocket<Build> {
+async fn rocket(shared_state: SharedState) -> Rocket<Build> {
+    let config = shared_state.read().await.config.clone();
+
     rocket::build()
         .mount("/admin", admin::routes()) // Admin routes for agent management
         .mount("/console", console_net::routes()) // Routes for console protocol
         .mount("/agent", agent::routes()) // Agent-specific routes
-        .manage(shared_state) // Shared state for listeners
-        .mount("/listeners", routes![get_listeners]) // Endpoint to fetch listeners
+        .mount("/binaries", binaries::routes())
+        .manage(shared_state)
         .configure(rocket::Config {
-            log_level: rocket::config::LogLevel::Critical, // Suppress unnecessary Rocket logs
+            log_level: rocket::config::LogLevel::Critical,
+            address: config.address,
+            port: config.port,
             ..rocket::Config::default()
         })
 }
 
-// Endpoint to fetch active listeners
-#[get("/")]
-async fn get_listeners(state: &rocket::State<SharedState>) -> String {
-    let listeners = state.read().await;
-    format!("Active listeners: {:?}", listeners.listeners)
-}
-
-// Launch the Rocket server asynchronously
-async fn launch_rocket(shared_state: SharedState) -> Result<Rocket<Ignite>, rocket::Error> {
-    rocket(shared_state).launch().await
-}
-
-fn setup_static_routes() -> Rocket<Build> {
-    rocket::build().mount("/", routes![served_files::serve_compiled_file])
-}
-
 #[tokio::main]
 async fn main() -> Result<(), rocket::Error> {
-    // Initialize logger
     env_logger::init();
 
+    let config_path: PathBuf = PathBuf::from("talaria.toml");
+
+    let config: Config = match fs::read_to_string(&config_path) {
+        Err(_) => {
+            println!(
+                "Config file not found at: {}",
+                config_path.into_os_string().into_string().unwrap()
+            );
+            println!("Using default values");
+            Config::default()
+        }
+        Ok(config_str) => {
+            println!(
+                "Config file found at: {}",
+                config_path.into_os_string().into_string().unwrap()
+            );
+
+            match toml::from_str::<Config>(&config_str) {
+                Ok(config) => config,
+                Err(_) => {
+                    println!("Unable to parse config file");
+                    println!("Using default values:\n");
+                    Config::default()
+                }
+            }
+        }
+    };
+
+    println!("\nConfiguration:");
+    println!("--------------------------");
+    print!("{}", toml::to_string_pretty(&config.clone()).unwrap());
+    println!("--------------------------\n");
+
+    match config.binary_path.is_dir() {
+        true => println!("Binary directory exists"),
+        false => println!("Binary directory does not exist"),
+    }
+
+    if !config.binary_path.join("windows.exe").is_file() {
+        println!("Binary 'windows.exe' not found");
+    }
+    if !config.binary_path.join("linux").is_file() {
+        println!("Binary 'linux' not found");
+    }
+
     // Initialize shared state for active listeners
-    let shared_state = Arc::new(RwLock::new(State::default()));
+    let shared_state = State::from(config).to_shared_state();
 
     // Launch the Rocket server in a separate task
     tokio::spawn({
         let shared_state = shared_state.clone();
-        async move {
-            launch_rocket(shared_state).await.unwrap();
-        }
+        async move { rocket(shared_state).await.launch().await }
     });
 
     // Start the interactive console
