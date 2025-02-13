@@ -4,6 +4,6 @@ members = [
     "tartarus",
     "hermes",
     "talaria",
-    "Mnemosyne"
+    "mnemosyne"
 ]
 resolver = "2"
