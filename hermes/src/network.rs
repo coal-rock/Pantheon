@@ -68,17 +68,6 @@ pub async fn send_heartbeat(agent: &mut AgentContext) -> Result<AgentInstruction
     make_request(agent, response).await
 }
 
-/// Creates AgentResponse struct from AgentResponseBody
-async fn agent_response_from_body(
-    agent: &mut AgentContext,
-    packet_body: AgentResponseBody,
-) -> AgentResponse {
-    AgentResponse {
-        packet_header: agent.generate_packet_header(),
-        packet_body,
-    }
-}
-
 /// Serializes and sends an AgentResponse,
 /// returns a deserialized AgentInstruction
 async fn make_request(
@@ -89,11 +78,11 @@ async fn make_request(
     let response = agent
         .http_client
         .post(agent.url() + "/agent/monolith")
-        .body(request)
+        .body(request?)
         .send()
         .await?;
 
     let bytes = response.bytes().await?;
     let instruction = AgentInstruction::deserialize(&bytes.to_vec());
-    Ok(instruction)
+    Ok(instruction?)
 }

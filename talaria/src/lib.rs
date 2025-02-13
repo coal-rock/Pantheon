@@ -1,4 +1,5 @@
 pub mod protocol {
+    use anyhow::Result;
     use bincode;
     use serde::{Deserialize, Serialize};
 
@@ -111,12 +112,12 @@ pub mod protocol {
     }
 
     impl AgentInstruction {
-        pub fn serialize(response: &AgentInstruction) -> Vec<u8> {
-            bincode::serialize(response).unwrap()
+        pub fn serialize(response: &AgentInstruction) -> Result<Vec<u8>> {
+            Ok(bincode::serialize(response)?)
         }
 
-        pub fn deserialize(response: &Vec<u8>) -> AgentInstruction {
-            bincode::deserialize(&response[..]).unwrap()
+        pub fn deserialize(response: &Vec<u8>) -> Result<AgentInstruction> {
+            Ok(bincode::deserialize(&response[..])?)
         }
     }
 
@@ -127,12 +128,12 @@ pub mod protocol {
     }
 
     impl AgentResponse {
-        pub fn serialize(response: &AgentResponse) -> Vec<u8> {
-            bincode::serialize(response).unwrap()
+        pub fn serialize(response: &AgentResponse) -> Result<Vec<u8>> {
+            Ok(bincode::serialize(response)?)
         }
 
-        pub fn deserialize(response: &Vec<u8>) -> AgentResponse {
-            bincode::deserialize::<AgentResponse>(&response[..]).unwrap()
+        pub fn deserialize(response: &Vec<u8>) -> Result<AgentResponse> {
+            Ok(bincode::deserialize::<AgentResponse>(&response[..])?)
         }
     }
 }
@@ -224,6 +225,7 @@ pub mod api {
 
 pub mod console {
     use serde::{Deserialize, Serialize};
+    use thiserror::Error;
 
     // refers to agent via name or id, ex:
     // connect agent1
@@ -282,35 +284,26 @@ pub mod console {
         Help,
     }
 
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Error, Clone, Debug, Serialize, Deserialize)]
     pub enum CommandError {
+        #[error("unknown command: {command_name}")]
         UnknownCommand { command_name: String },
+        #[error("invalid agent id")]
         InvalidAgentId,
+        #[error("invalid agent nickname")]
         InvalidAgentNickname,
+        #[error("group must start with #")]
         GroupMustStartWithPound,
+        #[error("invalid agent identifier")]
         InvalidAgentIdentifier,
+        #[error("expected an argument")]
         ExpectedArgument,
+        #[error("expected {args} args")]
         ExpectedNArgs { args: u64 },
+        #[error("expected {args1} or {args2} args")]
         ExpectedAOrBArgs { args1: u64, args2: u64 },
-    }
-
-    impl CommandError {
-        pub fn to_string(&self) -> String {
-            match self {
-                CommandError::UnknownCommand { command_name } => {
-                    format!("unknown command: \"{}\"", command_name)
-                }
-                CommandError::InvalidAgentId => "invalid agent id".to_string(),
-                CommandError::InvalidAgentNickname => "invalid agent nickname".to_string(),
-                CommandError::GroupMustStartWithPound => "group must start with: #".to_string(),
-                CommandError::InvalidAgentIdentifier => "invalid agent identifier".to_string(),
-                CommandError::ExpectedNArgs { args } => format!("expected {} arguments", args),
-                CommandError::ExpectedAOrBArgs { args1, args2 } => {
-                    format!("expected {} or {} args", args1, args2)
-                }
-                CommandError::ExpectedArgument => format!("expected an argument"),
-            }
-        }
+        #[error("unable to parse command")]
+        ParsingError,
     }
 
     pub enum Token {
@@ -412,9 +405,10 @@ pub mod console {
 
         pub fn parse_target_ident(&mut self) -> Result<TargetIdentifier, CommandError> {
             let token = self.peek()?;
+            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
             // match on first char
-            match token.chars().next().unwrap() {
+            match next_char {
                 '#' => {
                     return Ok(TargetIdentifier::Group {
                         group: self.parse_group_ident()?,
@@ -440,8 +434,9 @@ pub mod console {
 
         pub fn parse_agent_ident(&mut self) -> Result<AgentIdentifier, CommandError> {
             let token = self.peek()?;
+            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
-            match token.chars().next().unwrap() {
+            match next_char {
                 '0'..='9' => Ok(AgentIdentifier::ID {
                     id: self.parse_agent_id()?,
                 }),
@@ -454,8 +449,9 @@ pub mod console {
 
         pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
             let token = self.consume()?;
+            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
-            match token.chars().next().unwrap() {
+            match next_char {
                 '0'..='9' => {
                     let id = token.parse::<u64>();
 
@@ -470,8 +466,9 @@ pub mod console {
 
         pub fn parse_agent_nickname(&mut self) -> Result<String, CommandError> {
             let token = self.consume()?;
+            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
-            match token.chars().next().unwrap() {
+            match next_char {
                 'a'..='z' | 'A'..='Z' => Ok(token.to_string()),
                 _ => Err(CommandError::InvalidAgentNickname),
             }
