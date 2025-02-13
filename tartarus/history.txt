@@ -93,3 +93,9 @@ exec ls
 ls 
 list 
 exec 2833411257688766487 ls 
+list 
+list agents 
+agents 
+list 
+nickname 15067587078438673037
+nickname 15067587078438673037 a

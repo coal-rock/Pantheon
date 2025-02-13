@@ -1,7 +1,7 @@
-use anyhow::Result;
-/// The Harpe
+/// ! The Harpe !
 /// Hermes weapon of choice
 /// Prebaked commands live here
+use anyhow::Result;
 use std::process::Command;
 use tokio::io::AsyncWriteExt;
 

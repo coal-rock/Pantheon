@@ -676,3 +676,20 @@ pub mod console {
         pub new_target: NewTarget,
     }
 }
+
+pub mod helper {
+    /// Wrapper around println!() macro that
+    /// only runs if the binary was compiled in
+    /// debug mode
+    #[macro_export]
+    macro_rules! devlog{
+        ($($rest:expr),+) => {
+            {
+                #[cfg(debug_assertions)]
+                println!($($rest),+);
+            }
+        };
+    }
+
+    pub use devlog;
+}

