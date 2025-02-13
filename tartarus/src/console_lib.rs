@@ -29,7 +29,7 @@ pub async fn evaluate_command(
         }
         Command::Clear => clear().await,
         Command::ListGroups => list_groups(state).await,
-        Command::Help => todo!(),
+        Command::Help => help().await,
     }
 }
 
@@ -273,7 +273,7 @@ async fn remove_agents_from_group(
 async fn clear() -> ConsoleResponse {
     ConsoleResponse {
         success: true,
-        output: "\033c".to_string(),
+        output: "\x1B[2J\x1B[1;1H".to_string(),
         new_target: NewTarget::NoChange,
     }
 }
@@ -523,4 +523,45 @@ async fn status(
     let mut state = state.write().await;
 
     todo!()
+}
+
+async fn help() -> ConsoleResponse {
+    let output: String = 
+r#"---------------------------------------------------------------------------------------------------------------------
+ _____          _
+|_   _|_ _ _ __| |_ __ _ _ __ _   _ ___
+  | |/ _` | '__| __/ _` | '__| | | / __|
+  | | (_| | |  | || (_| | |  | |_| \__ \
+  |_|\__,_|_|   \__\__,_|_|   \__,_|___/
+---------------------------------------------------------------------------------------------------------------------
+Vocab:
+    agent    | An infected device
+    group    | A named collection of infected devices
+    target   | Either a single infected device, or a group of infected devices
+    <>       | Required argument
+    []       | Optional argument, if connected to a target and the argument is optional, command defaults to target
+---------------------------------------------------------------------------------------------------------------------
+Commands:
+    connect <target>                                            | Connects to an agent or group 
+    disconnect                                                  | Disconnects from an agent or gropu
+    create_group <group_name> <agent1> <agent2>                 | Creates a group
+    delete_group <group_name>                                   | Deletes a group
+    add_agents_to_group <group_name> <agent1> <agent2>          | Adds agents to a group
+    remove_agents_from_group <group_name> <agent1> <agent2>     | Removes agents from a group
+    exec [target] <command>                                     | Executes a shell command on an agent or group
+    list                                                        | Lists agents
+    list_groups                                                 | Lists groups
+    ping [target]                                               | Pings an agent or group
+    status [target]                                             | Prints the status of an agent or group
+    nickname [agent] <nickname>                                 | Sets the nickname of an agent
+    clear                                                       | Clears the terminal
+    help                                                        | Displays this message
+---------------------------------------------------------------------------------------------------------------------"#
+    .into();
+
+    ConsoleResponse {
+        success: true,
+        output,
+        new_target: NewTarget::NoChange,
+    }
 }

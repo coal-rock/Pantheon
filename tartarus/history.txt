@@ -1,18 +1,4 @@
 #V2
-help
-connect 
-connect 1
-connect "nick"
-connect nick
-help
-exit 
-ls 
-"ls"
-"ls" 
-"connect" "ls"
-help 
-connect  
-connect 123
 connect fortite 
 exit 
 list_agents 
@@ -99,3 +85,17 @@ agents
 list 
 nickname 15067587078438673037
 nickname 15067587078438673037 a
+list 
+fg
+help 
+help
+clear
+clear 
+fg 
+clear 
+ls 
+s
+ls 
+exit 
+fg
+exit 
