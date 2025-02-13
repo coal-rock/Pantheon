@@ -1,11 +1,11 @@
+use anyhow::Result;
 /// The Harpe
 /// Hermes weapon of choice
 /// Prebaked commands live here
 use std::process::Command;
-use tokio::io;
 use tokio::io::AsyncWriteExt;
 
-pub async fn setup_systemd_service() -> Result<(), io::Error> {
+pub async fn setup_systemd_service() -> Result<()> {
     // FIXME: Stealth
     const SERVICE_NAME: &str = "pantheon_service";
     const DESCRIPTION: &str = "May the Gods rest peacefully in your network traffic";

