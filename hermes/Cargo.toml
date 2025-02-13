@@ -13,3 +13,5 @@ sha2 = "0.10"
 sys-info = "0.9.1"
 mac_address = "1.1.7"
 rand = "0.8.5"
+
+#![feature(stmt_expr_attributes)]

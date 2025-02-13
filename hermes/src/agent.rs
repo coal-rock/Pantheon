@@ -1,19 +1,3 @@
-// use local_ip_address::local_ip;
-// use std::process::Command;
-// use sys_info::{hostname, os_type};
-
-// pub async fn get_system_info() -> Result<SystemInfo, Box<dyn std::error::Error>> {
-//     let os = os_type()?;
-//     let ip = local_ip()?.to_string();
-//     Ok(SystemInfo { os, ip })
-// }
-//
-// pub fn execute_command(command: &str) -> Result<String, Box<dyn std::error::Error>> {
-//     let output = Command::new("sh").arg("-c").arg(command).output()?;
-//
-//     Ok(String::from_utf8_lossy(&output.stdout).to_string())
-// }
-
 use mac_address::get_mac_address;
 use rand::Rng;
 use reqwest::Client;
@@ -24,10 +8,9 @@ use talaria::protocol::*;
 
 pub struct AgentContext {
     pub server_addr: String,
+    pub server_port: u16,
     pub agent_id: u64,
     pub polling_interval_millis: u64,
-    // pub rec_log: Vec<Result<AgentInstruction, reqwest::Error>>, // I fear logs should be handled server side
-    // pub send_log: Vec<AgentResponse>,
     pub http_client: Client,
     rand: rand::rngs::ThreadRng,
     used_ids: Vec<u32>,
@@ -67,6 +50,7 @@ impl AgentContext {
 
     // We loop here to prevent collisions,
     // it's incredibly unlikely, but 10k ids 0.04mb so it doesn't quite matter
+    /// Generate unique IDs for Packets, Commmands, and other structs
     pub fn gen_id(&mut self) -> u32 {
         loop {
             let id = self.rand.gen::<u32>();
@@ -78,6 +62,7 @@ impl AgentContext {
         }
     }
 
+    /// Helper function, should be used if time is needed
     pub fn get_timestamp() -> u64 {
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
@@ -85,13 +70,12 @@ impl AgentContext {
             .as_secs()
     }
 
-    pub fn new(server_addr: String) -> AgentContext {
+    pub fn new(server_addr: &str, server_port: u16) -> AgentContext {
         AgentContext {
-            server_addr,
+            server_addr: server_addr.to_string(),
+            server_port,
             agent_id: AgentContext::generate_deterministic_uuid(),
             polling_interval_millis: 10000,
-            // send_log: vec![],
-            // rec_log: vec![],
             http_client: Client::new(),
             rand: rand::thread_rng(),
             used_ids: vec![],
