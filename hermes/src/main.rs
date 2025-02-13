@@ -13,17 +13,22 @@ use tokio::time::sleep;
 // We can look into using `include_bytes!()` in the future
 const BACKEND_SERVER_ADDR: &str = "http://127.0.0.1";
 const BACKEND_SERVER_PORT: u16 = 8000;
+const POLLING_INTERVAL_MILLIS: u64 = 10000;
 
 #[tokio::main]
 async fn main() {
     // Create the agent context
-    let mut agent = AgentContext::new(BACKEND_SERVER_ADDR, BACKEND_SERVER_PORT);
+    let mut agent = AgentContext::new(
+        BACKEND_SERVER_ADDR,
+        BACKEND_SERVER_PORT,
+        POLLING_INTERVAL_MILLIS,
+    );
 
     // Main agent loop
     loop {
         match network::send_heartbeat(&mut agent).await {
-            Some(instruction) => network::handle_response(&mut agent, instruction).await,
-            None => devlog!("Failed to communicate with server."),
+            Ok(instruction) => network::handle_response(&mut agent, instruction).await,
+            Err(err) => devlog!("Failed to communicate with server\n {:?}", err),
         }
 
         // FIXME: whoever wrote this does not understand the nature of async code (me [cole])
