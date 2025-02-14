@@ -659,14 +659,14 @@ pub mod console {
         pub current_target: Option<TargetIdentifier>,
     }
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub enum NewTarget {
         NoTarget,
         Target { target: TargetIdentifier },
         NoChange,
     }
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct ConsoleResponse {
         pub success: bool,
         pub output: String,

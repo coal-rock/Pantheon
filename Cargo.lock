@@ -2790,6 +2790,7 @@ dependencies = [
  "serde_json",
  "talaria",
  "tokio",
+ "toml",
 ]
 
 [[package]]

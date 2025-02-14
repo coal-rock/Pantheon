@@ -9,7 +9,6 @@ mod config;
 mod console_interface;
 mod console_lib;
 mod console_net;
-mod served_files;
 mod state;
 
 use crate::console_interface::start_console;

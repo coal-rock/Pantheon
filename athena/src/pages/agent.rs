@@ -1,4 +1,4 @@
-use crate::components::console::Console;
+use crate::components::console::ConsoleWindow;
 use crate::components::network_log::NetworkLog;
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
@@ -34,7 +34,7 @@ pub fn agent(&AgentProps { agent_id }: &AgentProps) -> Html {
                 <Card class="box">
                     <CardTitle> {"Console"} </CardTitle>
                     <CardBody>
-                        <Console/>
+                        <ConsoleWindow/>
                     </CardBody>
                 </Card>
 

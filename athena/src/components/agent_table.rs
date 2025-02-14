@@ -79,7 +79,7 @@ pub fn agent_table_inner() -> Html {
 
                 spawn_local(async move {
                     let fetched_data: Vec<AgentInfo> =
-                        gloo_net::http::Request::get("/admin/api/list_agents")
+                        gloo_net::http::Request::get("/api/admin/list_agents")
                             .send()
                             .await
                             .unwrap()

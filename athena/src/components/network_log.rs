@@ -79,7 +79,7 @@ pub fn network_log(props: &AgentProps) -> Html {
 
                 spawn_local(async move {
                     let fetched_data: Vec<NetworkHistoryEntry> = gloo_net::http::Request::get(
-                        &format!("/admin/api/{}/network_history", agent_id).to_string(),
+                        &format!("/api/admin/{}/network_history", agent_id).to_string(),
                     )
                     .send()
                     .await
