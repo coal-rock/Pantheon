@@ -40,7 +40,7 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
 async fn main() -> Result<(), rocket::Error> {
     env_logger::init();
 
-    let config_path: PathBuf = PathBuf::from("talaria.toml");
+    let config_path: PathBuf = PathBuf::from("tartarus.toml");
 
     let config: Config = match fs::read_to_string(&config_path) {
         Err(_) => {

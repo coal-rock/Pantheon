@@ -21,5 +21,8 @@ version = "0.3"
 features = [
     "HtmlElement",
     "HtmlInputElement",
-    "MediaQueryList"
+    "MediaQueryList",
+    "Window",
+    "Location",
+    "UrlSearchParams",
 ]

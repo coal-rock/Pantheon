@@ -2,9 +2,9 @@ mod components;
 mod pages;
 
 use pages::{about::About, agent::Agent, downloads::Downloads, home::Home, settings::Settings};
+use web_sys::{window, UrlSearchParams};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use web_sys::{window, UrlSearchParams};
 
 const STATIC_API_TOKEN: &str = "bb123#123"; // The static token
 
@@ -41,25 +41,49 @@ fn switch(routes: Route) -> Html {
 
 #[function_component(App)]
 fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Auth/>
+        </BrowserRouter>
+    }
+}
+
+#[function_component(Auth)]
+fn auth() -> Html {
     let navigator = use_navigator().unwrap();
 
     use_effect_with((), move |_| {
+        let navigator = navigator.clone();
         let location = window().unwrap().location();
         let search = location.search().unwrap_or_default();
         let params = UrlSearchParams::new_with_str(&search).unwrap();
+
+        web_sys::console::log_1(&params.to_string());
 
         // Check if the token is in the URL
         if let Some(token) = params.get("token") {
             if token == STATIC_API_TOKEN {
                 // Store the token in localStorage
-                window().unwrap().local_storage().unwrap().unwrap().set_item("api_token", &token).unwrap();
+                window()
+                    .unwrap()
+                    .local_storage()
+                    .unwrap()
+                    .unwrap()
+                    .set_item("api_token", &token)
+                    .unwrap();
             } else {
                 // Redirect to Access Denied
                 navigator.push(&Route::AccessDenied);
             }
         } else {
             // If no token in URL, check localStorage
-            let stored_token = window().unwrap().local_storage().unwrap().unwrap().get_item("api_token").unwrap();
+            let stored_token = window()
+                .unwrap()
+                .local_storage()
+                .unwrap()
+                .unwrap()
+                .get_item("api_token")
+                .unwrap();
             if stored_token != Some(STATIC_API_TOKEN.to_string()) {
                 // No valid token found, redirect
                 navigator.push(&Route::AccessDenied);
@@ -70,9 +94,7 @@ fn app() -> Html {
     });
 
     html! {
-        <BrowserRouter>
             <Switch<Route> render={switch} /> // <- must be child of <BrowserRouter>
-        </BrowserRouter>
     }
 }
 
