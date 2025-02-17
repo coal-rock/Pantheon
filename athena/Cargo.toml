@@ -25,4 +25,5 @@ features = [
     "Window",
     "Location",
     "UrlSearchParams",
+    "Clipboard",
 ]

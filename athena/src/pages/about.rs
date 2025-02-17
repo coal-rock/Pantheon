@@ -6,7 +6,7 @@ use crate::components::full_page::FullPage;
 pub fn about() -> Html {
     html! {
         <FullPage>
-            <h1> { "about" } </h1>
+            <h1 style = "font-size:30px; bold;" > { "About" } </h1>
         </FullPage>
     }
 }
