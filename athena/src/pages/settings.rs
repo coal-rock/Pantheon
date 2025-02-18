@@ -1,5 +1,7 @@
 use yew::prelude::*;
 use web_sys::HtmlInputElement;
+use patternfly_yew::prelude::Button;
+use patternfly_yew::prelude::ButtonVariant;
 
 use crate::components::full_page::FullPage;
 
@@ -43,7 +45,7 @@ pub fn settings() -> Html {
                 <div class="parent">
                     <select name="status" onchange={on_mode_change}>
                         <option value="ip-mode" selected={*mode == "ip-mode"}>{ "IP mode" }</option>
-                        <option value="domain-name-mode" selected={*mode == "domain-name-mode"}>{ "Domain-name mode" }</option>
+                        <option value="domain-name-mode" selected={*mode == "domain-name-mode"}>{ "Domain-name mode" } </option> 
                     </select>
                 </div>
             </div>
@@ -53,26 +55,32 @@ pub fn settings() -> Html {
                     html! {
                         <div>
                             <label for="ip-address">{"IP Address:"}</label>
-                            <input
-                                type="text"
-                                id="ip-address"
-                                value={(*input_value).clone()}
-                                oninput={on_input_change}
-                                placeholder="Enter IP Address"
-                            />
+                            <div class="input-container">
+                                <input
+                                    type="text"
+                                    id="ip-address"
+                                    value={(*input_value).clone()}
+                                    oninput={on_input_change}
+                                    placeholder="Enter IP Address"
+                                />
+                                <Button variant={ButtonVariant::Control}>{ "Enter" }</Button>{" "}
+                            </div>
                         </div>
                     }
                 } else {
                     html! {
                         <div>
                             <label for="dns-hostname">{"DNS Hostname:"}</label>
-                            <input
-                                type="text"
-                                id="dns-hostname"
-                                value={(*input_value).clone()}
-                                oninput={on_input_change}
-                                placeholder="Enter DNS Hostname"
-                            />
+                            <div class="input-container">
+                                <input
+                                    type="text"
+                                    id="dns-hostname"
+                                    value={(*input_value).clone()}
+                                    oninput={on_input_change}
+                                    placeholder="Enter DNS Hostname"
+                                />
+                                <Button variant={ButtonVariant::Control}>{ "Enter" }</Button>{" "}
+                            </div>
                         </div>
                     }
                 }

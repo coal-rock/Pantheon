@@ -1,7 +1,7 @@
 mod components;
 mod pages;
 
-use pages::{about::About, agent::Agent, downloads::Downloads, home::Home, settings::Settings};
+use pages::{about::About, agent::Agent, downloads::Downloads, home::Home, settings::Settings, alerts::Alerts};
 use web_sys::{window, UrlSearchParams};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -20,6 +20,8 @@ enum Route {
     About,
     #[at("/downloads")]
     Downloads,
+    #[at("/alerts")]
+    Alerts,
     #[at("/denied")]
     AccessDenied,
     #[not_found]
@@ -34,6 +36,7 @@ fn switch(routes: Route) -> Html {
         Route::Settings => html! { <Settings /> },
         Route::About => html! { <About /> },
         Route::Downloads => html! { <Downloads /> },
+        Route::Alerts => html! { <Alerts /> },
         Route::AccessDenied => html! { <h1>{ "Access Denied - Invalid Token" }</h1> },
         Route::NotFound => html! { <h1>{ "404 - Page not found" }</h1> },
     }

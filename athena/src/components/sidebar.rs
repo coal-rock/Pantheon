@@ -59,6 +59,10 @@ pub fn sidebar(agents: &Vec<AgentInfo>) -> VChild<PageSidebar> {
                     <NavItem>{"Downloads"}</NavItem>
                 </Link<Route>>
 
+                <Link<Route> to={Route::Alerts}>
+                    <NavItem>{"Alerts"}</NavItem>
+                </Link<Route>>
+
             </Nav>
         </PageSidebar>
     }
