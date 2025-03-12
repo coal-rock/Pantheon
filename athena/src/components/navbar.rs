@@ -39,7 +39,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                 div {
                     class: "flex flex-col p-4",
                     Link {
-                        class: "text-white font-sans text-4xl",
+                        class: "text-gray-300 hover:text-white font-sans text-4xl",
                         to: Route::Home {},
                         "Athena"
                     }
