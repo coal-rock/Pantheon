@@ -1,6 +1,12 @@
 /*! tailwindcss v4.0.13 | MIT License | https://tailwindcss.com */
+.static {
+  position: static;
+}
 .m-2 {
   margin: calc(var(--spacing) * 2);
+}
+.mb-4 {
+  margin-bottom: calc(var(--spacing) * 4);
 }
 .ml-2 {
   margin-left: calc(var(--spacing) * 2);
@@ -194,6 +200,12 @@
 .bg-zinc-950 {
   background-color: var(--color-zinc-950);
 }
+.stroke-black {
+  stroke: var(--color-black);
+}
+.stroke-current {
+  stroke: currentColor;
+}
 .p-0 {
   padding: calc(var(--spacing) * 0);
 }
@@ -233,11 +245,23 @@
 .pr-2 {
   padding-right: calc(var(--spacing) * 2);
 }
+.pb-1 {
+  padding-bottom: calc(var(--spacing) * 1);
+}
+.pb-2 {
+  padding-bottom: calc(var(--spacing) * 2);
+}
+.pb-4 {
+  padding-bottom: calc(var(--spacing) * 4);
+}
 .pl-1 {
   padding-left: calc(var(--spacing) * 1);
 }
 .pl-2 {
   padding-left: calc(var(--spacing) * 2);
+}
+.pl-4 {
+  padding-left: calc(var(--spacing) * 4);
 }
 .font-mono {
   font-family: var(--font-mono);
@@ -268,8 +292,18 @@
   font-size: var(--text-xl);
   line-height: var(--tw-leading, var(--text-xl--line-height));
 }
+.font-black {
+  --tw-font-weight: var(--font-weight-black);
+  font-weight: var(--font-weight-black);
+}
+.text-black {
+  color: var(--color-black);
+}
 .text-gray-400 {
   color: var(--color-gray-400);
+}
+.text-red-500 {
+  color: var(--color-red-500);
 }
 .text-white {
   color: var(--color-white);
@@ -376,6 +410,7 @@
     --text-3xl--line-height: calc(2.25 / 1.875);
     --text-4xl: 2.25rem;
     --text-4xl--line-height: calc(2.5 / 2.25);
+    --font-weight-black: 900;
     --default-font-family: var(--font-sans);
     --default-font-feature-settings: var(--font-sans--font-feature-settings);
     --default-font-variation-settings: var(--font-sans--font-variation-settings);
@@ -530,4 +565,8 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false;
 }
