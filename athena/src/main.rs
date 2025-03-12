@@ -1,14 +1,12 @@
 use dioxus::prelude::*;
 
-mod components;
-mod views;
+pub mod components;
+pub mod views;
 
-use components::navbar::Navbar;
 use views::home::Home;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 enum Route {
-    #[layout(Navbar)]
     #[route("/")]
     Home {},
 }
