@@ -4,6 +4,7 @@ pub mod components;
 pub mod views;
 
 use views::home::Home;
+use views::page::Page;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 enum Route {
