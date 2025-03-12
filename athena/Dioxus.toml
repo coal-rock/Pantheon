@@ -3,13 +3,13 @@
 [web.app]
 
 # HTML title tag content
-title = "athena"
+title = "Athena"
 
 # include `assets` in web platform
 [web.resource]
 
 # Additional CSS style files
-style = []
+style = ["assets/tailwind.css"]
 
 # Additional JavaScript files
 script = []
