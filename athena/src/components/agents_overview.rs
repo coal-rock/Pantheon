@@ -4,7 +4,7 @@ use dioxus_free_icons::icons::fa_solid_icons::FaMagnifyingGlass;
 use dioxus_free_icons::Icon;
 
 #[component]
-pub fn AgentTable() -> Element {
+pub fn AgentsOverview() -> Element {
     rsx! {
         div {
             class: "bg-zinc-950 w-full h-full rounded flex flex-col p-4 drop-shadow-sm draggable",
@@ -19,19 +19,7 @@ pub fn AgentTable() -> Element {
                 }
             }
             div {
-                class: "bg-zinc-900 w-full rounded-xs border-b-1 border-gray-400 h-8 flex items-center pl-2",
-                Icon {
-                    width: 16,
-                    icon: FaMagnifyingGlass,
-                    fill: "lightgray"
-                }
-                input {
-                    class: "w-full h-full text-gray-300 outline-none pl-2",
-                    value: "",
-                    placeholder: "agent name",
-                }
-            }
-            div {
+
             }
         }
     }

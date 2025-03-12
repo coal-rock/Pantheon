@@ -20,17 +20,32 @@
 .h-screen {
   height: 100vh;
 }
+.w-0 {
+  width: calc(var(--spacing) * 0);
+}
+.w-1\/2 {
+  width: calc(1/2 * 100%);
+}
 .w-64 {
   width: calc(var(--spacing) * 64);
 }
 .w-full {
   width: 100%;
 }
+.shrink {
+  flex-shrink: 1;
+}
+.shrink-0 {
+  flex-shrink: 0;
+}
 .grow {
   flex-grow: 1;
 }
 .grow-0 {
   flex-grow: 0;
+}
+.basis-0 {
+  flex-basis: calc(var(--spacing) * 0);
 }
 .transform {
   transform: var(--tw-rotate-x) var(--tw-rotate-y) var(--tw-rotate-z) var(--tw-skew-x) var(--tw-skew-y);
@@ -91,6 +106,9 @@
 }
 .stroke-current {
   stroke: currentColor;
+}
+.p-0 {
+  padding: calc(var(--spacing) * 0);
 }
 .p-2 {
   padding: calc(var(--spacing) * 2);
@@ -165,6 +183,13 @@
 .outline-none {
   --tw-outline-style: none;
   outline-style: none;
+}
+.hover\:cursor-grab {
+  &:hover {
+    @media (hover: hover) {
+      cursor: grab;
+    }
+  }
 }
 .hover\:bg-zinc-900 {
   &:hover {
