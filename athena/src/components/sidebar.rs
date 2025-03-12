@@ -3,10 +3,11 @@ use dioxus::prelude::*;
 use crate::Route;
 
 #[component]
-pub fn Sidebar() -> Element {
+pub fn Sidebar(should_show: Signal<bool>) -> Element {
     rsx! {
         div {
             class: "grow-0 w-72 bg-zinc-950 border-r-2 flex flex-col",
+            display: if *should_show.read() { None } else { Some("none") },
 
             SidebarElement{
                 text: "Agents",
