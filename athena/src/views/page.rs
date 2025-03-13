@@ -29,8 +29,18 @@ pub fn Page(children: Element) -> Element {
 
             swappable.on('drag:start', (event) => {
                 const draggedItem = event.source;
-                // draggedItem.style.transition = 'transform 0.2s ease';
                 draggedItem.style.transform = 'scale(0.95)';
+                draggedItem.classList.add("blur-sm");
+            });
+
+            swappable.on('mirror:created', (event) => {
+                const mirror = event.mirror;
+                mirror.style.zIndex = '1000'; 
+                mirror.style.position = 'absolute';
+                mirror.classList.remove("blur-sm");
+                mirror.classList.add("transition-color");
+                mirror.classList.add("!scale-90");
+                mirror.classList.add("!border-blue-500");
             });
 
             swappable.on('drag:move', (event) => {
@@ -42,6 +52,7 @@ pub fn Page(children: Element) -> Element {
                 const draggedItem = event.source;
                 draggedItem.style.transition = 'transform 0.2s ease';
                 draggedItem.style.transform = 'scale(1)';
+                draggedItem.classList.remove("blur");
             });
 
             console.log("swappable init over")

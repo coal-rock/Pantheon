@@ -9,7 +9,7 @@ pub fn Home() -> Element {
     rsx! {
         Page {
             div {
-                class: "grow bg-stone-600 flex space-between items-center flex-row gap-2 p-2",
+                class: "grow bg-zinc-800 flex space-between items-center flex-row gap-2 p-2",
                 div {
                     class: "flex h-full p-0 grow shrink w-0 gap-2",
                     AgentsOverview{}

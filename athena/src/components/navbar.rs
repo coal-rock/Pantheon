@@ -17,8 +17,10 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
         div {
             class: "bg-zinc-950 h-16 flex items-center justify-between border-b-2",
             div {
-                class: "flex flex-row p-3 items-center",
+                class: "flex flex-row items-center w-64",
                 button {
+                    class: "hover:grab p-4",
+
                     onmouseenter: move |_event| {
                         sidebar_toggle_hover.set(true);
                     },
@@ -37,33 +39,55 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                     }
                 }
                 div {
-                    class: "flex flex-col p-4",
-                    Link {
-                        class: "text-gray-300 hover:text-white font-sans text-4xl",
-                        to: Route::Home {},
-                        "Athena"
+                    class: "flex flex-row border-2 w-full",
+                    img {
+                        class: "h-24 -ml-2",
+                        src: asset!("assets/cdo-logo.png"),
                     }
-                    h1 {
-                        class: "text-gray-400 font-sans text-sm",
-                        "v0.0.1"
+                    div {
+                        class: "flex flex-col p-4 -ml-9",
+                        Link {
+                            class: "text-gray-300 hover:text-white font-sans text-4xl",
+                            to: Route::Home {},
+                            "Athena"
+                        }
+                        h1 {
+                            class: "text-gray-400 font-sans text-sm",
+                            "v0.0.1"
+                        }
                     }
                 }
             }
-            a {
-                href: "https://github.com/Dack985/Pantheon",
-                target: "_blank",
-                onmouseenter: move |_event| {
-                    github_hover.set(true);
-                },
-                onmouseleave: move |_event| {
-                    github_hover.set(false);
-                },
-                Icon {
-                    class: "pr-2",
-                    width: 52,
-                    height: 52,
-                    fill: if *github_hover.read() {"white"} else {"lightgray"},
-                    icon: FaGithub,
+            div {
+                class: "w-64 grow h-full flex flex-col gap-0 justify-center items-left",
+                div {
+                    class: "p-2 border-r-2 flex flex-col w-24 h-full items-center",
+                    div {
+                        class: "text-gray-300 text-md",
+                        "Hermes"
+                    }
+                    div {
+                        class: "text-gray-400 text-sm",
+                        "192.168.1.2"
+                    }
+                }
+            }
+            div {
+                class: "h-full p-2 border-l-2",
+                a {
+                    href: "https://github.com/Dack985/Pantheon",
+                    target: "_blank",
+                    onmouseenter: move |_event| {
+                        github_hover.set(true);
+                    },
+                    onmouseleave: move |_event| {
+                        github_hover.set(false);
+                    },
+                    Icon {
+                        class: "w-full h-full",
+                        fill: if *github_hover.read() {"white"} else {"lightgray"},
+                        icon: FaGithub,
+                    }
                 }
             }
         }

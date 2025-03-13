@@ -7,10 +7,10 @@ use dioxus_free_icons::Icon;
 pub fn AgentsTable() -> Element {
     rsx! {
         div {
-            class: "bg-zinc-950 w-full h-full rounded flex flex-col p-4 drop-shadow-sm draggable",
+            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-500",
             div {
                 class: "text-gray-300 text-xl font-sans pl-1 handle cursor-grab active:cursor-grab",
-                "Agents Table"
+                "Agent Table"
             }
             div {
                 class: "flex items-center h-4",

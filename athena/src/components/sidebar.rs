@@ -53,7 +53,7 @@ fn SidebarElement(text: String, to: Route, icon: Element) -> Element {
             class: "border-zinc-800 hover:bg-zinc-900 border-b-1 flex justify-start items-center h-14 hover:underline decoration-2 underline-offset-4 decoration-blue-500",
             to: "{to}",
             div {
-                class: "text-white pl-4 flex stroke-current text-red-500",
+                class: "text-white pl-4 flex stroke-current",
                 {icon}
                 div {
                     class: "pl-4",
