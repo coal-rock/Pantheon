@@ -19,7 +19,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
             div {
                 class: "flex flex-row items-center w-64",
                 button {
-                    class: "hover:grab p-4",
+                    class: "cursor-pointer p-4",
 
                     onmouseenter: move |_event| {
                         sidebar_toggle_hover.set(true);

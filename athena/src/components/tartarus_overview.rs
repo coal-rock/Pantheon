@@ -94,7 +94,7 @@ fn UsageSlider(text: String, value: f64, center_text: String) -> Element {
                 }
             }
             div {
-                class: "bg-gray-700 rounded-full",
+                class: "bg-zinc-900 rounded-full",
                 div {
                     class: "bg-blue-600 h-2.5 rounded-full",
                     width: value,
