@@ -59,16 +59,27 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                 }
             }
             div {
-                class: "w-64 grow h-full flex flex-col gap-0 justify-center items-left",
+                class: "w-64 grow h-full flex flex-row gap-0 justify-left items-left",
                 div {
                     class: "p-2 border-r-2 flex flex-col w-24 h-full items-center",
                     div {
                         class: "text-gray-300 text-md",
-                        "Hermes"
+                        "Tartarus"
                     }
                     div {
                         class: "text-gray-400 text-sm",
                         "192.168.1.2"
+                    }
+                }
+                div {
+                    class: "p-2 border-r-2 flex flex-col w-20 h-full items-center",
+                    div {
+                        class: "text-gray-300 text-md",
+                        "Uptime"
+                    }
+                    div {
+                        class: "text-gray-400 text-sm",
+                        "100 hours"
                     }
                 }
             }
