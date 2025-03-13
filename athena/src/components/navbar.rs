@@ -39,13 +39,16 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                     }
                 }
                 div {
-                    class: "flex flex-row border-2 w-full",
-                    img {
-                        class: "h-24 -ml-2",
-                        src: asset!("assets/cdo-logo.png"),
+                    class: "flex flex-row border-2 items-center justify-center ml-1",
+                    div {
+                        class: "w-full h-full",
+                        img {
+                            class: "ml-2 mb-1",
+                            src: asset!("assets/cdo-logo.png"),
+                        }
                     }
                     div {
-                        class: "flex flex-col p-4 -ml-9",
+                        class: "flex flex-col p-2 m-1",
                         Link {
                             class: "text-gray-300 hover:text-white font-sans text-4xl",
                             to: Route::Home {},

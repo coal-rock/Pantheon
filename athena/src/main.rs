@@ -19,8 +19,10 @@ fn main() {
 #[component]
 fn App() -> Element {
     rsx! {
+        document::Link { rel: "icon", href: asset!("/assets/favicon.ico") }
         document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
         script { src: "https://cdn.jsdelivr.net/npm/@shopify/draggable/build/umd/index.min.js" }
+
         Router::<Route> {}
     }
 }
