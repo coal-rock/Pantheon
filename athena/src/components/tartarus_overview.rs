@@ -6,21 +6,13 @@ use dioxus_free_icons::icons::fa_solid_icons::{
 };
 use dioxus_free_icons::Icon;
 
+use crate::components::panel_base::PanelBase;
+
 #[component]
 pub fn TartarusOverview() -> Element {
     rsx! {
-        div {
-            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow-xl draggable border-2 border-gray-500",
-            div {
-                class: "text-gray-300 text-xl font-sans pl-1 handle cursor-grab active:cursor-grab",
-                "Tartarus Overview"
-            }
-            div {
-                class: "flex items-center h-4",
-                hr {
-                    class: "w-full text-color-600",
-                }
-            }
+        PanelBase {
+            title: "Tartarus Overview",
             div {
                 class: "flex flex-col gap-4",
                 span {

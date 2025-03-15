@@ -1,22 +1,14 @@
 use dioxus::prelude::*;
 
+use crate::components::panel_base::PanelBase;
+
 #[component]
 pub fn Notepad() -> Element {
     let mut input = use_signal(|| String::new());
 
     rsx! {
-        div {
-            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-600",
-            div {
-                class: "text-gray-300 text-xl font-sans pl-1 handle cursor-grab active:cursor-grab",
-                "Notepad"
-            }
-            div {
-                class: "flex items-center h-4",
-                hr {
-                    class: "w-full",
-                }
-            }
+        PanelBase {
+            title: "Notepad",
             div {
                 class: "flex h-0 grow shrink basis-0 w-full bg-zinc-900 mt-2 rounded p-2",
                 div {

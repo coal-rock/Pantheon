@@ -3,6 +3,8 @@ use dioxus::prelude::*;
 use dioxus_free_icons::icons::fa_solid_icons::FaMagnifyingGlass;
 use dioxus_free_icons::Icon;
 
+use crate::components::panel_base::PanelBase;
+
 #[component]
 pub fn AgentsTable() -> Element {
     let show_windows = use_signal(|| true);
@@ -10,18 +12,8 @@ pub fn AgentsTable() -> Element {
     let show_inactive = use_signal(|| true);
 
     rsx! {
-        div {
-            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-500",
-            div {
-                class: "text-gray-300 text-xl font-sans pl-1 handle cursor-grab active:cursor-grab",
-                "Agent Table"
-            }
-            div {
-                class: "flex items-center h-4",
-                hr {
-                    class: "w-full",
-                }
-            }
+        PanelBase {
+            title: "Agents Table",
             div {
                 class: "bg-zinc-900 w-full rounded-xs border-b-1 border-gray-400 h-8 flex items-center pl-2",
                 Icon {
