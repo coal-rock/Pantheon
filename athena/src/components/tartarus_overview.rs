@@ -18,7 +18,7 @@ pub fn TartarusOverview() -> Element {
             div {
                 class: "flex items-center h-4",
                 hr {
-                    class: "w-full",
+                    class: "w-full text-color-600",
                 }
             }
             div {

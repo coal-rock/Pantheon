@@ -10,7 +10,7 @@ pub fn Sidebar(should_show: Signal<bool>) -> Element {
     // TODO: make icons slightly change color on hover
     rsx! {
         div {
-            class: "grow-0 w-64 bg-zinc-950 border-r-2 flex flex-col",
+            class: "grow-0 w-64 bg-zinc-950 border-r-2 border-gray-600 flex flex-col",
             display: if *should_show.read() { None } else { Some("none") },
 
             SidebarElement{

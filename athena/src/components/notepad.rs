@@ -6,7 +6,7 @@ pub fn Notepad() -> Element {
 
     rsx! {
         div {
-            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-500",
+            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-600",
             div {
                 class: "text-gray-300 text-xl font-sans pl-1 handle cursor-grab active:cursor-grab",
                 "Notepad"

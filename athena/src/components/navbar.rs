@@ -15,7 +15,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
 
     rsx! {
         div {
-            class: "bg-zinc-950 h-16 flex items-center justify-between border-b-2",
+            class: "bg-zinc-950 h-16 flex items-center justify-between border-0 border-b-2 border-gray-600",
             div {
                 class: "flex flex-row items-center w-64",
                 button {
@@ -39,7 +39,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                     }
                 }
                 div {
-                    class: "flex flex-row border-2 items-center justify-center ml-1",
+                    class: "flex flex-row border-2 border-gray-600 items-center justify-center ml-1",
                     div {
                         class: "w-full h-full",
                         img {
@@ -64,7 +64,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
             div {
                 class: "w-64 grow h-full flex flex-row gap-0 justify-left items-left",
                 div {
-                    class: "p-2 border-r-2 flex flex-col w-24 h-full items-center",
+                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-24 h-full items-center",
                     div {
                         class: "text-gray-300 text-md",
                         "Tartarus"
@@ -75,7 +75,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                     }
                 }
                 div {
-                    class: "p-2 border-r-2 flex flex-col w-20 h-full items-center",
+                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-20 h-full items-center",
                     div {
                         class: "text-gray-300 text-md",
                         "Uptime"
@@ -87,7 +87,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                 }
             }
             div {
-                class: "h-full p-2 border-l-2",
+                class: "h-full p-2 border-l-2 border-gray-600",
                 a {
                     href: "https://github.com/Dack985/Pantheon",
                     target: "_blank",

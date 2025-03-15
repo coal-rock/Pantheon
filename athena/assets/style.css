@@ -6,3 +6,8 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Hack for differently color HR?? sorta works? FIXME*/
+hr {
+  border-top: 1px solid rgb(46, 52, 54) !important;
+}
