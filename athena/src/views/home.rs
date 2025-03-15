@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use crate::components::agents_overview::AgentsOverview;
 use crate::components::agents_table::AgentsTable;
 use crate::components::console::Console;
+use crate::components::notepad::Notepad;
 use crate::components::tartarus_overview::TartarusOverview;
 use crate::views::page::Page;
 
@@ -24,7 +25,7 @@ pub fn Home() -> Element {
                 }
                 div {
                     class: "flex flex-col h-full p-0 grow shrink basis-0 w-0 gap-2",
-                    AgentsOverview{}
+                    Notepad{}
                     TartarusOverview{}
                 }
             }

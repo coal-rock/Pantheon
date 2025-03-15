@@ -104,6 +104,9 @@
 .cursor-pointer {
   cursor: pointer;
 }
+.resize-none {
+  resize: none;
+}
 .flex-col {
   flex-direction: column;
 }
@@ -291,6 +294,14 @@
 }
 .ring-offset-gray-800 {
   --tw-ring-offset-color: var(--color-gray-800);
+}
+.outline-hidden {
+  --tw-outline-style: none;
+  outline-style: none;
+  @media (forced-colors: active) {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
 }
 .blur {
   --tw-blur: blur(8px);
