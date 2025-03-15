@@ -10,10 +10,6 @@ pub fn Page(children: Element) -> Element {
     // FIXME: find a slightly nicer way of doing this
     let script = r#"
         setTimeout(() => {
-            let script = document.createElement('script');
-            script.setAttribute('src','https://cdn.jsdelivr.net/npm/@shopify/draggable/build/umd/index.min.js');
-            document.head.appendChild(script);
-
             const swappable = new Draggable.Swappable(document.querySelectorAll('div'), {
                 draggable: '.draggable',
                 handle: '.handle',
