@@ -85,7 +85,43 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                         "100 hours"
                     }
                 }
+
+
+                div {
+                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full justify-center items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
+                    DropdownMenu {
+                        DropdownElement {
+                            layout: vec![1],
+                        }
+
+                        DropdownElement {
+                            layout: vec![2]
+                        }
+
+                        hr{}
+
+                        DropdownElement {
+                            layout: vec![1, 1]
+                        }
+
+                        DropdownElement {
+                            layout: vec![2, 2]
+                        }
+
+                        hr{}
+
+                        DropdownElement {
+                            layout: vec![1, 1, 1]
+                        }
+
+                        DropdownElement {
+                            layout: vec![2, 2, 2]
+                        }
+                    }
+                }
+
             }
+
             div {
                 class: "h-full p-2 border-l-2 border-gray-600",
                 a {
@@ -103,6 +139,82 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                         icon: FaGithub,
                     }
                 }
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+struct Hidden(Signal<bool>);
+
+#[derive(Clone)]
+struct CurrentLayout(Signal<Layout>);
+
+#[derive(Clone)]
+struct Layout(Vec<i32>);
+
+impl Layout {
+    fn to_string(&self) -> String {
+        self.0
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join("-")
+    }
+}
+
+#[component]
+fn DropdownMenu(children: Element) -> Element {
+    let mut hidden = use_context_provider(|| Hidden(Signal::new(true)));
+    let hidden_class = if hidden.0() { "hidden" } else { "block" };
+
+    let current_layout = use_context_provider(|| CurrentLayout(Signal::new(Layout(vec![2, 2]))));
+
+    rsx! {
+        div {
+            onmouseenter: move |_| {
+                hidden.0.set(false);
+            },
+            onmouseleave: move |_| {
+                hidden.0.set(true);
+            },
+            button {
+                id: "dropdown-button",
+                div {
+                    class: "text-gray-300 text-md",
+                    "Layout"
+                }
+                div {
+                    class: "text-gray-400 text-sm",
+                    {current_layout.0().to_string()}
+                }
+            }
+
+            ul {
+                class: "dropdown-menu absolute pt-4 left-1/2 transform -translate-x-1/2 w-20 z-10 {hidden_class}",
+                div {
+                    class: "border-gray-600 border-2",
+                    {children}
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn DropdownElement(layout: Vec<i32>) -> Element {
+    let mut hidden = use_context::<Hidden>().0;
+    let mut current_layout = use_context::<CurrentLayout>();
+
+    rsx! {
+        li {
+            a {
+                class: "py-1 px-1 block whitespace-no-wrap bg-zinc-950 text-center hover:bg-zinc-900",
+                onclick: move |_| {
+                    hidden.set(true);
+                    current_layout.0.set(Layout(layout.clone()));
+                },
+                {Layout(layout.clone()).to_string()}
             }
         }
     }
