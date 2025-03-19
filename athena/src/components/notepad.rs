@@ -3,12 +3,13 @@ use dioxus::prelude::*;
 use crate::components::panel_base::PanelBase;
 
 #[component]
-pub fn Notepad() -> Element {
+pub fn Notepad(id: i32) -> Element {
     let mut input = use_signal(|| String::new());
 
     rsx! {
         PanelBase {
             title: "Notepad",
+            panel_id: id,
             div {
                 class: "flex h-0 grow shrink basis-0 w-full bg-zinc-900 mt-2 rounded p-2",
                 div {

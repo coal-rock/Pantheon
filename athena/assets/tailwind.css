@@ -243,6 +243,9 @@
 .bg-gray-700 {
   background-color: var(--color-gray-700);
 }
+.bg-transparent {
+  background-color: transparent;
+}
 .bg-zinc-700 {
   background-color: var(--color-zinc-700);
 }

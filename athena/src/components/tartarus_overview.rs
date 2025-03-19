@@ -9,10 +9,11 @@ use dioxus_free_icons::Icon;
 use crate::components::panel_base::PanelBase;
 
 #[component]
-pub fn TartarusOverview() -> Element {
+pub fn TartarusOverview(id: i32) -> Element {
     rsx! {
         PanelBase {
             title: "Tartarus Overview",
+            panel_id: id,
             div {
                 class: "flex flex-col gap-4",
                 span {

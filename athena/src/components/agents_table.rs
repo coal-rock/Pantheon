@@ -6,7 +6,7 @@ use dioxus_free_icons::Icon;
 use crate::components::panel_base::PanelBase;
 
 #[component]
-pub fn AgentsTable() -> Element {
+pub fn AgentsTable(id: i32) -> Element {
     let show_windows = use_signal(|| true);
     let show_linux = use_signal(|| true);
     let show_inactive = use_signal(|| true);
@@ -14,6 +14,7 @@ pub fn AgentsTable() -> Element {
     rsx! {
         PanelBase {
             title: "Agents Table",
+            panel_id: id,
             div {
                 class: "bg-zinc-900 w-full rounded-xs border-b-1 border-gray-400 h-8 flex items-center pl-2",
                 Icon {

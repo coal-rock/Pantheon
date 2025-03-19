@@ -1,3 +1,4 @@
+use dioxus::logger::tracing::Level;
 use dioxus::prelude::*;
 
 pub mod components;
@@ -13,6 +14,7 @@ enum Route {
 }
 
 fn main() {
+    dioxus::logger::init(Level::INFO).expect("logger failed to init");
     dioxus::launch(App);
 }
 

@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use crate::components::panel_base::PanelBase;
 
 #[component]
-pub fn Console() -> Element {
+pub fn Console(id: i32) -> Element {
     // FIXME: sorta cooked flexbox layout
     // FIXME: console doesn't auto-scroll for now - fix?
     let mut command_history: Signal<Vec<String>> = use_signal(|| vec![]);
@@ -13,6 +13,7 @@ pub fn Console() -> Element {
     rsx! {
         PanelBase {
             title: "Console",
+            panel_id: id,
             div {
                 class: "flex h-0 grow shrink basis-0 w-full bg-zinc-900 mt-2 rounded p-2",
                 div {

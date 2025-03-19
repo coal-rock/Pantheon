@@ -4,6 +4,7 @@ use dioxus_free_icons::icons::fa_brands_icons::FaGithub;
 use dioxus_free_icons::icons::fa_solid_icons::FaBars;
 use dioxus_free_icons::Icon;
 
+use crate::views::page::PanelManager;
 use crate::Route;
 
 #[component]
@@ -147,28 +148,12 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
 #[derive(Clone)]
 struct Hidden(Signal<bool>);
 
-#[derive(Clone)]
-struct CurrentLayout(Signal<Layout>);
-
-#[derive(Clone)]
-struct Layout(Vec<i32>);
-
-impl Layout {
-    fn to_string(&self) -> String {
-        self.0
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
-            .join("-")
-    }
-}
-
 #[component]
 fn DropdownMenu(children: Element) -> Element {
     let mut hidden = use_context_provider(|| Hidden(Signal::new(true)));
     let hidden_class = if hidden.0() { "hidden" } else { "block" };
 
-    let current_layout = use_context_provider(|| CurrentLayout(Signal::new(Layout(vec![2, 2]))));
+    let panel_manager = use_context::<PanelManager>();
 
     rsx! {
         div {
@@ -186,7 +171,7 @@ fn DropdownMenu(children: Element) -> Element {
                 }
                 div {
                     class: "text-gray-400 text-sm",
-                    {current_layout.0().to_string()}
+                    {panel_manager.stringify_layout()}
                 }
             }
 
@@ -204,17 +189,17 @@ fn DropdownMenu(children: Element) -> Element {
 #[component]
 fn DropdownElement(layout: Vec<i32>) -> Element {
     let mut hidden = use_context::<Hidden>().0;
-    let mut current_layout = use_context::<CurrentLayout>();
+    let mut panel_manager = use_context::<PanelManager>();
 
     rsx! {
         li {
             a {
-                class: "py-1 px-1 block whitespace-no-wrap bg-zinc-950 text-center hover:bg-zinc-900",
+                class: "py-1 px-1 block whitespace-no-wrap bg-zinc-950 text-center hover:bg-zinc-900 text-gray-300",
                 onclick: move |_| {
                     hidden.set(true);
-                    current_layout.0.set(Layout(layout.clone()));
+                    panel_manager.set_layout(layout.clone());
                 },
-                {Layout(layout.clone()).to_string()}
+                {PanelManager::stringify_external_layout(layout.clone())}
             }
         }
     }

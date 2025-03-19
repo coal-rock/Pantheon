@@ -9,10 +9,11 @@ use dioxus_free_icons::Icon;
 use crate::components::panel_base::PanelBase;
 
 #[component]
-pub fn AgentsOverview() -> Element {
+pub fn AgentsOverview(id: i32) -> Element {
     rsx! {
         PanelBase {
             title: "Agent Overview",
+            panel_id: id,
             div {
                 class: "w-full h-full flex flex-row gap-2 pt-2",
                 div {

@@ -19,3 +19,6 @@ script = []
 # Javascript code file
 # serve: [dev-server] only
 script = []
+
+[web.watcher]
+watch_path = ["src", "assets"]

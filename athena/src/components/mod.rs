@@ -4,5 +4,6 @@ pub mod console;
 pub mod navbar;
 pub mod notepad;
 pub mod panel_base;
+pub mod placeholder_panel;
 pub mod sidebar;
 pub mod tartarus_overview;

@@ -3,13 +3,16 @@ use dioxus::prelude::*;
 use dioxus_free_icons::icons::fa_solid_icons::FaX;
 use dioxus_free_icons::Icon;
 
+use crate::views::page::PanelManager;
+
 #[component]
-pub fn PanelBase(children: Element, title: String) -> Element {
-    let mut display_class = use_signal(|| String::new());
+pub fn PanelBase(children: Element, title: String, panel_id: i32) -> Element {
+    let mut panel_manager = use_context::<PanelManager>();
 
     rsx! {
         div {
-            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-500 {display_class}",
+            id: panel_id.to_string(),
+            class: "bg-zinc-950 w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-500",
             div {
                 class: "text-gray-300 text-xl font-sans pl-1 flex flex-row justify-between items-center",
                 div {
@@ -19,7 +22,13 @@ pub fn PanelBase(children: Element, title: String) -> Element {
                 div {
                     button {
                         onclick: move |_event| {
-                            *display_class.write() = String::from("hidden");
+                            panel_manager.remove_panel(panel_id);
+
+                            panel_manager.layout.write();
+                            panel_manager.open_panels.write();
+
+
+                            let _ = use_resource(move || async move { document::eval(&format!("document.getElementById(\"{}\").outerHTML = \"\"", panel_id)).await });
                         },
                         Icon {
                             icon: FaX,
