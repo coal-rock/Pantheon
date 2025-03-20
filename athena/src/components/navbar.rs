@@ -89,7 +89,7 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
 
 
                 div {
-                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full justify-center items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
+                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
                     DropdownMenu {
                         DropdownElement {
                             layout: vec![1],

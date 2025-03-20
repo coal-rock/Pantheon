@@ -8,6 +8,7 @@ use crate::views::page::PanelManager;
 #[component]
 pub fn PanelBase(children: Element, title: String, panel_id: i32) -> Element {
     let mut panel_manager = use_context::<PanelManager>();
+    let mut close_hovered = use_signal(|| false);
 
     rsx! {
         div {
@@ -30,11 +31,17 @@ pub fn PanelBase(children: Element, title: String, panel_id: i32) -> Element {
 
                             let _ = use_resource(move || async move { document::eval(&format!("document.getElementById(\"{}\").outerHTML = \"\"", panel_id)).await });
                         },
+                        onmouseenter: move |_event| {
+                            close_hovered.set(true);
+                        },
+                        onmouseleave: move |_event| {
+                            close_hovered.set(false);
+                        },
                         Icon {
                             icon: FaX,
                             width: 16,
                             height: 14,
-                            fill: "red",
+                            fill: if close_hovered() {"#3584e4"} else {"white"}
                         }
                     }
                 }
