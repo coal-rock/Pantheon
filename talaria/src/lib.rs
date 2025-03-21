@@ -1,11 +1,9 @@
 pub mod protocol {
     use anyhow::Result;
-    use rkyv::{deserialize, rancor::Error, Archive, Deserialize, Serialize};
-    use serde;
+    use bincode;
+    use serde::{Deserialize, Serialize};
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum AgentResponseBody {
         CommandResponse {
             command: String,
@@ -59,9 +57,7 @@ pub mod protocol {
         }
     }
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
         Command {
             command: String,
@@ -101,9 +97,7 @@ pub mod protocol {
         }
     }
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct PacketHeader {
         pub agent_id: u64,
         pub timestamp: u64,
@@ -111,9 +105,7 @@ pub mod protocol {
         pub os: Option<String>,
     }
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
         pub packet_header: PacketHeader,
         pub packet_body: AgentInstructionBody,
@@ -121,18 +113,15 @@ pub mod protocol {
 
     impl AgentInstruction {
         pub fn serialize(response: &AgentInstruction) -> Result<Vec<u8>> {
-            Ok(rkyv::to_bytes::<Error>(response)?.to_vec())
+            Ok(bincode::serialize(response)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentInstruction> {
-            let archived = rkyv::access::<ArchivedAgentInstruction, Error>(&response[..])?;
-            Ok(deserialize::<AgentInstruction, Error>(archived)?)
+            Ok(bincode::deserialize(&response[..])?)
         }
     }
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct AgentResponse {
         pub packet_header: PacketHeader,
         pub packet_body: AgentResponseBody,
@@ -140,33 +129,27 @@ pub mod protocol {
 
     impl AgentResponse {
         pub fn serialize(response: &AgentResponse) -> Result<Vec<u8>> {
-            Ok(rkyv::to_bytes::<Error>(response)?.to_vec())
+            Ok(bincode::serialize(response)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentResponse> {
-            let archived = rkyv::access::<ArchivedAgentResponse, Error>(&response[..])?;
-            Ok(deserialize::<AgentResponse, Error>(archived)?)
+            Ok(bincode::deserialize::<AgentResponse>(&response[..])?)
         }
     }
 }
 
 pub mod api {
     use crate::protocol::*;
-    use rkyv::{Archive, Deserialize, Serialize};
-    use serde;
+    use serde::{Deserialize, Serialize};
     use std::net::SocketAddr;
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum NetworkHistoryEntry {
         AgentInstruction { instruction: AgentInstruction },
         AgentResponse { response: AgentResponse },
     }
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct Agent {
         pub nickname: Option<String>,
         pub id: u64,
@@ -228,30 +211,9 @@ pub mod api {
         pub fn pop_instruction(&mut self) -> Option<AgentInstructionBody> {
             self.queue.pop()
         }
-
-        // Trims all data-intensive vecs to an arbitrary depth
-        pub fn truncate(&self, depth: usize) -> Agent {
-            Agent {
-                nickname: self.nickname.clone(),
-                id: self.id.clone(),
-                os: self.os.clone(),
-                ip: self.ip.clone(),
-                last_packet_send: self.last_packet_send.clone(),
-                last_packet_recv: self.last_packet_recv.clone(),
-                network_history: self
-                    .network_history
-                    .clone()
-                    .into_iter()
-                    .take(depth)
-                    .collect(),
-                queue: self.queue.clone().into_iter().take(depth).collect(),
-            }
-        }
     }
 
-    #[derive(
-        Archive, Serialize, Deserialize, serde::Serialize, serde::Deserialize, Clone, Debug,
-    )]
+    #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
     pub struct AgentInfo {
         pub name: String,
         pub id: u64,
