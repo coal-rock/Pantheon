@@ -1,9 +1,9 @@
 pub mod protocol {
     use anyhow::Result;
-    use bincode;
+    use bincode::{Decode, Encode};
     use serde::{Deserialize, Serialize};
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentResponseBody {
         CommandResponse {
             command: String,
@@ -57,7 +57,7 @@ pub mod protocol {
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
         Command {
             command: String,
@@ -97,7 +97,7 @@ pub mod protocol {
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct PacketHeader {
         pub agent_id: u64,
         pub timestamp: u64,
@@ -105,7 +105,7 @@ pub mod protocol {
         pub os: Option<String>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
         pub packet_header: PacketHeader,
         pub packet_body: AgentInstructionBody,
@@ -113,15 +113,17 @@ pub mod protocol {
 
     impl AgentInstruction {
         pub fn serialize(response: &AgentInstruction) -> Result<Vec<u8>> {
-            Ok(bincode::serialize(response)?)
+            let config = bincode::config::standard();
+            Ok(bincode::encode_to_vec(response, config)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentInstruction> {
-            Ok(bincode::deserialize(&response[..])?)
+            let config = bincode::config::standard();
+            Ok(bincode::decode_from_slice(response, config)?.0)
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentResponse {
         pub packet_header: PacketHeader,
         pub packet_body: AgentResponseBody,
@@ -129,11 +131,13 @@ pub mod protocol {
 
     impl AgentResponse {
         pub fn serialize(response: &AgentResponse) -> Result<Vec<u8>> {
-            Ok(bincode::serialize(response)?)
+            let config = bincode::config::standard();
+            Ok(bincode::encode_to_vec(response, config)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentResponse> {
-            Ok(bincode::deserialize::<AgentResponse>(&response[..])?)
+            let config = bincode::config::standard();
+            Ok(bincode::decode_from_slice(response, config)?.0)
         }
     }
 }
