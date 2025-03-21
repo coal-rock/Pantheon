@@ -30,8 +30,8 @@ fn main() {
     #[cfg(feature = "server")]
     tokio::runtime::Runtime::new()
         .unwrap()
-        .block_on(tartarus::launch(ServeConfig::new().unwrap(), App));
+        .block_on(tartarus::launch(App));
 
-    #[cfg(not(feature = "server"))]
+    dioxus::LaunchBuilder::new().launch(App);
     dioxus::launch(App);
 }

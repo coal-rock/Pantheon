@@ -3,16 +3,19 @@ use rocket::serde::json::Json;
 use std::collections::HashMap;
 use talaria::api::*;
 
-// gets all information about agents
+/// Retrieves all agents
 #[get("/agents")]
 pub async fn get_agents(state: &rocket::State<SharedState>) -> Json<HashMap<u64, Agent>> {
     Json(state.read().await.agents.clone())
 }
 
-#[get("/<agent_id>/network_history")]
+/// Retrieves arbitrary amount of network history
+/// for specified agent
+#[get("/<agent_id>/network_history?<count>")]
 pub async fn get_agent_history(
     state: &rocket::State<SharedState>,
     agent_id: u64,
+    count: usize,
 ) -> Option<Json<Vec<NetworkHistoryEntry>>> {
     let agents = state.read().await.agents.clone();
 
@@ -24,7 +27,7 @@ pub async fn get_agent_history(
                 .clone()
                 .iter()
                 .rev()
-                .take(100)
+                .take(count)
                 .map(|x| x.clone())
                 .collect::<Vec<NetworkHistoryEntry>>(),
         )),
@@ -32,7 +35,7 @@ pub async fn get_agent_history(
     }
 }
 
-// gets basic info about agents (name, id, ip, status, ping)
+// Retrieves basic info about agent
 #[get("/list_agents")]
 pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
     let agents: HashMap<u64, Agent> = state.read().await.agents.clone();
@@ -51,7 +54,6 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
     Json(agent_info)
 }
 
-// Route registration
 pub fn routes() -> Vec<rocket::Route> {
     rocket::routes![get_agents, list_agents, get_agent_history]
 }

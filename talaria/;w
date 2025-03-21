@@ -137,27 +137,27 @@ pub mod protocol {
     impl AgentResponse {
         pub fn serialize(response: &AgentResponse) -> Result<Vec<u8>> {
             Ok(rkyv::to_bytes::<Error>(response)?.to_vec())
+            Ok(bincode::serialize(response)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentResponse> {
-            let archived = rkyv::access::<ArchivedAgentResponse, Error>(&response[..])?;
-            Ok(deserialize::<AgentResponse, Error>(archived)?)
+            Ok(bincode::deserialize::<AgentResponse>(&response[..])?)
         }
     }
 }
 
 pub mod api {
     use crate::protocol::*;
-    use rkyv::{Archive, Deserialize, Serialize};
+    use serde::{Deserialize, Serialize};
     use std::net::SocketAddr;
 
-    #[derive(Archive, Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum NetworkHistoryEntry {
         AgentInstruction { instruction: AgentInstruction },
         AgentResponse { response: AgentResponse },
     }
 
-    #[derive(Archive, Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct Agent {
         pub nickname: Option<String>,
         pub id: u64,
@@ -240,7 +240,7 @@ pub mod api {
         }
     }
 
-    #[derive(Archive, Serialize, Deserialize, Clone, PartialEq, Debug)]
+    #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
     pub struct AgentInfo {
         pub name: String,
         pub id: u64,

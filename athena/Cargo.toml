@@ -12,18 +12,22 @@ anyhow = "1.0.97"
 dioxus = { version = "0.6", features = ["router", "fullstack"] }
 serde = { version = "1.0.219", features = ["derive"] }
 talaria = { path = "../talaria" }
+rkyv = { version = "0.8.10"}
 
 # client
-# we should make this option, but i get compilation errors when i do, not sure what's going on.
+# we should make this optional, but i get compilation errors when i do, not sure what's going on.
 # oh well :(
 dioxus-free-icons = { version = "0.9", features = ["font-awesome-brands", "font-awesome-regular", "font-awesome-solid"] }
 
 # server
 axum = { version = "0.7", optional = true }
+server_fn = {version = "0.6.15", optional = true, features = ["rkyv"]} # load-bearing
 tokio = { version = "1.44.1", optional = true }
 dioxus-cli-config = { version = "0.6", optional = true }
 
 [features]
 default = []
 web = ["dioxus/web"]
-server = ["dioxus/server", "dep:axum", "dep:tokio", "dep:dioxus-cli-config"]
+server = ["dioxus/server", "dep:axum", "dep:tokio", "dep:dioxus-cli-config", "dep:server_fn"]
+
+
