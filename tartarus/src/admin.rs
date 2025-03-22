@@ -93,6 +93,30 @@ pub async fn tartarus_info(state: &rocket::State<SharedState>) -> Json<TartarusI
     })
 }
 
+#[get("/tartarus_stats")]
+pub async fn tartarus_stats(state: &rocket::State<SharedState>) -> Json<TartarusStats> {
+    let state = state.read().await;
+    let agents = state.agents.clone();
+    let statistics = state.statistics.clone();
+
+    Json(TartarusStats {
+        registered_agents: agents.len() as u64,
+        active_agents: agents.len() as u64, // TODO: fix
+        packets_sent: statistics.packets_sent,
+        packets_recv: statistics.packets_recv,
+        average_response_latency: statistics.get_average_latency(), // safe
+        total_traffic: statistics.get_total_traffic(),              //safe
+        windows_agents: 0,                                          // TODO: fix
+        linux_agents: agents.len() as u64,
+    })
+}
+
 pub fn routes() -> Vec<rocket::Route> {
-    rocket::routes![get_agents, list_agents, get_agent_history, tartarus_info]
+    rocket::routes![
+        get_agents,
+        list_agents,
+        get_agent_history,
+        tartarus_info,
+        tartarus_stats,
+    ]
 }

@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use bytesize::ByteSize;
 use dioxus::prelude::*;
 
 use dioxus_free_icons::icons::fa_brands_icons::{FaLinux, FaWindows};
@@ -7,10 +10,42 @@ use dioxus_free_icons::icons::fa_solid_icons::{
 use dioxus_free_icons::Icon;
 
 use crate::components::panel_base::PanelBase;
+use crate::services::api::Api;
 
 #[component]
 pub fn AgentsOverview(id: i32) -> Element {
+    let mut registered_agents = use_signal(|| None);
+    let mut active_agents = use_signal(|| None);
+    let mut packets_sent = use_signal(|| None);
+    let mut packets_recv = use_signal(|| None);
+    let mut avg_response_latency = use_signal(|| None);
+    let mut total_traffic = use_signal(|| None);
+    let mut windows_agents = use_signal(|| None);
+    let mut linux_agents = use_signal(|| None);
+
+    let fetch_stats = move |_| async move {
+        let api = use_context::<Api>();
+
+        loop {
+            let stats = api.get_tartarus_stats().await.unwrap();
+
+            registered_agents.set(Some(stats.registered_agents));
+            active_agents.set(Some(stats.active_agents));
+            packets_sent.set(Some(stats.packets_sent));
+            packets_recv.set(Some(stats.packets_recv));
+            avg_response_latency.set(Some(stats.average_response_latency));
+            total_traffic.set(Some(stats.total_traffic));
+            windows_agents.set(Some(stats.windows_agents));
+            linux_agents.set(Some(stats.linux_agents));
+
+            async_std::task::sleep(Duration::from_secs(1)).await;
+        }
+    };
     rsx! {
+        div {
+            onvisible: fetch_stats,
+            class: "hidden",
+        }
         PanelBase {
             title: "Agent Overview",
             panel_id: id,
@@ -20,28 +55,28 @@ pub fn AgentsOverview(id: i32) -> Element {
                     class: "flex flex-col grow shrink basis-0 gap-2",
                     Statistic {
                         text: "Registered Agents:",
-                        value: "12",
+                        value: format!("{}", registered_agents().unwrap_or(0)),
                         icon: rsx!{Icon {
                             icon: FaRobot
                         }}
                     }
                     Statistic {
                         text: "Active Agents:",
-                        value: "10",
+                        value: format!("{}", active_agents().unwrap_or(0)),
                         icon: rsx!{Icon {
                             icon: FaRobot
                         }}
                     }
                     Statistic {
                         text: "Packets Sent:",
-                        value: "91822",
+                        value: format!("{}", packets_sent().unwrap_or(0)),
                         icon: rsx!{Icon {
                             icon: FaArrowRight
                         }}
                     }
                     Statistic {
                         text: "Packets Received:",
-                        value: "91942",
+                        value: format!("{}", packets_recv().unwrap_or(0)),
                         icon: rsx!{Icon {
                             icon: FaArrowLeft,
                         }}
@@ -51,28 +86,28 @@ pub fn AgentsOverview(id: i32) -> Element {
                     class: "flex flex-col grow shrink basis-0 gap-2",
                     Statistic {
                         text: "Average Response Latency:",
-                        value: "25ms",
+                        value: format!("{:.0}ms", avg_response_latency().unwrap_or(0.0)),
                         icon: rsx!{Icon {
                             icon: FaClock,
                         }}
                     }
                     Statistic {
                         text: "Total Traffic:",
-                        value: "413.1 KB",
+                        value: ByteSize::b(total_traffic().unwrap_or(0)).display().si().to_string(),
                         icon: rsx!{Icon {
-                            icon: FaRobot
+                            icon: FaServer,
                         }}
                     }
                     Statistic {
                         text: "Windows Agents:",
-                        value: "0",
+                        value: format!("{}", windows_agents().unwrap_or(0)),
                         icon: rsx!{Icon {
                             icon: FaWindows,
                         }}
                     }
                     Statistic {
                         text: "Linux Agents:",
-                        value: "12",
+                        value: format!("{}", linux_agents().unwrap_or(0)),
                         icon: rsx!{Icon {
                             icon: FaLinux,
                         }}

@@ -10,6 +10,7 @@ mod console_interface;
 mod console_lib;
 mod console_net;
 mod state;
+mod statistics;
 
 use crate::console_interface::start_console;
 use config::Config;

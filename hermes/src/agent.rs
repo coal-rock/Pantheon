@@ -63,11 +63,11 @@ impl AgentContext {
     }
 
     /// Helper function, should be used if time is needed
-    pub fn get_timestamp() -> u64 {
+    pub fn get_timestamp() -> u128 {
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
-            .as_secs()
+            .as_millis()
     }
 
     pub fn url(&self) -> String {

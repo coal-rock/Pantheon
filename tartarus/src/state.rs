@@ -6,6 +6,7 @@ use talaria::console::*;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
+use crate::statistics::Statistics;
 
 // Shared state for active listeners
 #[derive(Default, Clone)]
@@ -13,6 +14,7 @@ pub struct State {
     pub config: Config,
     pub agents: HashMap<u64, Agent>,
     pub groups: HashMap<String, Vec<u64>>,
+    pub statistics: Statistics,
 }
 
 impl State {
@@ -51,6 +53,7 @@ impl State {
             config,
             agents: HashMap::new(),
             groups: HashMap::new(),
+            statistics: Statistics::default(),
         }
     }
 

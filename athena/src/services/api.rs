@@ -44,4 +44,8 @@ impl Api {
     pub async fn get_tartarus_info(&self) -> Result<TartarusInfo> {
         Ok(self.get("/tartarus_info", vec![]).await?)
     }
+
+    pub async fn get_tartarus_stats(&self) -> Result<TartarusStats> {
+        Ok(self.get("/tartarus_stats", vec![]).await?)
+    }
 }

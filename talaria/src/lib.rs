@@ -100,7 +100,7 @@ pub mod protocol {
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct PacketHeader {
         pub agent_id: u64,
-        pub timestamp: u64,
+        pub timestamp: u128,
         pub packet_id: u32,
         pub os: Option<String>,
     }
@@ -159,8 +159,8 @@ pub mod api {
         pub id: u64,
         pub os: Option<String>,
         pub ip: SocketAddr,
-        pub last_packet_send: u64,
-        pub last_packet_recv: u64,
+        pub last_packet_send: u128,
+        pub last_packet_recv: u128,
         pub network_history: Vec<NetworkHistoryEntry>,
         pub queue: Vec<AgentInstructionBody>,
     }
@@ -223,7 +223,7 @@ pub mod api {
         pub id: u64,
         pub ip: String,
         pub status: bool,
-        pub ping: u64,
+        pub ping: u128,
     }
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -239,6 +239,18 @@ pub mod api {
         pub kernel: String,
         pub hostname: String,
         pub uptime: u64,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct TartarusStats {
+        pub registered_agents: u64,
+        pub active_agents: u64,
+        pub packets_sent: u64,
+        pub packets_recv: u64,
+        pub average_response_latency: f32,
+        pub total_traffic: u64,
+        pub windows_agents: u64,
+        pub linux_agents: u64,
     }
 }
 

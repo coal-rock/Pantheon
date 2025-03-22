@@ -130,15 +130,26 @@ pub async fn monolith(
     register_or_update(state, &response, &instruction, remote_addr).await;
 
     // respond to agent with instruction
-    AgentInstruction::serialize(&instruction).unwrap()
+    let instruction = AgentInstruction::serialize(&instruction).unwrap();
+
+    let state = &mut state.write().await;
+    state.statistics.log_recv(input.len());
+
+    state
+        .statistics
+        .log_latency(current_time() - response.packet_header.timestamp);
+
+    state.statistics.log_send(instruction.len());
+
+    instruction
 }
 
 // Helper to get current time in seconds since UNIX epoch
-fn current_time() -> u64 {
+fn current_time() -> u128 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
-        .as_secs()
+        .as_millis()
 }
 
 pub fn routes() -> Vec<rocket::Route> {
