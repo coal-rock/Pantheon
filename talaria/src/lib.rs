@@ -295,20 +295,20 @@ pub mod console {
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum AgentIdentifier {
         Nickname { nickname: String },
         ID { id: u64 },
     }
 
     // refers to group of agents or single agent
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum TargetIdentifier {
         Group { group: String },
         Agent { agent: AgentIdentifier },
     }
 
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum Command {
         Connect {
             agent: TargetIdentifier,

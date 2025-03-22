@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use talaria::console::{CommandContext, NewTarget};
+use talaria::console::{Command, CommandContext, NewTarget};
 
 use crate::{components::panel_base::PanelBase, services::api::Api};
 
@@ -10,66 +10,79 @@ pub fn Console(id: i32) -> Element {
     // FIXME: conosole implementation is awful, figure out how to use callbacks properly
     let mut console = use_signal(|| talaria::console::Console::new(None));
 
-    let mut console_history: Signal<Vec<String>> = use_signal(|| vec![]);
+    // a value of true in this tuple means the command failed
+    let mut console_history: Signal<Vec<(bool, String)>> = use_signal(|| vec![]);
     let mut input = use_signal(|| String::new());
 
-    let handle_command = move |evt: FormEvent| {
-        async move {
-            let api = use_context::<Api>();
-            let console_history = &mut console_history.write();
-            let console = &mut console.write();
+    let handle_command = move |event: FormEvent| async move {
+        let api = use_context::<Api>();
+        let console_history = &mut console_history.write();
+        let console = &mut console.write();
 
-            {
-                console_history.push(console.status_line() + &input.read().clone());
+        async fn scrollToBottom() {
+            let _ = document::eval(
+                r#"
+            setTimeout(() => {
+                const element = document.getElementById("console-line");
+                if (element) {
+                    element.scrollIntoView({ behavior: "smooth", block: "start" });
 
-                let current_target = console.get_target();
-                let input = &mut input.write();
-
-                let command = match console.handle_command(input.to_string()) {
-                    Ok(command) => command,
-                    Err(err) => {
-                        console_history.push(err.to_string());
-                        input.clear();
-                        return;
-                    }
-                };
-
-                let response = match api
-                    .console(CommandContext {
-                        command,
-                        current_target: None,
-                    })
-                    .await
-                {
-                    Ok(response) => response,
-                    Err(err) => {
-                        console_history.push(err.to_string());
-                        // input.clear();
-                        return;
-                    }
-                };
-
-                console.set_target(match response.new_target {
-                    NewTarget::NoTarget => None,
-                    NewTarget::Target { target } => Some(target),
-                    NewTarget::NoChange => current_target,
-                });
-
-                console_history.push(response.output.to_string());
-            }
+                    console.log("no way");
+                }
+            }, 10);
+            "#,
+            )
+            .await;
         }
-    };
 
-    let test = move |evt: FormEvent| {
-        evt.prevent_default();
-        evt.stop_propagation();
+        console_history.push((false, console.status_line() + &input.read().clone()));
+
+        let current_target = console.get_target();
+        let input = &mut input.write();
+
+        let command = match console.handle_command(input.to_string()) {
+            Ok(command) => command,
+            Err(err) => {
+                console_history.push((true, err.to_string()));
+                input.clear();
+                scrollToBottom().await;
+                return;
+            }
+        };
+
+        input.clear();
+
+        let response = match api
+            .console(CommandContext {
+                command: command.clone(),
+                current_target: console.get_target(),
+            })
+            .await
+        {
+            Ok(response) => response,
+            Err(err) => {
+                console_history.push((true, err.to_string()));
+                scrollToBottom().await;
+                return;
+            }
+        };
+
+        console.set_target(match response.new_target {
+            NewTarget::NoTarget => None,
+            NewTarget::Target { target } => Some(target),
+            NewTarget::NoChange => current_target,
+        });
+
+        console_history.push((!response.success, response.output.to_string()));
+
+        if command == Command::Clear {
+            console_history.clear();
+        }
+
+        scrollToBottom().await;
     };
 
     rsx! {
-        // div {
-        //     class: "h-200 w-200",
-        //     onclick: handle_command,
-        // }
         PanelBase {
             title: "Console",
             panel_id: id,
@@ -80,8 +93,11 @@ pub fn Console(id: i32) -> Element {
                     div {
                         class: "flex flex-col focus-none w-full h-full",
                         div {
-                            for entry in console_history.iter() {
-                                p { "{entry} "}
+                            for (error, entry) in console_history.read().clone() {
+                                p {
+                                    class: if error {"text-red-500"} else {""},
+                                    "{entry} "
+                                }
                             }
                         }
                         div {
