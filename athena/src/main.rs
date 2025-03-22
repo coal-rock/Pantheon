@@ -1,11 +1,10 @@
 use dioxus::prelude::*;
 
-#[cfg(feature = "server")]
-pub mod tartarus;
-
 pub mod components;
+pub mod services;
 pub mod views;
 
+use services::api::Api;
 use views::home::Home;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -16,6 +15,8 @@ enum Route {
 
 #[component]
 fn App() -> Element {
+    let api = use_context_provider(|| Api::new("http://localhost:8080/"));
+
     rsx! {
         document::Link { rel: "icon", href: asset!("/assets/favicon.ico") }
         document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
@@ -27,11 +28,5 @@ fn App() -> Element {
 }
 
 fn main() {
-    #[cfg(feature = "server")]
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(tartarus::launch(App));
-
-    dioxus::LaunchBuilder::new().launch(App);
     dioxus::launch(App);
 }

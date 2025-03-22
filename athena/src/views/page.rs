@@ -122,7 +122,7 @@ pub fn Page() -> Element {
             vec![
                 PanelType::AgentsOverview,
                 PanelType::AgentsTable,
-                PanelType::AgentsOverview,
+                PanelType::TartarusOverview,
                 PanelType::AgentsTable,
             ],
         )

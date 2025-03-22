@@ -1,6 +1,7 @@
 use crate::SharedState;
 use rocket::serde::json::Json;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
+use sysinfo::{Disks, System};
 use talaria::api::*;
 
 /// Retrieves all agents
@@ -54,6 +55,44 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
     Json(agent_info)
 }
 
+#[get("/tartarus_info")]
+pub async fn tartarus_info(state: &rocket::State<SharedState>) -> Json<TartarusInfo> {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let cpu_name = if let Some(cpu) = sys.cpus().first() {
+        Some(cpu.brand())
+    } else {
+        None
+    };
+
+    let mut storage_total = None;
+    let mut storage_used = None;
+
+    let disks = Disks::new_with_refreshed_list();
+
+    for disk in &disks {
+        if disk.mount_point() == Path::new("/") {
+            storage_total = Some(disk.total_space());
+            storage_used = Some(disk.total_space() - disk.available_space())
+        }
+    }
+
+    Json(TartarusInfo {
+        cpu_usage: sys.global_cpu_usage(),
+        memory_total: sys.total_memory(),
+        memory_used: sys.used_memory(),
+        storage_total: storage_total.unwrap(),
+        storage_used: storage_used.unwrap(),
+        cpu_name: cpu_name.unwrap().to_string(),
+        core_count: sys.cpus().len() as u64,
+        os: System::long_os_version().unwrap(),
+        kernel: System::kernel_version().unwrap(),
+        hostname: System::host_name().unwrap(),
+        uptime: System::uptime(),
+    })
+}
+
 pub fn routes() -> Vec<rocket::Route> {
-    rocket::routes![get_agents, list_agents, get_agent_history]
+    rocket::routes![get_agents, list_agents, get_agent_history, tartarus_info]
 }

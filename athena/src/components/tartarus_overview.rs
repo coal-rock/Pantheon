@@ -1,3 +1,4 @@
+use bytesize::ByteSize;
 use dioxus::prelude::*;
 
 use dioxus_free_icons::icons::fa_brands_icons::{FaLinux, FaWindows};
@@ -7,10 +8,42 @@ use dioxus_free_icons::icons::fa_solid_icons::{
 use dioxus_free_icons::Icon;
 
 use crate::components::panel_base::PanelBase;
+use crate::services::api::Api;
 
 #[component]
 pub fn TartarusOverview(id: i32) -> Element {
+    let mut cpu_usage = use_signal(|| None);
+    let mut core_count = use_signal(|| None);
+    let mut memory_used = use_signal(|| None);
+    let mut memory_total = use_signal(|| None);
+    let mut storage_used = use_signal(|| None);
+    let mut storage_total = use_signal(|| None);
+    let mut os = use_signal(|| None);
+    let mut kernel = use_signal(|| None);
+    let mut cpu_name = use_signal(|| None);
+    let mut hostname = use_signal(|| None);
+
+    let fetch_info = move |_| async move {
+        let api = use_context::<Api>();
+        let info = api.get_tartarus_info().await.unwrap();
+
+        cpu_usage.set(Some(info.cpu_usage));
+        core_count.set(Some(info.core_count));
+        memory_used.set(Some(info.memory_used));
+        memory_total.set(Some(info.memory_total));
+        storage_used.set(Some(info.storage_used));
+        storage_total.set(Some(info.storage_total));
+        os.set(Some(info.os));
+        kernel.set(Some(info.kernel));
+        cpu_name.set(Some(info.cpu_name));
+        hostname.set(Some(info.hostname));
+    };
+
     rsx! {
+        button {
+            onclick: fetch_info,
+            "balls"
+        }
         PanelBase {
             title: "Tartarus Overview",
             panel_id: id,
@@ -22,20 +55,26 @@ pub fn TartarusOverview(id: i32) -> Element {
                 }
                 UsageSlider {
                     text: "CPU Usage",
-                    center_text: "of 32 cores",
-                    value: 34.0,
+                    center_text: format!("of {} cores", core_count().unwrap_or(0)),
+                    value: cpu_usage(),
                 }
 
                 UsageSlider {
                     text: "Memory Usage",
-                    center_text: "136.14 GiB of 1.69 TiB",
-                    value: 8.0,
+                    center_text: format!("{} of {}",
+                        ByteSize::b(memory_used().unwrap_or(0)).display().si().to_string(),
+                        ByteSize::b(memory_total().unwrap_or(0)).display().si().to_string(),
+                        ),
+                    value: (memory_used().unwrap_or(0) as f32 / memory_total().unwrap_or(0) as f32) * 100.0,
                 }
 
                 UsageSlider {
                     text: "Storage Usage",
-                    center_text: "637.86 GiB of 13.79 TiB",
-                    value: 5.0,
+                    center_text: format!("{} of {}",
+                        ByteSize::b(storage_used().unwrap_or(0)).display().si().to_string(),
+                        ByteSize::b(storage_total().unwrap_or(0)).display().si().to_string(),
+                        ),
+                    value: (storage_used().unwrap_or(0) as f32 / storage_total().unwrap_or(0) as f32) * 100.0,
                 }
                 hr {
                     class: "p-0 m-0",
@@ -47,15 +86,20 @@ pub fn TartarusOverview(id: i32) -> Element {
                 div {
                     Info {
                         name: "CPU(s):",
-                        value: "32 x Intel(R) Xeon(R) CPU E5-2690",
+                        value: cpu_name(),
+                    }
+
+                    Info {
+                        name: "OS:",
+                        value: os(),
                     }
                     Info {
                         name: "Kernel:",
-                        value: "Linux 6.8.12-1-pve",
+                        value: kernel(),
                     }
                     Info {
                         name: "Hostname:",
-                        value: "cdo",
+                        value: hostname(),
                     }
                 }
             }
@@ -64,8 +108,17 @@ pub fn TartarusOverview(id: i32) -> Element {
 }
 
 #[component]
-fn UsageSlider(text: String, value: f64, center_text: String) -> Element {
-    let value = format!("{value}%");
+fn UsageSlider(text: String, value: Option<f32>, center_text: String) -> Element {
+    let (value, value_str) = match value {
+        Some(value) => {
+            if value.is_nan() {
+                (0.0, format!("..."))
+            } else {
+                (value, format!("{value:.0}%"))
+            }
+        }
+        None => (0.0, format!("...")),
+    };
 
     // flowbite
     rsx! {
@@ -83,14 +136,14 @@ fn UsageSlider(text: String, value: f64, center_text: String) -> Element {
                 }
                 span {
                     class: "text-sm font-medium text-gray-300 flex flex-1 justify-end",
-                    "{value}"
+                    "{value_str}"
                 }
             }
             div {
                 class: "bg-zinc-900 rounded-full",
                 div {
                     class: "bg-blue-600 h-2.5 rounded-full",
-                    width: value,
+                    width: format!("{value}%"),
                 }
             }
         }
@@ -98,7 +151,7 @@ fn UsageSlider(text: String, value: f64, center_text: String) -> Element {
 }
 
 #[component]
-fn Info(name: String, value: String) -> Element {
+fn Info(name: String, value: Option<String>) -> Element {
     rsx! {
         div {
             class: "flex flex-row justify-between",
@@ -108,7 +161,7 @@ fn Info(name: String, value: String) -> Element {
             }
             span {
                 class: "text-gray-300",
-                "{value}"
+                { value.unwrap_or(String::from("...")) }
             }
         }
     }

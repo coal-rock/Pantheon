@@ -6,7 +6,7 @@ use talaria::protocol::*;
 
 use crate::SharedState;
 
-// Register or update agent in the state
+// Register or update egent in the state
 async fn register_or_update(
     state: &rocket::State<SharedState>,
     response: &AgentResponse,

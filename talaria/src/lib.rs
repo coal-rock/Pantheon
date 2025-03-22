@@ -225,6 +225,21 @@ pub mod api {
         pub status: bool,
         pub ping: u64,
     }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct TartarusInfo {
+        pub cpu_usage: f32,
+        pub memory_total: u64,
+        pub memory_used: u64,
+        pub storage_total: u64,
+        pub storage_used: u64,
+        pub cpu_name: String,
+        pub core_count: u64,
+        pub os: String,
+        pub kernel: String,
+        pub hostname: String,
+        pub uptime: u64,
+    }
 }
 
 pub mod console {
