@@ -1,14 +1,10 @@
-use bytesize::ByteSize;
 use dioxus::prelude::*;
-
-use dioxus_free_icons::icons::fa_brands_icons::{FaLinux, FaWindows};
-use dioxus_free_icons::icons::fa_solid_icons::{
-    FaArrowLeft, FaArrowRight, FaClock, FaRobot, FaServer,
-};
-use dioxus_free_icons::Icon;
 
 use crate::components::panel_base::PanelBase;
 use crate::services::api::Api;
+
+use bytesize::ByteSize;
+use std::time::Duration;
 
 #[component]
 pub fn TartarusOverview(id: i32) -> Element {
@@ -25,24 +21,29 @@ pub fn TartarusOverview(id: i32) -> Element {
 
     let fetch_info = move |_| async move {
         let api = use_context::<Api>();
-        let info = api.get_tartarus_info().await.unwrap();
 
-        cpu_usage.set(Some(info.cpu_usage));
-        core_count.set(Some(info.core_count));
-        memory_used.set(Some(info.memory_used));
-        memory_total.set(Some(info.memory_total));
-        storage_used.set(Some(info.storage_used));
-        storage_total.set(Some(info.storage_total));
-        os.set(Some(info.os));
-        kernel.set(Some(info.kernel));
-        cpu_name.set(Some(info.cpu_name));
-        hostname.set(Some(info.hostname));
+        loop {
+            let info = api.get_tartarus_info().await.unwrap();
+            cpu_usage.set(Some(info.cpu_usage));
+            core_count.set(Some(info.core_count));
+            memory_used.set(Some(info.memory_used));
+            memory_total.set(Some(info.memory_total));
+            storage_used.set(Some(info.storage_used));
+            storage_total.set(Some(info.storage_total));
+            os.set(Some(info.os));
+            kernel.set(Some(info.kernel));
+            cpu_name.set(Some(info.cpu_name));
+            hostname.set(Some(info.hostname));
+
+            async_std::task::sleep(Duration::from_secs(1)).await;
+        }
     };
 
     rsx! {
-        button {
-            onclick: fetch_info,
-            "balls"
+        // not sure how else to do this, maybe a hack
+        div {
+            onvisible: fetch_info,
+            class: "hidden",
         }
         PanelBase {
             title: "Tartarus Overview",

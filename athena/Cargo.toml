@@ -14,7 +14,11 @@ talaria = { path = "../talaria" }
 dioxus-free-icons = { version = "0.9", features = ["font-awesome-brands", "font-awesome-regular", "font-awesome-solid"] }
 reqwest = { version = "0.12.15", features = ["json"] }
 bytesize = "2.0.1"
+async-std = "1.13.1"
 
 [features]
 default = []
 web = ["dioxus/web"]
+
+[lints.rust]
+rust_2024_compatibility = "allow"

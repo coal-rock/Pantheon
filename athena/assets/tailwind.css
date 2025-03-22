@@ -92,6 +92,9 @@
 .h-16 {
   height: calc(var(--spacing) * 16);
 }
+.h-100 {
+  height: calc(var(--spacing) * 100);
+}
 .h-full {
   height: 100%;
 }
