@@ -44,8 +44,14 @@
 .ms-2 {
   margin-inline-start: calc(var(--spacing) * 2);
 }
+.me-2 {
+  margin-inline-end: calc(var(--spacing) * 2);
+}
 .-mt-2 {
   margin-top: calc(var(--spacing) * -2);
+}
+.mt-0 {
+  margin-top: calc(var(--spacing) * 0);
 }
 .mt-2 {
   margin-top: calc(var(--spacing) * 2);
@@ -86,14 +92,14 @@
 .h-8 {
   height: calc(var(--spacing) * 8);
 }
+.h-12 {
+  height: calc(var(--spacing) * 12);
+}
 .h-14 {
   height: calc(var(--spacing) * 14);
 }
 .h-16 {
   height: calc(var(--spacing) * 16);
-}
-.h-100 {
-  height: calc(var(--spacing) * 100);
 }
 .h-full {
   height: 100%;
@@ -103,6 +109,9 @@
 }
 .w-0 {
   width: calc(var(--spacing) * 0);
+}
+.w-2\.5 {
+  width: calc(var(--spacing) * 2.5);
 }
 .w-4 {
   width: calc(var(--spacing) * 4);
@@ -128,11 +137,29 @@
 .shrink {
   flex-shrink: 1;
 }
+.shrink-0 {
+  flex-shrink: 0;
+}
 .grow {
   flex-grow: 1;
 }
 .grow-0 {
   flex-grow: 0;
+}
+.grow-1 {
+  flex-grow: 1;
+}
+.grow-2 {
+  flex-grow: 2;
+}
+.grow-4 {
+  flex-grow: 4;
+}
+.grow-5 {
+  flex-grow: 5;
+}
+.grow-6 {
+  flex-grow: 6;
 }
 .basis-0 {
   flex-basis: calc(var(--spacing) * 0);
@@ -245,6 +272,12 @@
 }
 .bg-gray-700 {
   background-color: var(--color-gray-700);
+}
+.bg-green-500 {
+  background-color: var(--color-green-500);
+}
+.bg-red-500 {
+  background-color: var(--color-red-500);
 }
 .bg-transparent {
   background-color: transparent;
@@ -435,6 +468,8 @@
     'Noto Color Emoji';
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
+    --color-red-500: oklch(0.637 0.237 25.331);
+    --color-green-500: oklch(0.723 0.219 149.579);
     --color-blue-500: oklch(0.623 0.214 259.815);
     --color-blue-600: oklch(0.546 0.245 262.881);
     --color-gray-300: oklch(0.872 0.01 258.338);

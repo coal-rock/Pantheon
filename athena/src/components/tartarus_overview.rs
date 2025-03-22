@@ -23,17 +23,21 @@ pub fn TartarusOverview(id: i32) -> Element {
         let api = use_context::<Api>();
 
         loop {
-            let info = api.get_tartarus_info().await.unwrap();
-            cpu_usage.set(Some(info.cpu_usage));
-            core_count.set(Some(info.core_count));
-            memory_used.set(Some(info.memory_used));
-            memory_total.set(Some(info.memory_total));
-            storage_used.set(Some(info.storage_used));
-            storage_total.set(Some(info.storage_total));
-            os.set(Some(info.os));
-            kernel.set(Some(info.kernel));
-            cpu_name.set(Some(info.cpu_name));
-            hostname.set(Some(info.hostname));
+            match api.get_tartarus_info().await {
+                Ok(info) => {
+                    cpu_usage.set(Some(info.cpu_usage));
+                    core_count.set(Some(info.core_count));
+                    memory_used.set(Some(info.memory_used));
+                    memory_total.set(Some(info.memory_total));
+                    storage_used.set(Some(info.storage_used));
+                    storage_total.set(Some(info.storage_total));
+                    os.set(Some(info.os));
+                    kernel.set(Some(info.kernel));
+                    cpu_name.set(Some(info.cpu_name));
+                    hostname.set(Some(info.hostname));
+                }
+                Err(_) => {}
+            }
 
             async_std::task::sleep(Duration::from_secs(1)).await;
         }

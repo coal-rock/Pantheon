@@ -27,16 +27,19 @@ pub fn AgentsOverview(id: i32) -> Element {
         let api = use_context::<Api>();
 
         loop {
-            let stats = api.get_tartarus_stats().await.unwrap();
-
-            registered_agents.set(Some(stats.registered_agents));
-            active_agents.set(Some(stats.active_agents));
-            packets_sent.set(Some(stats.packets_sent));
-            packets_recv.set(Some(stats.packets_recv));
-            avg_response_latency.set(Some(stats.average_response_latency));
-            total_traffic.set(Some(stats.total_traffic));
-            windows_agents.set(Some(stats.windows_agents));
-            linux_agents.set(Some(stats.linux_agents));
+            match api.get_tartarus_stats().await {
+                Ok(stats) => {
+                    registered_agents.set(Some(stats.registered_agents));
+                    active_agents.set(Some(stats.active_agents));
+                    packets_sent.set(Some(stats.packets_sent));
+                    packets_recv.set(Some(stats.packets_recv));
+                    avg_response_latency.set(Some(stats.average_response_latency));
+                    total_traffic.set(Some(stats.total_traffic));
+                    windows_agents.set(Some(stats.windows_agents));
+                    linux_agents.set(Some(stats.linux_agents));
+                }
+                Err(_) => {}
+            }
 
             async_std::task::sleep(Duration::from_secs(1)).await;
         }

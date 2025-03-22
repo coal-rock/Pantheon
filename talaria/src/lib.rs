@@ -3,6 +3,39 @@ pub mod protocol {
     use bincode::{Decode, Encode};
     use serde::{Deserialize, Serialize};
 
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
+    pub struct OS {
+        pub os_type: OSType,
+        pub os_string: Option<String>,
+    }
+
+    impl OS {
+        pub fn from(os_type: &str, os_string: Option<String>) -> OS {
+            OS {
+                os_type: match os_type.to_lowercase().as_str() {
+                    "linux" => OSType::Linux,
+                    "windows" => OSType::Windows,
+                    _ => OSType::Other,
+                },
+                os_string,
+            }
+        }
+
+        pub fn overlord() -> OS {
+            OS {
+                os_type: OSType::Other,
+                os_string: None,
+            }
+        }
+    }
+
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
+    pub enum OSType {
+        Windows,
+        Linux,
+        Other,
+    }
+
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentResponseBody {
         CommandResponse {
@@ -102,7 +135,7 @@ pub mod protocol {
         pub agent_id: u64,
         pub timestamp: u128,
         pub packet_id: u32,
-        pub os: Option<String>,
+        pub os: OS,
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
@@ -157,7 +190,7 @@ pub mod api {
     pub struct Agent {
         pub nickname: Option<String>,
         pub id: u64,
-        pub os: Option<String>,
+        pub os: OS,
         pub ip: SocketAddr,
         pub last_packet_send: u128,
         pub last_packet_recv: u128,
@@ -219,7 +252,8 @@ pub mod api {
 
     #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
     pub struct AgentInfo {
-        pub name: String,
+        pub name: Option<String>,
+        pub os: OS,
         pub id: u64,
         pub ip: String,
         pub status: bool,

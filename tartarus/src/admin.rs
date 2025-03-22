@@ -44,11 +44,12 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
 
     for (_, agent) in agents {
         agent_info.push(AgentInfo {
-            name: agent.nickname.unwrap_or("No Name".to_string()),
+            name: agent.nickname,
             id: agent.id,
             ip: agent.ip.to_string(),
+            os: agent.os,
             status: true,
-            ping: agent.last_packet_send - agent.last_packet_recv, // FIXME: unsafe,
+            ping: agent.last_packet_recv - agent.last_packet_send, // FIXME: unsafe
         });
     }
 

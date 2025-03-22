@@ -40,11 +40,16 @@ impl AgentContext {
     }
 
     pub fn generate_packet_header(&mut self) -> PacketHeader {
+        let os = OS::from(
+            &sys_info::os_type().unwrap_or(String::new()),
+            sys_info::os_release().ok(),
+        );
+
         PacketHeader {
             agent_id: self.agent_id,
             timestamp: AgentContext::get_timestamp(),
             packet_id: self.gen_id(),
-            os: Some(sys_info::os_type().unwrap()),
+            os,
         }
     }
 

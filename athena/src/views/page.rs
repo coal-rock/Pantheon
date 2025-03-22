@@ -123,7 +123,7 @@ pub fn Page() -> Element {
                 PanelType::AgentsOverview,
                 PanelType::AgentsTable,
                 PanelType::TartarusOverview,
-                PanelType::AgentsTable,
+                PanelType::Console,
             ],
         )
     });

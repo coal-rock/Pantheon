@@ -1,9 +1,15 @@
+use std::time::Duration;
+
 use dioxus::prelude::*;
 
-use dioxus_free_icons::icons::fa_solid_icons::FaMagnifyingGlass;
+use dioxus_free_icons::icons::fa_brands_icons::{FaLinux, FaWindows};
+use dioxus_free_icons::icons::fa_solid_icons::{FaMagnifyingGlass, FaQuestion};
 use dioxus_free_icons::Icon;
+use talaria::api::*;
+use talaria::protocol::OSType;
 
 use crate::components::panel_base::PanelBase;
+use crate::services::api::Api;
 
 #[component]
 pub fn AgentsTable(id: i32) -> Element {
@@ -11,7 +17,25 @@ pub fn AgentsTable(id: i32) -> Element {
     let show_linux = use_signal(|| true);
     let show_inactive = use_signal(|| true);
 
+    let mut agents: Signal<Vec<AgentInfo>> = use_signal(|| vec![]);
+
+    let fetch_agents = move |_| async move {
+        let api = use_context::<Api>();
+
+        loop {
+            match api.list_agents().await {
+                Ok(response) => agents.set(response),
+                Err(_) => {}
+            }
+
+            async_std::task::sleep(Duration::from_secs(1)).await;
+        }
+    };
     rsx! {
+        div {
+            onvisible: fetch_agents,
+            class: "hidden",
+        }
         PanelBase {
             title: "Agents Table",
             panel_id: id,
@@ -48,6 +72,9 @@ pub fn AgentsTable(id: i32) -> Element {
                     checked: show_inactive,
                 }
             }
+            AgentList{
+                agents: agents()
+            }
         }
     }
 }
@@ -73,6 +100,99 @@ fn Checkbox(text: String, id: String, checked: Signal<bool>) -> Element {
                 class: "ms-2 text-sm font-medium text-gray-300",
                 r#for: id,
                 "{text}"
+            }
+        }
+    }
+}
+
+#[component]
+fn AgentList(agents: Vec<AgentInfo>) -> Element {
+    rsx! {
+        div {
+            class: "flex flex-row h-12 bg-zinc-900 w-full shrink-0 m-0 mt-2 items-center p-2 text-gray-300 text-md justify-between text-center",
+            h1 {
+                class: "grow-1 shrink basis-0",
+                "OS"
+            }
+            h1 {
+                class: "grow-4 shrink basis-0",
+                "Name"
+            }
+            h1 {
+                class: "grow-6 shrink basis-0",
+                "ID"
+            }
+            h1 {
+                class: "grow-5 shrink basis-0",
+                "IP"
+            }
+            h1 {
+                class: "grow-4 shrink basis-0",
+                "Status"
+            }
+            h1 {
+                class: "grow-2 shrink basis-0",
+                "Ping"
+            }
+        }
+        hr{}
+        div {
+            class: "flex flex-col w-full h-full mt-0 bg-zinc-950 p-0 gap-0 overflow-x-scroll grow shrink basis-0 no-scrollbar",
+            for agent in agents {
+                div {
+                    class: "flex flex-row h-12 bg-zinc-900 w-full shrink-0 m-0 items-center p-2 text-gray-300 text-md justify-between text-center",
+                    div {
+                        class: "grow-1 shrink basis-0 flex justify-center",
+                        match agent.os.os_type {
+                            OSType::Windows =>
+                                rsx!{Icon {
+                                    icon: FaWindows,
+                                }},
+                            OSType::Linux =>
+                                rsx!{Icon {
+                                    icon: FaLinux,
+                                }},
+                            OSType::Other =>
+                                rsx!{Icon {
+                                    icon: FaQuestion,
+                                }},
+                        }
+                    }
+                    h1 {
+                        class: "grow-4 shrink basis-0",
+                        {agent.name.unwrap_or("No Name".to_string())}
+                    }
+                    h1 {
+                        class: "grow-6 shrink basis-0",
+                        {agent.id.to_string()}
+                    }
+                    h1 {
+                        class: "grow-5 shrink basis-0",
+                        {agent.ip}
+                    }
+                    div {
+                        class: "grow-4 shrink basis-0 flex flex-row items-center justify-center",
+                        match agent.status {
+                            true => rsx! {
+                                div {
+                                    class: "h-2.5 w-2.5 rounded-full bg-green-500 me-2"
+                                }
+                                "Online"
+                            },
+                            false=> rsx !{
+                                div {
+                                    class: "h-2.5 w-2.5 rounded-full bg-red-500 me-2"
+                                }
+                                "Offline"
+                            }
+                        }
+                    }
+                    h1 {
+                        class: "grow-2 shrink basis-0",
+                        {agent.ping.to_string() + "ms"}
+                    }
+                }
+                hr{}
             }
         }
     }

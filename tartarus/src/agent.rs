@@ -76,7 +76,7 @@ pub async fn monolith(
                     agent_id: response.packet_header.agent_id,
                     timestamp: current_time(),
                     packet_id: response.packet_header.packet_id,
-                    os: None,
+                    os: OS::overlord(),
                 },
                 packet_body: AgentInstructionBody::Ok,
             }
@@ -92,7 +92,7 @@ pub async fn monolith(
                         agent_id: response.packet_header.agent_id,
                         timestamp: current_time(),
                         packet_id: response.packet_header.packet_id,
-                        os: None,
+                        os: OS::overlord(),
                     },
                     packet_body: AgentInstructionBody::Ok,
                 }
@@ -105,7 +105,7 @@ pub async fn monolith(
                         agent_id: response.packet_header.agent_id,
                         timestamp: current_time(),
                         packet_id: response.packet_header.packet_id,
-                        os: None,
+                        os: OS::overlord(),
                     },
                     packet_body: body.unwrap_or(AgentInstructionBody::Ok),
                 }
@@ -116,7 +116,7 @@ pub async fn monolith(
                 agent_id: response.packet_header.agent_id,
                 timestamp: current_time(),
                 packet_id: response.packet_header.packet_id,
-                os: None,
+                os: OS::overlord(),
             },
             packet_body: AgentInstructionBody::Command {
                 command_id: 1, // Example command_id; replace with logic for unique IDs
