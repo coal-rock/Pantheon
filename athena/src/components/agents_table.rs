@@ -15,7 +15,9 @@ use crate::services::api::Api;
 pub fn AgentsTable(id: i32) -> Element {
     let show_windows = use_signal(|| true);
     let show_linux = use_signal(|| true);
+    let show_other = use_signal(|| true);
     let show_inactive = use_signal(|| true);
+    let mut query = use_signal(|| String::new());
 
     let mut agents: Signal<Vec<AgentInfo>> = use_signal(|| vec![]);
 
@@ -48,7 +50,8 @@ pub fn AgentsTable(id: i32) -> Element {
                 }
                 input {
                     class: "w-full h-full text-gray-300 outline-none pl-2",
-                    value: "",
+                    value: query(),
+                    oninput: move |event| query.set(event.value()),
                     placeholder: "agent name",
                 }
             }
@@ -67,13 +70,24 @@ pub fn AgentsTable(id: i32) -> Element {
                 }
                 "|"
                 Checkbox{
+                    id: "show-other",
+                    text: "Show Other",
+                    checked: show_other,
+                }
+                "|"
+                Checkbox{
                     id: "show-inactive",
                     text: "Show Inactive",
                     checked: show_inactive,
                 }
             }
             AgentList{
-                agents: agents()
+                agents: agents(),
+                show_windows: show_windows(),
+                show_linux: show_linux(),
+                show_inactive: show_inactive(),
+                show_other: show_other(),
+                query: query(),
             }
         }
     }
@@ -106,7 +120,34 @@ fn Checkbox(text: String, id: String, checked: Signal<bool>) -> Element {
 }
 
 #[component]
-fn AgentList(agents: Vec<AgentInfo>) -> Element {
+fn AgentList(
+    agents: Vec<AgentInfo>,
+    show_windows: bool,
+    show_linux: bool,
+    show_other: bool,
+    show_inactive: bool,
+    query: String,
+) -> Element {
+    let agents: Vec<AgentInfo> = agents
+        .into_iter()
+        .filter(|agent| match agent.os.os_type {
+            OSType::Windows => show_windows,
+            OSType::Linux => show_linux,
+            OSType::Other => show_other,
+        })
+        .filter(|agent| agent.status || show_inactive)
+        .filter(|agent| {
+            if query == "" {
+                return true;
+            }
+
+            match &agent.name {
+                Some(name) => name.to_lowercase().contains(&query.to_lowercase()),
+                None => false,
+            }
+        })
+        .collect();
+
     rsx! {
         div {
             class: "flex flex-row h-12 bg-zinc-900 w-full shrink-0 m-0 mt-2 items-center p-2 text-gray-300 text-md justify-between text-center",
@@ -160,7 +201,7 @@ fn AgentList(agents: Vec<AgentInfo>) -> Element {
                     }
                     h1 {
                         class: "grow-4 shrink basis-0",
-                        {agent.name.unwrap_or("No Name".to_string())}
+                        {agent.name.unwrap_or("...".to_string())}
                     }
                     h1 {
                         class: "grow-6 shrink basis-0",
