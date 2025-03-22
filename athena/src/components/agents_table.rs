@@ -110,9 +110,8 @@ fn Checkbox(text: String, id: String, checked: Signal<bool>) -> Element {
                     *checked.write() = new_value;
                 },
             }
-            label {
-                class: "ms-2 text-sm font-medium text-gray-300",
-                r#for: id,
+            span {
+                class: "ms-2 text-sm font-medium text-gray-300 select-none",
                 "{text}"
             }
         }
