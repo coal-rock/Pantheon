@@ -1,5 +1,4 @@
 #V2
-help 
 ls 
 connect 
 fortnite 
@@ -99,3 +98,4 @@ fuck you
 help
 list agents 
 list
+nickname 10746812031658964514 cole

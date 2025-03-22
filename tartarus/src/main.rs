@@ -25,7 +25,7 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
 
     rocket::build()
         .mount("/admin", admin::routes()) // Admin routes for agent management
-        .mount("/console", console_net::routes()) // Routes for console protocol
+        .mount("/admin/console", console_net::routes()) // Routes for console protocol
         .mount("/agent", agent::routes()) // Agent-specific routes
         .mount("/binaries", binaries::routes())
         .manage(shared_state)

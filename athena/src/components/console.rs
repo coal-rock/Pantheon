@@ -1,16 +1,75 @@
 use dioxus::prelude::*;
+use talaria::console::{CommandContext, NewTarget};
 
-use crate::components::panel_base::PanelBase;
+use crate::{components::panel_base::PanelBase, services::api::Api};
 
 #[component]
 pub fn Console(id: i32) -> Element {
     // FIXME: sorta cooked flexbox layout
     // FIXME: console doesn't auto-scroll for now - fix?
-    let mut command_history: Signal<Vec<String>> = use_signal(|| vec![]);
+    // FIXME: conosole implementation is awful, figure out how to use callbacks properly
+    let mut console = use_signal(|| talaria::console::Console::new(None));
+
+    let mut console_history: Signal<Vec<String>> = use_signal(|| vec![]);
     let mut input = use_signal(|| String::new());
-    let empty_input = use_signal(|| String::new());
+
+    let handle_command = move |evt: FormEvent| {
+        async move {
+            let api = use_context::<Api>();
+            let console_history = &mut console_history.write();
+            let console = &mut console.write();
+
+            {
+                console_history.push(console.status_line() + &input.read().clone());
+
+                let current_target = console.get_target();
+                let input = &mut input.write();
+
+                let command = match console.handle_command(input.to_string()) {
+                    Ok(command) => command,
+                    Err(err) => {
+                        console_history.push(err.to_string());
+                        input.clear();
+                        return;
+                    }
+                };
+
+                let response = match api
+                    .console(CommandContext {
+                        command,
+                        current_target: None,
+                    })
+                    .await
+                {
+                    Ok(response) => response,
+                    Err(err) => {
+                        console_history.push(err.to_string());
+                        // input.clear();
+                        return;
+                    }
+                };
+
+                console.set_target(match response.new_target {
+                    NewTarget::NoTarget => None,
+                    NewTarget::Target { target } => Some(target),
+                    NewTarget::NoChange => current_target,
+                });
+
+                console_history.push(response.output.to_string());
+            }
+        }
+    };
+
+    let test = move |evt: FormEvent| {
+        evt.prevent_default();
+        evt.stop_propagation();
+    };
 
     rsx! {
+        // div {
+        //     class: "h-200 w-200",
+        //     onclick: handle_command,
+        // }
         PanelBase {
             title: "Console",
             panel_id: id,
@@ -21,20 +80,17 @@ pub fn Console(id: i32) -> Element {
                     div {
                         class: "flex flex-col focus-none w-full h-full",
                         div {
-                            for command in command_history.iter() {
-                                p { "> {command} "}
+                            for entry in console_history.iter() {
+                                p { "{entry} "}
                             }
                         }
                         div {
                             class: "flex flex-row",
-                            "> ",
+                            {console.read().status_line()}
                             form {
                                 class: "flex w-full",
                                 id: "console-line",
-                                onsubmit: move |_event| {
-                                    command_history.write().push(input.read().clone());
-                                    input.set(empty_input());
-                                },
+                                onsubmit: handle_command,
                                 input {
                                     class: "w-full h-full flex align-start word-break focus:outline-none text-sm font-mono grow",
                                     r#type: "text",
