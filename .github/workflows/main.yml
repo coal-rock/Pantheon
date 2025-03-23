@@ -1,0 +1,76 @@
+name: Build All
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Trunk
+        run: cargo install trunk
+
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install Dioxus CLI
+        run: cargo install dioxus-cli
+
+      - name: Build Athena (Web)
+        run: |
+          cd athena
+          dx build --release --output ../athena-web-dist
+
+      - name: Build Athena (Desktop)
+        run: |
+          cd athena
+          dx build --platform desktop --release --output ../athena-desktop-dist
+
+      - name: Build Hermes
+        run: |
+          cd hermes
+          cargo build --release --out-dir ../hermes-bin
+
+      - name: Build Tartarus
+        run: |
+          cd tartarus
+          cargo build --release --out-dir ../tartarus-bin
+
+      # - name: Run tests
+      #   run: cargo test --release
+
+      - name: Upload Athena Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: athena-web-build
+          path: athena-web-dist/
+
+      - name: Upload Athena Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: athena-desktop-build
+          path: athena-desktop-dist/
+
+      - name: Upload Hermes Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hermes-binary
+          path: hermes-bin/
+
+      - name: Upload Tartarus Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartarus-binary
+          path: tartarus-bin/
