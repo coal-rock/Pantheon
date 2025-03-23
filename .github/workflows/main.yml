@@ -34,7 +34,7 @@ jobs:
       - name: Install Dioxus CLI
         run: cargo binstall dioxus-cli
       
-      - name: Install Node.js and TailwindCSS CLI
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -53,7 +53,7 @@ jobs:
       - name: Build Athena (Web)
         run: |
           cd athena
-          dx build --release --output ../athena-web-dist
+          dx build --platform web --release
 
       - name: Build Athena (Desktop)
         run: |
