@@ -34,10 +34,15 @@ jobs:
       - name: Install Dioxus CLI
         run: cargo binstall dioxus-cli
       
-      - name: Install Node.js and TailwindCSS CLI
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Install Tailwind
+        run: |
+          cd athena
+          npm install tailwindcss @tailwindcss/cli
 
       - name: Build Tailwind styles for Athena
         run: |
@@ -48,7 +53,7 @@ jobs:
       - name: Build Athena (Web)
         run: |
           cd athena
-          dx build --release --output ../athena-web-dist
+          dx build --platform web --release
 
       - name: Build Athena (Desktop)
         run: |
@@ -58,12 +63,12 @@ jobs:
       - name: Build Hermes
         run: |
           cd hermes
-          cargo build --release --out-dir ../hermes-bin
+          CARGO_TARGET_DIR=../hermes-bin cargo build --release
 
       - name: Build Tartarus
         run: |
           cd tartarus
-          cargo build --release --out-dir ../tartarus-bin
+          CARGO_TARGET_DIR=../tartarus-bin cargo build --release
 
       - name: Upload Athena Web Artifact
         uses: actions/upload-artifact@v4
@@ -81,10 +86,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hermes-binary
-          path: hermes-bin/
+          path: hermes-bin/release/hermes
 
       - name: Upload Tartarus Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tartarus-binary
-          path: tartarus-bin/
+          path: tartarus-bin/release/tartarus
