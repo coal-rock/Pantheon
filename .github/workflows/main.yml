@@ -63,12 +63,12 @@ jobs:
       - name: Build Hermes
         run: |
           cd hermes
-          cargo build --release --out-dir ../hermes-bin
+          CARGO_TARGET_DIR=../hermes-bin cargo build --release
 
       - name: Build Tartarus
         run: |
           cd tartarus
-          cargo build --release --out-dir ../tartarus-bin
+          CARGO_TARGET_DIR=../tartarus-bin cargo build --release
 
       - name: Upload Athena Web Artifact
         uses: actions/upload-artifact@v4
@@ -86,10 +86,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hermes-binary
-          path: hermes-bin/
+          path: hermes-bin/release/hermes
 
       - name: Upload Tartarus Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tartarus-binary
-          path: tartarus-bin/
+          path: tartarus-bin/release/tartarus
