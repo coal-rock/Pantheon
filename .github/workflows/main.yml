@@ -39,6 +39,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Tailwind
+        run: |
+          cd athena
+          npm install tailwindcss @tailwindcss/cli
+
       - name: Build Tailwind styles for Athena
         run: |
           cd athena
