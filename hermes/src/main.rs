@@ -37,6 +37,6 @@ async fn main() {
         // we are waiting X amount of time from the end of the last execution,
         // meaning if we intend to call function Y every X seconds, we are actually
         // calling function Y every X + N seconds, where N is the execution time of Y
-        sleep(Duration::from_millis(agent.polling_interval_millis)).await;
+        // sleep(Duration::from_millis(agent.polling_interval_millis)).await;
     }
 }

@@ -46,6 +46,8 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                         img {
                             class: "ml-2 mb-1",
                             src: asset!("assets/cdo-logo.png"),
+                            width: 50,
+                            height: 50,
                         }
                     }
                     div {

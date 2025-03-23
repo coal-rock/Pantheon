@@ -10,7 +10,7 @@ use crate::views::page::PanelManager;
 pub fn Placeholder() -> Element {
     rsx! {
         div {
-            class: "bg-transparent w-full h-full rounded-xs flex flex-col p-4 drop-shadow draggable border-2 border-gray-500",
+            class: "bg-transparent w-full h-full rounded-xs flex flex-col p-4 draggable border-2 border-gray-500",
         }
     }
 }

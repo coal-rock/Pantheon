@@ -1,6 +1,4 @@
 #V2
-ls 
-connect 
 fortnite 
 ls 
 help 
@@ -99,3 +97,5 @@ help
 list agents 
 list
 nickname 10746812031658964514 cole
+list 
+exit 
