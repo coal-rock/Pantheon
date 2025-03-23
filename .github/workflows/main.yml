@@ -19,14 +19,34 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Trunk
-        run: cargo install trunk
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.12.2
 
+      - name: Install Dioxus Dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1.4.3
+        with:
+          packages: libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          version: 1.0
+            
       - name: Install wasm32 target
         run: rustup target add wasm32-unknown-unknown
 
       - name: Install Dioxus CLI
-        run: cargo install dioxus-cli
+        run: cargo binstall dioxus-cli
+      
+      - name: Install Node.js and TailwindCSS CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install TailwindCSS CLI
+        run: npm install -g tailwindcss
+
+      - name: Build Tailwind styles for Athena
+        run: |
+          cd athena
+          tailwindcss -i input.css -o assets/tailwind.css
+
 
       - name: Build Athena (Web)
         run: |
@@ -47,9 +67,6 @@ jobs:
         run: |
           cd tartarus
           cargo build --release --out-dir ../tartarus-bin
-
-      # - name: Run tests
-      #   run: cargo test --release
 
       - name: Upload Athena Web Artifact
         uses: actions/upload-artifact@v4
