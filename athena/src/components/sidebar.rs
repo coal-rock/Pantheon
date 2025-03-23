@@ -1,87 +1,65 @@
-use gloo_timers;
-use patternfly_yew::prelude::*;
-use talaria::api::*;
-use wasm_bindgen_futures::spawn_local;
-use yew::{prelude::*, virtual_dom::VChild};
-use yew_router::prelude::*;
+use dioxus::prelude::*;
 
 use crate::Route;
 
-pub fn brand() -> Html {
-    html! {
-        <MastheadBrand>
-            <Title size={Size::XXXXLarge}>
-                { "Athena" }
-            </Title>
-        </MastheadBrand>
+use dioxus_free_icons::icons::fa_solid_icons::{FaBell, FaDownload, FaGear, FaInfo, FaRobot};
+use dioxus_free_icons::Icon;
+
+#[component]
+pub fn Sidebar(should_show: Signal<bool>) -> Element {
+    // TODO: make icons slightly change color on hover
+    rsx! {
+        div {
+            class: "grow-0 w-64 bg-zinc-950 border-r-2 border-gray-600 flex flex-col",
+            display: if *should_show.read() { None } else { Some("none") },
+
+            SidebarElement{
+                text: "Agents",
+                to: Route::Home {},
+                icon: rsx!(Icon { icon: FaRobot })
+            }
+
+            SidebarElement{
+                text: "Settings",
+                to: Route::Home {},
+                icon: rsx!(Icon { icon: FaGear })
+            }
+
+            SidebarElement{
+                text: "About",
+                to: Route::Home {},
+                icon: rsx!(Icon { icon: FaInfo })
+            }
+
+            SidebarElement{
+                text: "Downloads",
+                to: Route::Home {},
+                icon: rsx!(Icon { icon: FaDownload })
+            }
+
+            SidebarElement{
+                text: "Alerts",
+                to: Route::Home {},
+                icon: rsx!(Icon { icon: FaBell })
+            }
+        }
     }
 }
 
-pub fn sidebar(agents: &Vec<AgentInfo>) -> VChild<PageSidebar> {
-    html_nested! {
-        <PageSidebar>
-            <Nav>
-                <Link<Route> to={Route::Home}>
-                    <NavLink>{"Main Panel"}</NavLink>
-                </Link<Route>>
-
-                <NavExpandable title="Agents">
-                    {
-                        agents.into_iter().map(|agent| {
-                            html! {
-                                <Link<Route> to={Route::Agent { id: agent.id }}>
-                                    <NavItem>
-                                        <div style="display: block">
-                                            <div style="font-size: 14px !important;">
-                                                {agent.name.clone()}
-                                            </div>
-
-                                            <div style="color: grey !important;">
-                                                {agent.id}
-                                            </div>
-                                        </div>
-                                    </NavItem>
-                                </Link<Route>>
-                            }
-                        }).collect::<Html>()
-                    }
-                </NavExpandable>
-
-                <Link<Route> to={Route::Settings}>
-                    <NavItem>{"Settings"}</NavItem>
-                </Link<Route>>
-
-                <Link<Route> to={Route::About}>
-                    <NavItem>{"About"}</NavItem>
-                </Link<Route>>
-
-                <Link<Route> to={Route::Downloads}>
-                    <NavItem>{"Downloads"}</NavItem>
-                </Link<Route>>
-
-                <Link<Route> to={Route::Alerts}>
-                    <NavItem>{"Alerts"}</NavItem>
-                </Link<Route>>
-
-            </Nav>
-        </PageSidebar>
-    }
-}
-
-pub fn tools() -> Html {
-    html! {
-        <Toolbar full_height=true>
-            <ToolbarContent>
-                <ToolbarGroup
-                    modifiers={ToolbarElementModifier::Right.all()}
-                >
-                    <ToolbarItem>
-                        <h5>
-                        {"v0.0.1"}
-                        </h5>
-                    </ToolbarItem>
-                </ToolbarGroup>
-            </ToolbarContent>
-        </Toolbar>
+#[component]
+fn SidebarElement(text: String, to: Route, icon: Element) -> Element {
+    rsx! {
+        Link {
+            class: "border-zinc-800 hover:bg-zinc-900 border-b-1 flex justify-start items-center h-14 hover:underline decoration-2 underline-offset-4 decoration-blue-500",
+            to: "{to}",
+            div {
+                class: "text-white pl-4 flex stroke-current",
+                {icon}
+                div {
+                    class: "pl-4",
+                    "{text}"
+                }
+            }
+        }
     }
 }

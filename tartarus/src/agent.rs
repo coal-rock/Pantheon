@@ -6,7 +6,7 @@ use talaria::protocol::*;
 
 use crate::SharedState;
 
-// Register or update agent in the state
+// Register or update egent in the state
 async fn register_or_update(
     state: &rocket::State<SharedState>,
     response: &AgentResponse,
@@ -76,7 +76,7 @@ pub async fn monolith(
                     agent_id: response.packet_header.agent_id,
                     timestamp: current_time(),
                     packet_id: response.packet_header.packet_id,
-                    os: None,
+                    os: OS::overlord(),
                 },
                 packet_body: AgentInstructionBody::Ok,
             }
@@ -92,7 +92,7 @@ pub async fn monolith(
                         agent_id: response.packet_header.agent_id,
                         timestamp: current_time(),
                         packet_id: response.packet_header.packet_id,
-                        os: None,
+                        os: OS::overlord(),
                     },
                     packet_body: AgentInstructionBody::Ok,
                 }
@@ -105,7 +105,7 @@ pub async fn monolith(
                         agent_id: response.packet_header.agent_id,
                         timestamp: current_time(),
                         packet_id: response.packet_header.packet_id,
-                        os: None,
+                        os: OS::overlord(),
                     },
                     packet_body: body.unwrap_or(AgentInstructionBody::Ok),
                 }
@@ -116,7 +116,7 @@ pub async fn monolith(
                 agent_id: response.packet_header.agent_id,
                 timestamp: current_time(),
                 packet_id: response.packet_header.packet_id,
-                os: None,
+                os: OS::overlord(),
             },
             packet_body: AgentInstructionBody::Command {
                 command_id: 1, // Example command_id; replace with logic for unique IDs
@@ -130,15 +130,26 @@ pub async fn monolith(
     register_or_update(state, &response, &instruction, remote_addr).await;
 
     // respond to agent with instruction
-    AgentInstruction::serialize(&instruction).unwrap()
+    let instruction = AgentInstruction::serialize(&instruction).unwrap();
+
+    let state = &mut state.write().await;
+    state.statistics.log_recv(input.len());
+
+    state
+        .statistics
+        .log_latency(current_time() - response.packet_header.timestamp);
+
+    state.statistics.log_send(instruction.len());
+
+    instruction
 }
 
 // Helper to get current time in seconds since UNIX epoch
-fn current_time() -> u64 {
+fn current_time() -> u128 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
-        .as_secs()
+        .as_millis()
 }
 
 pub fn routes() -> Vec<rocket::Route> {

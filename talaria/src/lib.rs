@@ -1,9 +1,42 @@
 pub mod protocol {
     use anyhow::Result;
-    use bincode;
+    use bincode::{Decode, Encode};
     use serde::{Deserialize, Serialize};
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
+    pub struct OS {
+        pub os_type: OSType,
+        pub os_string: Option<String>,
+    }
+
+    impl OS {
+        pub fn from(os_type: &str, os_string: Option<String>) -> OS {
+            OS {
+                os_type: match os_type.to_lowercase().as_str() {
+                    "linux" => OSType::Linux,
+                    "windows" => OSType::Windows,
+                    _ => OSType::Other,
+                },
+                os_string,
+            }
+        }
+
+        pub fn overlord() -> OS {
+            OS {
+                os_type: OSType::Other,
+                os_string: None,
+            }
+        }
+    }
+
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
+    pub enum OSType {
+        Windows,
+        Linux,
+        Other,
+    }
+
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentResponseBody {
         CommandResponse {
             command: String,
@@ -57,7 +90,7 @@ pub mod protocol {
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
         Command {
             command: String,
@@ -97,15 +130,15 @@ pub mod protocol {
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct PacketHeader {
         pub agent_id: u64,
-        pub timestamp: u64,
+        pub timestamp: u128,
         pub packet_id: u32,
-        pub os: Option<String>,
+        pub os: OS,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
         pub packet_header: PacketHeader,
         pub packet_body: AgentInstructionBody,
@@ -113,15 +146,17 @@ pub mod protocol {
 
     impl AgentInstruction {
         pub fn serialize(response: &AgentInstruction) -> Result<Vec<u8>> {
-            Ok(bincode::serialize(response)?)
+            let config = bincode::config::standard();
+            Ok(bincode::encode_to_vec(response, config)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentInstruction> {
-            Ok(bincode::deserialize(&response[..])?)
+            let config = bincode::config::standard();
+            Ok(bincode::decode_from_slice(response, config)?.0)
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentResponse {
         pub packet_header: PacketHeader,
         pub packet_body: AgentResponseBody,
@@ -129,11 +164,13 @@ pub mod protocol {
 
     impl AgentResponse {
         pub fn serialize(response: &AgentResponse) -> Result<Vec<u8>> {
-            Ok(bincode::serialize(response)?)
+            let config = bincode::config::standard();
+            Ok(bincode::encode_to_vec(response, config)?)
         }
 
         pub fn deserialize(response: &Vec<u8>) -> Result<AgentResponse> {
-            Ok(bincode::deserialize::<AgentResponse>(&response[..])?)
+            let config = bincode::config::standard();
+            Ok(bincode::decode_from_slice(response, config)?.0)
         }
     }
 }
@@ -153,10 +190,10 @@ pub mod api {
     pub struct Agent {
         pub nickname: Option<String>,
         pub id: u64,
-        pub os: Option<String>,
+        pub os: OS,
         pub ip: SocketAddr,
-        pub last_packet_send: u64,
-        pub last_packet_recv: u64,
+        pub last_packet_send: u128,
+        pub last_packet_recv: u128,
         pub network_history: Vec<NetworkHistoryEntry>,
         pub queue: Vec<AgentInstructionBody>,
     }
@@ -215,11 +252,39 @@ pub mod api {
 
     #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
     pub struct AgentInfo {
-        pub name: String,
+        pub name: Option<String>,
+        pub os: OS,
         pub id: u64,
         pub ip: String,
         pub status: bool,
-        pub ping: u64,
+        pub ping: u128,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct TartarusInfo {
+        pub cpu_usage: f32,
+        pub memory_total: u64,
+        pub memory_used: u64,
+        pub storage_total: u64,
+        pub storage_used: u64,
+        pub cpu_name: String,
+        pub core_count: u64,
+        pub os: String,
+        pub kernel: String,
+        pub hostname: String,
+        pub uptime: u64,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct TartarusStats {
+        pub registered_agents: u64,
+        pub active_agents: u64,
+        pub packets_sent: u64,
+        pub packets_recv: u64,
+        pub average_response_latency: f32,
+        pub total_traffic: u64,
+        pub windows_agents: u64,
+        pub linux_agents: u64,
     }
 }
 
@@ -230,20 +295,20 @@ pub mod console {
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum AgentIdentifier {
         Nickname { nickname: String },
         ID { id: u64 },
     }
 
     // refers to group of agents or single agent
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum TargetIdentifier {
         Group { group: String },
         Agent { agent: AgentIdentifier },
     }
 
-    #[derive(Clone, Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum Command {
         Connect {
             agent: TargetIdentifier,

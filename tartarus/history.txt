@@ -1,11 +1,4 @@
 #V2
-disconnect 
-create_group
-add_to_GROUP
-add_to_group
-remove_from_group
-exit 
-help 
 ls 
 connect 
 fortnite 
@@ -99,3 +92,10 @@ list
 list_groups 
 hep 
 help
+exit 
+quit 
+fuck you 
+help
+list agents 
+list
+nickname 10746812031658964514 cole

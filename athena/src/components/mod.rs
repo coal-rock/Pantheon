@@ -1,5 +1,9 @@
-pub mod agent_table;
+pub mod agents_overview;
+pub mod agents_table;
 pub mod console;
-pub mod full_page;
-pub mod network_log;
+pub mod navbar;
+pub mod notepad;
+pub mod panel_base;
+pub mod placeholder_panel;
 pub mod sidebar;
+pub mod tartarus_overview;

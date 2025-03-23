@@ -1,29 +1,24 @@
 [package]
 name = "athena"
 version = "0.1.0"
+authors = ["coal-rock <colebrazinski15@gmail.com>"]
 edition = "2021"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-patternfly-yew = "0.6.3"
-yew = { version = "0.21", features = ["csr"] }
-yew-router = "0.18.0"
+anyhow = "1.0.97"
+dioxus = { version = "0.6", features = ["router"] }
+serde = { version = "1.0.219", features = ["derive"] }
 talaria = { path = "../talaria" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-gloo-net = "0.6.0"
-wasm-bindgen-futures = "0.4.49"
-gloo-timers = "0.3.0"
-chrono = "0.4.39"
+dioxus-free-icons = { version = "0.9", features = ["font-awesome-brands", "font-awesome-regular", "font-awesome-solid"] }
+reqwest = { version = "0.12.15", features = ["json"] }
+bytesize = "2.0.1"
+async-std = "1.13.1"
 
-[dependencies.web-sys]
-version = "0.3"
-features = [
-    "HtmlElement",
-    "HtmlInputElement",
-    "MediaQueryList",
-    "Window",
-    "Location",
-    "UrlSearchParams",
-    "Clipboard",
-]
+[features]
+default = []
+web = ["dioxus/web"]
+
+[lints.rust]
+rust_2024_compatibility = "allow"

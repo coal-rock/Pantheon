@@ -1,133 +1,125 @@
-use gloo_net::http::Request;
-use serde::{Deserialize, Serialize};
-use talaria::console::*;
-use yew::{platform::spawn_local, prelude::*};
+use dioxus::prelude::*;
+use talaria::console::{Command, CommandContext, NewTarget};
 
-#[derive(Clone, PartialEq)]
-struct TerminalState {
-    output: Vec<String>,
-    current_input: String,
-}
+use crate::{components::panel_base::PanelBase, services::api::Api};
 
-#[function_component(ConsoleWindow)]
-pub fn console() -> Html {
-    let console_history = use_state(|| vec![]);
-    let console_response = use_state(|| ConsoleResponse {
-        success: false,
-        output: String::new(),
-        new_target: NewTarget::NoTarget,
-    });
+#[component]
+pub fn Console(id: i32) -> Element {
+    // FIXME: sorta cooked flexbox layout
+    // FIXME: console doesn't auto-scroll for now - fix?
+    // FIXME: conosole implementation is awful, figure out how to use callbacks properly
+    let mut console = use_signal(|| talaria::console::Console::new(None));
 
-    let onkeydown = {
-        let console_history = console_history.clone();
+    // a value of true in this tuple means the command failed
+    let mut console_history: Signal<Vec<(bool, String)>> = use_signal(|| vec![]);
+    let mut input = use_signal(|| String::new());
 
-        Callback::from(move |e: KeyboardEvent| {
-            // Insane hack
-            if e.key() == "Enter" {
-                let input: web_sys::HtmlInputElement = e.target_unchecked_into();
-                let value = input.value();
+    let handle_command = move |event: FormEvent| async move {
+        let api = use_context::<Api>();
+        let console_history = &mut console_history.write();
+        let console = &mut console.write();
 
-                if value.starts_with("> ") {
-                    let mut temp = (*console_history).clone();
-                    temp.push(value.clone());
+        async fn scrollToBottom() {
+            let _ = document::eval(
+                r#"
+            setTimeout(() => {
+                const element = document.getElementById("console-line");
+                if (element) {
+                    element.scrollIntoView({ behavior: "smooth", block: "start" });
 
-                    let value = value.replacen("> ", "", 1);
-                    let mut console = Console::new(None);
-                    let command = console.handle_command(value).unwrap();
-
-                    {
-                        let console_response = console_response.clone();
-
-                        let fetch_and_update = {
-                            let console_response = console_response.clone();
-                            move || {
-                                let console_response = console_response.clone();
-                                let command_context: CommandContext = CommandContext {
-                                    command,
-                                    current_target: None,
-                                };
-
-                                spawn_local(async move {
-                                    let fetched_data: ConsoleResponse =
-                                        gloo_net::http::Request::post("/api/console/monolith")
-                                            .json(&command_context)
-                                            .unwrap()
-                                            .send()
-                                            .await
-                                            .unwrap()
-                                            .json()
-                                            .await
-                                            .unwrap();
-
-                                    console_response.set(fetched_data);
-                                });
-                            }
-                        };
-
-                        let fetch_and_update = fetch_and_update.clone();
-                        fetch_and_update()
-                    }
-
-                    for line in console_response.clone().output.split("\n") {
-                        temp.push(line.to_string());
-                    }
-
-                    console_history.set(temp.to_vec());
-                    input.set_value("> "); // Clear the input field if needed
+                    console.log("no way");
                 }
-            }
+            }, 10);
+            "#,
+            )
+            .await;
+        }
 
-            let input: web_sys::HtmlInputElement = e.target_unchecked_into();
-            let value = input.value();
+        console_history.push((false, console.status_line() + &input.read().clone()));
 
-            if value.len() < 2 {
-                input.set_value("> ");
+        let current_target = console.get_target();
+        let input = &mut input.write();
+
+        let command = match console.handle_command(input.to_string()) {
+            Ok(command) => command,
+            Err(err) => {
+                console_history.push((true, err.to_string()));
+                input.clear();
+                scrollToBottom().await;
+                return;
             }
-        })
+        };
+
+        input.clear();
+
+        let response = match api
+            .console(CommandContext {
+                command: command.clone(),
+                current_target: console.get_target(),
+            })
+            .await
+        {
+            Ok(response) => response,
+            Err(err) => {
+                console_history.push((true, err.to_string()));
+                scrollToBottom().await;
+                return;
+            }
+        };
+
+        console.set_target(match response.new_target {
+            NewTarget::NoTarget => None,
+            NewTarget::Target { target } => Some(target),
+            NewTarget::NoChange => current_target,
+        });
+
+        console_history.push((!response.success, response.output.to_string()));
+
+        if command == Command::Clear {
+            console_history.clear();
+        }
+
+        scrollToBottom().await;
     };
 
-    html! {
-        <>
-            <style>
-                {r#"
-                .console {
-                    height: 100%;
-                    width: 100%;
-                    margin: 0;
-                    background-color: black;
-                    color: white;
-                    border-radius: 8px;
-                    padding: 8px;
+    rsx! {
+        PanelBase {
+            title: "Console",
+            panel_id: id,
+            div {
+                class: "flex h-0 grow shrink basis-0 w-full bg-zinc-900 mt-2 rounded p-2",
+                div {
+                    class: "whitespace-pre text-gray-300 font-mono text-sm overflow-x-scroll no-scrollbar word-break w-full",
+                    div {
+                        class: "flex flex-col focus-none w-full h-full",
+                        div {
+                            for (error, entry) in console_history.read().clone() {
+                                p {
+                                    class: if error {"text-red-500"} else {""},
+                                    "{entry} "
+                                }
+                            }
+                        }
+                        div {
+                            class: "flex flex-row",
+                            {console.read().status_line()}
+                            form {
+                                class: "flex w-full",
+                                id: "console-line",
+                                onsubmit: handle_command,
+                                input {
+                                    class: "w-full h-full flex align-start word-break focus:outline-none text-sm font-mono grow",
+                                    r#type: "text",
+                                    value: "{input}",
+                                    oninput: move |event| {
+                                        input.set(event.value());
+                                    },
+                                }
+                            }
+                        }
+                    }
                 }
-
-                .console-history {
-                    width: 800px;
-                    height: 400px;
-                    font-family: monospace;
-                    overflow: scroll;
-                    white-space: pre;
-                    -ms-overflow-style: none;  /* IE (ew) and Edge */
-                    scrollbar-width: none;  /* Firefox */
-                }
-                
-                /* Chrome */
-                .console-history::-webkit-scrollbar {
-                    display: none;
-                }
-                "#}
-            </style>
-
-            <div class="console">
-                <div class="console-history">
-                    { for console_history.iter().map(|i| html!{<p> {i} </p>} )}
-                    <input
-                        type="text"
-                        style="background-color: black; color: white; border: none; width: 100%; font-family: monospace; overflow: scroll; outline: none; border-radius: 8px;"
-                        value={"> "}
-                        onkeydown={onkeydown}
-                    />
-                </div>
-            </div>
-        </>
+            }
+        }
     }
 }
