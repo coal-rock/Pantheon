@@ -1,7 +1,7 @@
 <div align="center">
   
 <div>
-  <img src="athena/assets/cdo-logo.png" alt="Pantheon logo" />
+  <img height=200 src="athena/assets/cdo-logo.png" alt="Pantheon logo" />
 </div>
 
 # Pantheon
