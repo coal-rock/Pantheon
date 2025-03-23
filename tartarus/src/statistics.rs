@@ -31,6 +31,7 @@ impl Statistics {
         if self.latencies.len() == 0 {
             return 0.0;
         }
+
         self.latencies.iter().sum::<u128>() as f32 / self.latencies.len() as f32
     }
 }
