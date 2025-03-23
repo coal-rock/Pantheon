@@ -38,14 +38,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
-      - name: Install TailwindCSS CLI
-        run: npm install -g tailwindcss
 
       - name: Build Tailwind styles for Athena
         run: |
           cd athena
-          tailwindcss -i input.css -o assets/tailwind.css
+          npx @tailwindcss/cli -i input.css -o assets/tailwind.css
 
 
       - name: Build Athena (Web)
@@ -56,7 +53,7 @@ jobs:
       - name: Build Athena (Desktop)
         run: |
           cd athena
-          dx build --platform desktop --release --output ../athena-desktop-dist
+          dx build --platform desktop --release
 
       - name: Build Hermes
         run: |
@@ -72,13 +69,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: athena-web-build
-          path: athena-web-dist/
+          path: target/dx/athena/release/web/public
 
       - name: Upload Athena Desktop Artifact
         uses: actions/upload-artifact@v4
         with:
           name: athena-desktop-build
-          path: athena-desktop-dist/
+          path: target/dx/athena/release/linux/app
 
       - name: Upload Hermes Binary Artifact
         uses: actions/upload-artifact@v4
