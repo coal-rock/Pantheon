@@ -4,6 +4,7 @@ extern crate log;
 
 mod admin;
 mod agent;
+mod auth;
 mod binaries;
 mod config;
 mod console_interface;
@@ -16,7 +17,7 @@ use crate::console_interface::start_console;
 use config::Config;
 use state::{SharedState, State};
 
-use rocket::{Build, Ignite, Rocket};
+use rocket::{Build, Rocket};
 use std::{fs, path::PathBuf};
 
 // Rocket instance with shared state
@@ -24,9 +25,9 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
     let config = shared_state.read().await.config.clone();
 
     rocket::build()
-        .mount("/admin", admin::routes()) // Admin routes for agent management
-        .mount("/admin/console", console_net::routes()) // Routes for console protocol
-        .mount("/agent", agent::routes()) // Agent-specific routes
+        .mount("/admin", admin::routes())
+        .mount("/admin/console", console_net::routes())
+        .mount("/agent", agent::routes())
         .mount("/binaries", binaries::routes())
         .manage(shared_state)
         .configure(rocket::Config {

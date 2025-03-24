@@ -1,3 +1,4 @@
+use crate::auth::Auth;
 use crate::SharedState;
 use rocket::serde::json::Json;
 use std::{collections::HashMap, path::Path};
@@ -6,7 +7,10 @@ use talaria::api::*;
 
 /// Retrieves all agents
 #[get("/agents")]
-pub async fn get_agents(state: &rocket::State<SharedState>) -> Json<HashMap<u64, Agent>> {
+pub async fn get_agents(
+    _auth: Auth,
+    state: &rocket::State<SharedState>,
+) -> Json<HashMap<u64, Agent>> {
     Json(state.read().await.agents.clone())
 }
 
@@ -14,6 +18,7 @@ pub async fn get_agents(state: &rocket::State<SharedState>) -> Json<HashMap<u64,
 /// for specified agent
 #[get("/<agent_id>/network_history?<count>")]
 pub async fn get_agent_history(
+    _auth: Auth,
     state: &rocket::State<SharedState>,
     agent_id: u64,
     count: usize,
@@ -38,7 +43,7 @@ pub async fn get_agent_history(
 
 // Retrieves basic info about agent
 #[get("/list_agents")]
-pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
+pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
     let agents: HashMap<u64, Agent> = state.read().await.agents.clone();
     let mut agent_info: Vec<AgentInfo> = vec![];
 
@@ -49,7 +54,7 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
             ip: agent.ip.to_string(),
             os: agent.os,
             status: true,
-            ping: agent.last_packet_recv - agent.last_packet_send, // FIXME: unsafe
+            ping: agent.last_packet_send - agent.last_packet_recv, // FIXME: unsafe
         });
     }
 
@@ -57,7 +62,7 @@ pub async fn list_agents(state: &rocket::State<SharedState>) -> Json<Vec<AgentIn
 }
 
 #[get("/tartarus_info")]
-pub async fn tartarus_info(state: &rocket::State<SharedState>) -> Json<TartarusInfo> {
+pub async fn tartarus_info(_auth: Auth, state: &rocket::State<SharedState>) -> Json<TartarusInfo> {
     let mut sys = System::new_all();
     sys.refresh_all();
 
@@ -95,7 +100,10 @@ pub async fn tartarus_info(state: &rocket::State<SharedState>) -> Json<TartarusI
 }
 
 #[get("/tartarus_stats")]
-pub async fn tartarus_stats(state: &rocket::State<SharedState>) -> Json<TartarusStats> {
+pub async fn tartarus_stats(
+    _auth: Auth,
+    state: &rocket::State<SharedState>,
+) -> Json<TartarusStats> {
     let state = state.read().await;
     let agents = state.agents.clone();
     let statistics = state.statistics.clone();
