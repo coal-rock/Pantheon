@@ -22,8 +22,6 @@
 
 Want to get involved? Join our Discord[test]!
 
-
-
 ### Components
 ```
 Panthon/
@@ -36,3 +34,19 @@ Panthon/
 
 ## Demo
 ![image](https://github.com/user-attachments/assets/a409f146-c2b5-46f2-aae6-2007e7216910)
+
+
+
+# Quick Start Guide
+
+The quickest way to get the most up to date version of the applciation is by pulling it stright from the github releases, to do this run the below command
+```
+sudo apt install jq -y
+
+curl -s https://api.github.com/repos/Dack985/Pantheon/releases/latest \
+| jq -r '.assets[].browser_download_url' \
+| xargs -I {} wget -P $HOME {}
+
+```
+
+From here you can chose wether to run Athena as a web application serving the file with something such as nginx or you can just use the raw binary also downloaded with this
