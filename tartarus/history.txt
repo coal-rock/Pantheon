@@ -1,6 +1,4 @@
 #V2
-fortnite 
-ls 
 help 
 ls 
 connect 
@@ -99,3 +97,5 @@ list
 nickname 10746812031658964514 cole
 list 
 exit 
+help
+clear

@@ -48,13 +48,19 @@ pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Jso
     let mut agent_info: Vec<AgentInfo> = vec![];
 
     for (_, agent) in agents {
+        // prevents overflow because for some reason we sometimes have negative latency
+        let ping = match agent.last_packet_send >= agent.last_packet_recv {
+            true => agent.last_packet_send - agent.last_packet_recv,
+            false => 0,
+        };
+
         agent_info.push(AgentInfo {
             name: agent.nickname,
             id: agent.id,
             ip: agent.ip.to_string(),
             os: agent.os,
             status: true,
-            ping: agent.last_packet_send - agent.last_packet_recv, // FIXME: unsafe
+            ping,
         });
     }
 

@@ -10,6 +10,7 @@ use talaria::console::*;
 pub struct Api {
     api_base: Url,
     client: Client,
+    token: String,
 }
 
 impl Api {
@@ -17,6 +18,7 @@ impl Api {
         Api {
             api_base: Url::parse(api_base).unwrap(),
             client: Client::new(),
+            token: String::from("bb123#123"),
         }
     }
 
@@ -32,6 +34,7 @@ impl Api {
             .client
             .get(self.make_api_path(endpoint)?)
             .query(&query_params)
+            .header("Authorization", &self.token)
             .send()
             .await?
             .json::<T>()
@@ -47,6 +50,7 @@ impl Api {
             .client
             .post(self.make_api_path(endpoint)?)
             .json(&data)
+            .header("Authorization", &self.token)
             .send()
             .await?
             .json::<O>()
