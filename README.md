@@ -49,4 +49,11 @@ curl -s https://api.github.com/repos/Dack985/Pantheon/releases/latest \
 
 ```
 
+
+Also here is a one-liner to install the installer script 
+```
+sudo curl -fsSL https://raw.githubusercontent.com/Dack985/Pantheon/main/install.sh | bash
+
+```
+
 From here you can chose wether to run Athena as a web application serving the file with something such as nginx or you can just use the raw binary also downloaded with this
