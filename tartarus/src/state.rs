@@ -18,7 +18,7 @@ pub struct State {
 }
 
 impl State {
-    pub fn get_agent(&self, ident: AgentIdentifier) -> Option<&Agent> {
+    pub fn get_agent(&self, ident: &AgentIdentifier) -> Option<&Agent> {
         match ident {
             AgentIdentifier::Nickname { nickname } => {
                 for (_, agent) in &self.agents {
@@ -33,7 +33,7 @@ impl State {
         return None;
     }
 
-    pub fn get_agent_mut(&mut self, ident: AgentIdentifier) -> Option<&mut Agent> {
+    pub fn get_agent_mut(&mut self, ident: &AgentIdentifier) -> Option<&mut Agent> {
         match ident {
             AgentIdentifier::Nickname { nickname } => {
                 for (id, agent) in self.agents.clone() {

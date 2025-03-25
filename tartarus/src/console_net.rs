@@ -9,8 +9,7 @@ pub async fn monolith(
     _auth: Auth,
     state: &rocket::State<SharedState>,
     command_context: Json<CommandContext>,
-) -> Json<ConsoleResponse> {
-    println!("the south monolith has been hit");
+) -> Json<Result<ConsoleResponse, ConsoleError>> {
     Json(console_lib::evaluate_command(state, command_context.0).await)
 }
 

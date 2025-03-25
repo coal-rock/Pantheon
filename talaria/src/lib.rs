@@ -99,6 +99,7 @@ pub mod protocol {
         },
         RequestHeartbeat,
         Ok,
+        SpawnShell,
     }
 
     impl AgentInstructionBody {
@@ -111,6 +112,7 @@ pub mod protocol {
                 } => "Command",
                 AgentInstructionBody::RequestHeartbeat => "RequestHeartbeat",
                 AgentInstructionBody::Ok => "Ok",
+                AgentInstructionBody::SpawnShell => "SpawnShell",
             }
         }
 
@@ -126,6 +128,7 @@ pub mod protocol {
                 ),
                 AgentInstructionBody::RequestHeartbeat => String::from("None"),
                 AgentInstructionBody::Ok => String::from("None"),
+                AgentInstructionBody::SpawnShell => String::from("None"),
             }
         }
     }
@@ -301,11 +304,29 @@ pub mod console {
         ID { id: u64 },
     }
 
+    impl Into<TargetIdentifier> for AgentIdentifier {
+        fn into(self) -> TargetIdentifier {
+            TargetIdentifier::Agent { agent: self }
+        }
+    }
+
     // refers to group of agents or single agent
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum TargetIdentifier {
         Group { group: String },
         Agent { agent: AgentIdentifier },
+    }
+
+    impl ToString for TargetIdentifier {
+        fn to_string(&self) -> String {
+            match self {
+                TargetIdentifier::Group { group } => format!("#{}", group),
+                TargetIdentifier::Agent { agent } => match agent {
+                    AgentIdentifier::Nickname { nickname } => format!("@{}", nickname),
+                    AgentIdentifier::ID { id } => format!("@{}", id),
+                },
+            }
+        }
     }
 
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -332,6 +353,9 @@ pub mod console {
         Exec {
             agents: Option<TargetIdentifier>,
             command: String,
+        },
+        SpawnShell {
+            agents: Option<TargetIdentifier>,
         },
         ListAgents,
         ListGroups,
@@ -618,6 +642,13 @@ pub mod console {
                     }),
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },
+                "spawn_shell" => match self.source.len() {
+                    0 => Ok(Command::SpawnShell { agents: None }),
+                    1 => Ok(Command::SpawnShell {
+                        agents: Some(self.parse_target_ident()?),
+                    }),
+                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
+                },
                 "list" => match self.is_at_end() {
                     true => Ok(Command::ListAgents),
                     false => Err(CommandError::ExpectedNArgs { args: 0 }),
@@ -680,13 +711,7 @@ pub mod console {
 
         pub fn status_line(&self) -> String {
             match &self.current_target {
-                Some(target) => match target {
-                    TargetIdentifier::Group { group } => format!("#{} > ", group),
-                    TargetIdentifier::Agent { agent } => match agent {
-                        AgentIdentifier::Nickname { nickname } => format!("@{} > ", nickname),
-                        AgentIdentifier::ID { id } => format!("@{} > ", id),
-                    },
-                },
+                Some(target) => format!("{} > ", target.to_string()),
                 None => format!("> "),
             }
         }
@@ -708,14 +733,6 @@ pub mod console {
 
             parser.parse()
         }
-
-        pub fn handle_command_response(
-            &mut self,
-            command_context: CommandContext,
-            command_response: ConsoleResponse,
-        ) -> String {
-            String::new()
-        }
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -733,9 +750,27 @@ pub mod console {
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct ConsoleResponse {
-        pub success: bool,
         pub output: String,
         pub new_target: NewTarget,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct ConsoleError {
+        pub message: String,
+    }
+
+    impl From<&str> for ConsoleError {
+        fn from(value: &str) -> Self {
+            Self {
+                message: value.to_string(),
+            }
+        }
+    }
+
+    impl From<String> for ConsoleError {
+        fn from(value: String) -> Self {
+            Self { message: value }
+        }
     }
 }
 

