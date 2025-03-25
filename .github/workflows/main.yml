@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Ensure Actions can create releases
 
     steps:
       - name: Checkout repository
@@ -70,26 +72,43 @@ jobs:
           cd tartarus
           CARGO_TARGET_DIR=../tartarus-bin cargo build --release
 
-      - name: Upload Athena Web Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: athena-web-build
-          path: target/dx/athena/release/web/public
+#      - name: Upload Athena Web Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: athena-web-build
+#          path: target/dx/athena/release/web/public
 
-      - name: Upload Athena Desktop Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: athena-desktop-build
-          path: target/dx/athena/release/linux/app
+#      - name: Upload Athena Desktop Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: athena-desktop-build
+#          path: target/dx/athena/release/linux/app
 
-      - name: Upload Hermes Binary Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hermes-binary
-          path: hermes-bin/release/hermes
+#      - name: Upload Hermes Binary Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: hermes-binary
+#          path: hermes-bin/release/hermes
 
-      - name: Upload Tartarus Binary Artifact
-        uses: actions/upload-artifact@v4
+#      - name: Upload Tartarus Binary Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: tartarus-binary
+#          path: tartarus-bin/release/tartarus
+
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: tartarus-binary
-          path: tartarus-bin/release/tartarus
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Release v1.0.${{ github.run_number }}"
+          draft: false
+          prerelease: false
+          files: |
+            target/dx/athena/release/web/public/*
+            target/dx/athena/release/linux/app/*
+            hermes-bin/release/hermes
+            tartarus-bin/release/tartarus
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
