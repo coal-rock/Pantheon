@@ -1,5 +1,3 @@
-use dioxus::prelude::*;
-
 use anyhow::Result;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
@@ -69,7 +67,10 @@ impl Api {
         Ok(self.get("/tartarus_stats", vec![]).await?)
     }
 
-    pub async fn console(&self, command_context: CommandContext) -> Result<ConsoleResponse> {
+    pub async fn console(
+        &self,
+        command_context: CommandContext,
+    ) -> Result<Result<ConsoleResponse, ConsoleError>> {
         Ok(self.post("/console/monolith", command_context).await?)
     }
 }

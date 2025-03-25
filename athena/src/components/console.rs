@@ -67,16 +67,23 @@ pub fn Console(id: i32) -> Element {
             }
         };
 
-        console.set_target(match response.new_target {
-            NewTarget::NoTarget => None,
-            NewTarget::Target { target } => Some(target),
-            NewTarget::NoChange => current_target,
-        });
+        match response {
+            Ok(response) => {
+                console.set_target(match response.new_target {
+                    NewTarget::NoTarget => None,
+                    NewTarget::Target { target } => Some(target),
+                    NewTarget::NoChange => current_target,
+                });
 
-        console_history.push((!response.success, response.output.to_string()));
+                console_history.push((false, response.output));
 
-        if command == Command::Clear {
-            console_history.clear();
+                if command == Command::Clear {
+                    console_history.clear();
+                }
+            }
+            Err(err) => {
+                console_history.push((true, err.message));
+            }
         }
 
         scrollToBottom().await;
