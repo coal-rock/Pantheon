@@ -1,4 +1,4 @@
-name: Build All
+name: Create Release
 
 on:
   push:
@@ -97,12 +97,10 @@ jobs:
             
       - name: Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tags: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
           prerelease: true
-          body: ${{ github.event.head_commit.message }}
           files: |
             ${{ steps.archive_athena_web.outputs.path }}
             ${{ steps.archive_athena_desktop.outputs.path }}
