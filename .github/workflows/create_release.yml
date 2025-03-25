@@ -99,6 +99,7 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
+          tags: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
           prerelease: true
           body: ${{ github.event.head_commit.message }}
