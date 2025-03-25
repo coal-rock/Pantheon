@@ -1,0 +1,111 @@
+name: Build All
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Ensure Actions can create releases
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.12.2
+
+      - name: Install Dioxus Dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1.4.3
+        with:
+          packages: libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          version: 1.0
+            
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install Dioxus CLI
+        run: cargo binstall dioxus-cli
+      
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Tailwind
+        run: |
+          cd athena
+          npm install tailwindcss @tailwindcss/cli
+
+      - name: Build Tailwind styles for Athena
+        run: |
+          cd athena
+          npx @tailwindcss/cli -i input.css -o assets/tailwind.css
+
+
+      - name: Build Athena (Web)
+        run: |
+          cd athena
+          dx build --platform web --release
+
+      - name: Build Athena (Desktop)
+        run: |
+          cd athena
+          dx build --platform desktop --release
+
+      - name: Build Hermes
+        run: |
+          cd hermes
+          CARGO_TARGET_DIR=../hermes-bin cargo build --release
+
+      - name: Build Tartarus
+        run: |
+          cd tartarus
+          CARGO_TARGET_DIR=../tartarus-bin cargo build --release
+          
+      - name: Archive Athena Web
+        id: archive_athena_web
+        uses: ksm2/archive-action@v1
+        with:
+          format: "tar.gz"
+          name: athena-web
+          include: "target/dx/athena/release/web/public/**/*.*"
+      
+      - name: Archive Athena Desktop
+        id: archive_athena_desktop
+        uses: ksm2/archive-action@v1
+        with:
+          format: "tar.gz"
+          name: athena-dekstop
+          include: "target/dx/athena/release/web/public/**/*.*"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            Release.txt
+            LICENSE
+            
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Release ${{ github.ref_name }}"
+          prerelease: true
+          body: ${{ github.event.head_commit.message }}
+          files: |
+            ${{ steps.archive_athena_web.outputs.path }}
+            ${{ steps.archive_athena_desktop.outputs.path }}
+            hermes-bin/release/hermes
+            tartarus-bin/release/tartarus
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
