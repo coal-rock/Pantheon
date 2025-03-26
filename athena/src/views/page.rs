@@ -194,8 +194,6 @@ pub fn Page() -> Element {
         attemptInitWindowManagement(0);
     "#;
 
-    // let _ = use_resource(move || async move { document::eval(script).await });
-
     rsx! {
         div {
             class: "flex flex-col h-screen",

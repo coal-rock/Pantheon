@@ -10,6 +10,7 @@ mod config;
 mod console_interface;
 mod console_lib;
 mod console_net;
+mod cors;
 mod state;
 mod statistics;
 
@@ -17,6 +18,7 @@ use crate::console_interface::start_console;
 use config::Config;
 use state::{SharedState, State};
 
+use cors::CORS;
 use rocket::{Build, Rocket};
 use std::{fs, path::PathBuf};
 
@@ -30,6 +32,7 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
         .mount("/agent", agent::routes())
         .mount("/binaries", binaries::routes())
         .manage(shared_state)
+        // .attach(CORS)
         .configure(rocket::Config {
             log_level: rocket::config::LogLevel::Critical,
             address: config.address,

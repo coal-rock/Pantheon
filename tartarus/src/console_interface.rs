@@ -13,7 +13,8 @@ pub async fn start_console(shared_state: &SharedState) {
 
     let mut console = Console::new(None);
 
-    print!("\x1B[2J\x1B[1;1H");
+    // print!("\x1B[2J\x1B[1;1H");
+    println!("-----------------------------------");
     println!("Type 'help' for a list of commands.");
 
     loop {

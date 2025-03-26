@@ -23,15 +23,15 @@ pub async fn evaluate_command(
                 exec(state, agents, command, command_context.current_target).await
             }
         Command::ListAgents => list_agents(state).await,
-        Command::Ping { agents } => todo!(),
-        Command::Status { agents } => Ok(status(state, agents, command_context.current_target).await),
+        Command::Ping { agents } => todo().await,
+        Command::Status { agents } => todo().await,
         Command::Nickname { agent, new_name } => {
                 nickname(state, command_context.current_target, agent, new_name).await
             }
         Command::Clear => clear().await,
         Command::ListGroups => list_groups(state).await,
         Command::Help => help().await,
-        Command::SpawnShell { agents } => Ok(spawn_shell(state, agents, command_context.current_target, ).await),
+        Command::SpawnShell { agents } => todo().await
     }
 }
 
@@ -68,6 +68,14 @@ async fn disconnect(current_target: Option<TargetIdentifier>) -> Result<ConsoleR
         }),
         None => Err(ConsoleError::from("not currently connected"))
     }
+}
+
+
+async fn todo() -> Result<ConsoleResponse, ConsoleError> {
+    Ok(ConsoleResponse {
+        output: format!("not implemented yet"),
+        new_target: NewTarget::NoChange,
+    })
 }
 
 async fn create_group(
