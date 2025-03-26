@@ -100,7 +100,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./athena/target/dx/athena/release/web/public  # Path to assets containing JS, CSS, etc.
+          publish_dir: ./target/dx/athena/release/web/public  # Path to assets containing JS, CSS, etc.
 
       # Copy index.html to the publish directory
 #      - name: Copy index.html to the deploy folder
