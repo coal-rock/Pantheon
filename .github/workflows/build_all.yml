@@ -113,9 +113,9 @@ jobs:
 #          cp /assets/index.html /assets/404.html  # Ensure SPA fallback
 
       # Final deployment to GitHub Pages (with assets and index.html)
-      - name: Deploy with JamesIves/github-pages-deploy-action
-        uses: JamesIves/github-pages-deploy-action@v4.4.1
-        with:
-          branch: gh-pages
-          folder: /assets
-          clean: false
+#      - name: Deploy with JamesIves/github-pages-deploy-action
+#        uses: JamesIves/github-pages-deploy-action@v4.4.1
+#        with:
+#          branch: gh-pages
+#          folder: /assets
+#          clean: false
