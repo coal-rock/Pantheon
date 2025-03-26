@@ -29,13 +29,13 @@ jobs:
         with:
           packages: libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
           version: 1.0
-
+            
       - name: Install wasm32 target
         run: rustup target add wasm32-unknown-unknown
 
       - name: Install Dioxus CLI
         run: cargo binstall dioxus-cli
-
+      
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,6 +50,7 @@ jobs:
         run: |
           cd athena
           npx @tailwindcss/cli -i input.css -o assets/tailwind.css
+
 
       - name: Build Athena (Web)
         run: |
@@ -94,28 +95,27 @@ jobs:
         with:
           name: tartarus-binary
           path: tartarus-bin/release/tartarus
-
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./assets  # Path to assets containing JS, CSS, etc.
+          publish_dir: /assets  # Path to assets containing JS, CSS, etc.
 
       # Copy index.html to the publish directory
       - name: Copy index.html to the deploy folder
         run: |
-          cp index.html ./assets  # Copy index.html from the root directory to assets
+          cp index.html /assets  # Copy index.html from the root directory to assets
 
       # Ensure SPA routing by copying index.html as 404.html (for fallback)
       - name: Copy index.html as 404.html
         run: |
-          cp ./assets/index.html ./assets/404.html  # Ensure SPA fallback
+          cp /assets/index.html /assets/404.html  # Ensure SPA fallback
 
       # Final deployment to GitHub Pages (with assets and index.html)
       - name: Deploy with JamesIves/github-pages-deploy-action
         uses: JamesIves/github-pages-deploy-action@v4.4.1
         with:
           branch: gh-pages
-          folder: ./assets
+          folder: /assets
           clean: false
