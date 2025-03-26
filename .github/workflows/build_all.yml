@@ -100,18 +100,22 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/dx/athena/release/web/public
+          publish_dir: ./assets  # Path to assets containing JS, CSS, etc.
 
-      # Ensure build is properly deployed on GitHub Pages with Dioxus specifics
-      - name: Build and Deploy with Dioxus CLI (GitHub Pages)
+      # Copy index.html to the publish directory
+      - name: Copy index.html to the deploy folder
         run: |
-          cd athena
-          dx build --release
-          cp ./dist/index.html ./dist/404.html
-          
-      - name: Deploy Project to GitHub Pages
+          cp index.html ./assets  # Copy index.html from the root directory to assets
+
+      # Ensure SPA routing by copying index.html as 404.html (for fallback)
+      - name: Copy index.html as 404.html
+        run: |
+          cp ./assets/index.html ./assets/404.html  # Ensure SPA fallback
+
+      # Final deployment to GitHub Pages (with assets and index.html)
+      - name: Deploy with JamesIves/github-pages-deploy-action
         uses: JamesIves/github-pages-deploy-action@v4.4.1
         with:
           branch: gh-pages
-          folder: athena/dist
+          folder: ./assets
           clean: false
