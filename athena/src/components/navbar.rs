@@ -8,7 +8,7 @@ use crate::views::page::PanelManager;
 use crate::Route;
 
 #[component]
-pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
+pub fn Navbar(show_sidebar: Signal<bool>, anemic: bool) -> Element {
     // we have to use use_signal for this as i'm not sure to apply css
     // to Icons direct
     let mut sidebar_toggle_hover = use_signal(|| false);
@@ -19,28 +19,34 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
             class: "bg-zinc-950 h-16 flex items-center justify-between border-0 border-b-2 border-gray-600",
             div {
                 class: "flex flex-row items-center w-64",
-                button {
-                    class: "cursor-pointer p-4",
+                if !anemic {
+                    button {
+                        class: "cursor-pointer p-4",
 
-                    onmouseenter: move |_event| {
-                        sidebar_toggle_hover.set(true);
-                    },
-                    onmouseleave: move |_event| {
-                        sidebar_toggle_hover.set(false);
-                    },
-                    onclick: move |_event| {
-                        let new_value = !show_sidebar.read().clone();
-                        *show_sidebar.write() = new_value;
-                    },
-                    Icon {
-                        width: 28,
-                        height: 28,
-                        fill: if *sidebar_toggle_hover.read() {"white"} else {"lightgray"},
-                        icon: FaBars,
+                        onmouseenter: move |_event| {
+                            sidebar_toggle_hover.set(true);
+                        },
+                        onmouseleave: move |_event| {
+                            sidebar_toggle_hover.set(false);
+                        },
+                        onclick: move |_event| {
+                            let new_value = !show_sidebar.read().clone();
+                            *show_sidebar.write() = new_value;
+                        },
+                        Icon {
+                            width: 28,
+                            height: 28,
+                            fill: if *sidebar_toggle_hover.read() {"white"} else {"lightgray"},
+                            icon: FaBars,
+                        }
                     }
                 }
+
                 div {
-                    class: "flex flex-row border-2 border-gray-600 items-center justify-center ml-1",
+                    class: match anemic {
+                        false => "flex flex-row border-2 border-gray-600 items-center justify-center ml-1",
+                        true => "flex flex-row border-2 border-gray-600 items-center justify-center border-l-0",
+                    },
                     div {
                         class: "w-full h-full",
                         img {
@@ -51,10 +57,16 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                         }
                     }
                     div {
-                        class: "flex flex-col p-2 m-1",
+                        class: match anemic {
+                            false => "flex flex-col p-2 m-1",
+                            true => "flex flex-col p-2",
+                        },
                         Link {
                             class: "text-gray-300 hover:text-white font-sans text-4xl",
-                            to: Route::Home {},
+                            to: match anemic {
+                                true => Route::Authenticate{},
+                                false => Route::Home{},
+                            },
                             "Athena"
                         }
                         h1 {
@@ -64,65 +76,67 @@ pub fn Navbar(show_sidebar: Signal<bool>) -> Element {
                     }
                 }
             }
-            div {
-                class: "w-64 grow h-full flex flex-row gap-0 justify-left items-left",
-                div {
-                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-24 h-full items-center",
-                    div {
-                        class: "text-gray-300 text-md",
-                        "Tartarus"
-                    }
-                    div {
-                        class: "text-gray-400 text-sm",
-                        "192.168.1.2"
-                    }
-                }
-                div {
-                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-20 h-full items-center",
-                    div {
-                        class: "text-gray-300 text-md",
-                        "Uptime"
-                    }
-                    div {
-                        class: "text-gray-400 text-sm",
-                        "100 hours"
-                    }
-                }
-
+            if !anemic {
 
                 div {
-                    class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
-                    DropdownMenu {
-                        DropdownElement {
-                            layout: vec![1],
+                    class: "w-64 grow h-full flex flex-row gap-0 justify-left items-left",
+                    div {
+                        class: "p-2 border-r-2 border-gray-600 flex flex-col w-24 h-full items-center",
+                        div {
+                            class: "text-gray-300 text-md",
+                            "Tartarus"
                         }
-
-                        DropdownElement {
-                            layout: vec![2]
-                        }
-
-                        hr{}
-
-                        DropdownElement {
-                            layout: vec![1, 1]
-                        }
-
-                        DropdownElement {
-                            layout: vec![2, 2]
-                        }
-
-                        hr{}
-
-                        DropdownElement {
-                            layout: vec![1, 1, 1]
-                        }
-
-                        DropdownElement {
-                            layout: vec![2, 2, 2]
+                        div {
+                            class: "text-gray-400 text-sm",
+                            "192.168.1.2"
                         }
                     }
-                }
+                    div {
+                        class: "p-2 border-r-2 border-gray-600 flex flex-col w-20 h-full items-center",
+                        div {
+                            class: "text-gray-300 text-md",
+                            "Uptime"
+                        }
+                        div {
+                            class: "text-gray-400 text-sm",
+                            "100 hours"
+                        }
+                    }
 
+                    div {
+                        class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
+                        DropdownMenu {
+                            DropdownElement {
+                                layout: vec![1],
+                            }
+
+                            DropdownElement {
+                                layout: vec![2]
+                            }
+
+                            hr{}
+
+                            DropdownElement {
+                                layout: vec![1, 1]
+                            }
+
+                            DropdownElement {
+                                layout: vec![2, 2]
+                            }
+
+                            hr{}
+
+                            DropdownElement {
+                                layout: vec![1, 1, 1]
+                            }
+
+                            DropdownElement {
+                                layout: vec![2, 2, 2]
+                            }
+                        }
+                    }
+
+                }
             }
 
             div {

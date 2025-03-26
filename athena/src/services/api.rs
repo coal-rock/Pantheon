@@ -1,4 +1,5 @@
 use anyhow::Result;
+use reqwest::StatusCode;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use talaria::api::*;
@@ -17,6 +18,20 @@ impl Api {
             api_base: Url::parse(api_base).unwrap(),
             client: Client::new(),
             token: String::from("bb123#123"),
+        }
+    }
+
+    pub fn set_token(&mut self, api_token: &str) {
+        self.token = api_token.to_string();
+    }
+
+    pub fn set_api_base(&mut self, api_base: &str) -> bool {
+        match Url::parse(api_base) {
+            Ok(url) => {
+                self.api_base = url;
+                true
+            }
+            Err(_) => false,
         }
     }
 
@@ -72,5 +87,37 @@ impl Api {
         command_context: CommandContext,
     ) -> Result<Result<ConsoleResponse, ConsoleError>> {
         Ok(self.post("/console/monolith", command_context).await?)
+    }
+
+    pub async fn is_online(&self, url: &str) -> bool {
+        let url = match Url::parse(url) {
+            Ok(url) => url,
+            Err(_) => return false,
+        };
+
+        let path = url.join(&format!("/admin{}", "/tartarus_info")).unwrap();
+
+        match self.client.get(path).send().await {
+            Ok(_) => true,
+            Err(_) => false,
+        }
+    }
+
+    pub async fn is_authed(&self, api_token: &str) -> bool {
+        match self
+            .client
+            .get(self.make_api_path("/tartarus_info").unwrap())
+            .header("Authorization", api_token)
+            .send()
+            .await
+        {
+            Ok(response) => match response.status() {
+                StatusCode::OK => return true,
+                _ => return false,
+            },
+            Err(_) => {
+                return false;
+            }
+        }
     }
 }

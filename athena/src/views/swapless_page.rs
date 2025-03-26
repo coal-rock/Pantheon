@@ -13,6 +13,7 @@ pub fn SwaplessPage(children: Element) -> Element {
 
             Navbar {
                 show_sidebar: show_sidebar,
+                anemic: false,
             }
             div {
                 class: "flex flex-row grow",

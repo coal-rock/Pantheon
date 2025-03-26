@@ -202,6 +202,7 @@ pub fn Page() -> Element {
 
             Navbar {
                 show_sidebar: show_sidebar,
+                anemic: false,
             }
             div {
                 class: "flex flex-row grow",
