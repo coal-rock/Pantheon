@@ -3,7 +3,6 @@ name: Build All
 on:
   push:
     branches:
-      - main
       - pages-test
   pull_request:
     branches:
@@ -12,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
