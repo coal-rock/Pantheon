@@ -24,9 +24,15 @@ pub fn Authenticate() -> Element {
     let fetch_status = move |_| async move {
         loop {
             {
-                let mut api = api.read();
+                let mut api = api.write();
+
                 online.set(api.is_online(&host()).await);
                 authed.set(api.is_authed(&token()).await);
+
+                if online() {
+                    api.set_api_base(&host());
+                    api.set_token(&token());
+                }
             }
 
             async_std::task::sleep(Duration::from_secs(1)).await;
@@ -34,10 +40,6 @@ pub fn Authenticate() -> Element {
     };
 
     rsx! {
-        div {
-            onvisible: fetch_status,
-            class: "hidden",
-        }
         div {
             class: "flex flex-col h-screen w-screen",
             onvisible: fetch_status,
