@@ -18,13 +18,12 @@ enum Route {
 
 #[component]
 fn App() -> Element {
-    let mut api = use_context_provider(|| Api::new("http://localhost:8080/"));
-
-    let host = use_synced_storage::<LocalStorage, String>("host".to_string(), || String::new());
+    let host = use_synced_storage::<LocalStorage, String>("host".to_string(), || {
+        String::from("http://localhost:8080")
+    });
     let token = use_synced_storage::<LocalStorage, String>("token".to_string(), || String::new());
 
-    api.set_token(&token());
-    api.set_api_base(&host());
+    let api = use_context_provider(|| Signal::new(Api::new(&host(), &token())));
 
     rsx! {
         document::Link { rel: "icon", href: asset!("/assets/favicon.ico") }

@@ -19,11 +19,11 @@ pub fn TartarusOverview(id: i32) -> Element {
     let mut cpu_name = use_signal(|| None);
     let mut hostname = use_signal(|| None);
 
-    let fetch_info = move |_| async move {
-        let api = use_context::<Api>();
+    let api = use_context::<Signal<Api>>();
 
+    let fetch_info = move |_| async move {
         loop {
-            match api.get_tartarus_info().await {
+            match api.read().get_tartarus_info().await {
                 Ok(info) => {
                     cpu_usage.set(Some(info.cpu_usage));
                     core_count.set(Some(info.core_count));

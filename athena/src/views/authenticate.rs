@@ -10,8 +10,6 @@ use crate::{components::navbar::Navbar, services::api::Api, Route};
 
 #[component]
 pub fn Authenticate() -> Element {
-    let mut api = use_context::<Api>();
-
     let mut online = use_signal(|| false);
     let mut authed = use_signal(|| false);
 
@@ -21,20 +19,16 @@ pub fn Authenticate() -> Element {
     // api.set_token(&token());
     // api.set_api_base(&host());
 
+    let mut api = use_context::<Signal<Api>>();
+
     let fetch_status = move |_| async move {
-        let mut api = use_context::<Api>();
-
         loop {
-            online.set(api.is_online(&host()).await);
-            authed.set(api.is_authed(&token()).await);
-
-            if online() {
-                api.set_api_base(&host());
+            {
+                let mut api = api.read();
+                online.set(api.is_online(&host()).await);
+                authed.set(api.is_authed(&token()).await);
             }
 
-            if authed() {
-                api.set_token(&token());
-            }
             async_std::task::sleep(Duration::from_secs(1)).await;
         }
     };
@@ -100,7 +94,9 @@ pub fn Authenticate() -> Element {
                                         false => "text-white font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 bg-gray-700 cursor-not-allowed transition-colors",
                                     },
                                     to: match online() && authed() {
-                                        true => Route::Home{},
+                                        true => {
+                                            Route::Home{}
+                                        },
                                         false => Route::Authenticate{},
                                     },
                                     "Continue"

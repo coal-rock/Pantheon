@@ -14,8 +14,9 @@ pub fn Console(id: i32) -> Element {
     let mut console_history: Signal<Vec<(bool, String)>> = use_signal(|| vec![]);
     let mut input = use_signal(|| String::new());
 
+    let api = use_context::<Signal<Api>>();
+
     let handle_command = move |event: FormEvent| async move {
-        let api = use_context::<Api>();
         let console_history = &mut console_history.write();
         let console = &mut console.write();
 
@@ -53,6 +54,7 @@ pub fn Console(id: i32) -> Element {
         input.clear();
 
         let response = match api
+            .read()
             .console(CommandContext {
                 command: command.clone(),
                 current_target: console.get_target(),

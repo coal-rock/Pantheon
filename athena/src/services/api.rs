@@ -13,11 +13,11 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new(api_base: &str) -> Api {
+    pub fn new(api_base: &str, token: &str) -> Api {
         Api {
-            api_base: Url::parse(api_base).unwrap(),
+            api_base: Url::parse(api_base).unwrap_or(Url::parse("http://localhost:8080").unwrap()),
             client: Client::new(),
-            token: String::from("bb123#123"),
+            token: token.to_string(),
         }
     }
 

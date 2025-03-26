@@ -21,13 +21,16 @@ pub fn AgentsTable(id: i32) -> Element {
 
     let mut agents: Signal<Vec<AgentInfo>> = use_signal(|| vec![]);
 
+    let api = use_context::<Signal<Api>>();
     let fetch_agents = move |_| async move {
-        let api = use_context::<Api>();
-
         loop {
-            match api.list_agents().await {
-                Ok(response) => agents.set(response),
-                Err(_) => {}
+            {
+                let api = api.read();
+
+                match api.list_agents().await {
+                    Ok(response) => agents.set(response),
+                    Err(_) => {}
+                }
             }
 
             async_std::task::sleep(Duration::from_secs(1)).await;
