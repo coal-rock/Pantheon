@@ -103,14 +103,14 @@ jobs:
           publish_dir: /assets  # Path to assets containing JS, CSS, etc.
 
       # Copy index.html to the publish directory
-      - name: Copy index.html to the deploy folder
-        run: |
-          cp index.html /assets  # Copy index.html from the root directory to assets
+#      - name: Copy index.html to the deploy folder
+#        run: |
+#          cp index.html /assets  # Copy index.html from the root directory to assets
 
       # Ensure SPA routing by copying index.html as 404.html (for fallback)
-      - name: Copy index.html as 404.html
-        run: |
-          cp /assets/index.html /assets/404.html  # Ensure SPA fallback
+#      - name: Copy index.html as 404.html
+#        run: |
+#          cp /assets/index.html /assets/404.html  # Ensure SPA fallback
 
       # Final deployment to GitHub Pages (with assets and index.html)
       - name: Deploy with JamesIves/github-pages-deploy-action
