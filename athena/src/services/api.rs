@@ -36,7 +36,7 @@ impl Api {
     }
 
     fn make_api_path(&self, endpoint: &str) -> Result<Url> {
-        Ok(self.api_base.join(&format!("/admin{}", endpoint))?)
+        Ok(self.api_base.join(&format!("/api/admin{}", endpoint))?)
     }
 
     async fn get<T>(&self, endpoint: &str, query_params: Vec<(&str, &str)>) -> Result<T>
@@ -89,13 +89,15 @@ impl Api {
         Ok(self.post("/console/monolith", command_context).await?)
     }
 
-    pub async fn is_online(&self, url: &str) -> bool {
-        let url = match Url::parse(url) {
+    pub async fn check_host(&self, host: &str) -> bool {
+        let url = match Url::parse(host) {
             Ok(url) => url,
             Err(_) => return false,
         };
 
-        let path = url.join(&format!("/admin{}", "/tartarus_info")).unwrap();
+        let path = url
+            .join(&format!("/api/admin{}", "/tartarus_info"))
+            .unwrap();
 
         match self.client.get(path).send().await {
             Ok(_) => true,
@@ -103,7 +105,16 @@ impl Api {
         }
     }
 
-    pub async fn is_authed(&self, api_token: &str) -> bool {
+    pub async fn check_auth(&self, host: &str, api_token: &str) -> bool {
+        let url = match Url::parse(host) {
+            Ok(url) => url,
+            Err(_) => return false,
+        };
+
+        let path = url
+            .join(&format!("/api/admin{}", "/tartarus_info"))
+            .unwrap();
+
         match self
             .client
             .get(self.make_api_path("/tartarus_info").unwrap())

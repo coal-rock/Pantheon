@@ -27,12 +27,12 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
     let config = shared_state.read().await.config.clone();
 
     rocket::build()
-        .mount("/admin", admin::routes())
-        .mount("/admin/console", console_net::routes())
-        .mount("/agent", agent::routes())
-        .mount("/binaries", binaries::routes())
+        .mount("/api/admin", admin::routes())
+        .mount("/api/admin/console", console_net::routes())
+        .mount("/api/agent", agent::routes())
+        .mount("/api/binaries", binaries::routes())
         .manage(shared_state)
-        // .attach(CORS)
+        .attach(CORS)
         .configure(rocket::Config {
             log_level: rocket::config::LogLevel::Critical,
             address: config.address,

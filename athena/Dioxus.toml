@@ -7,4 +7,4 @@ title = "Athena"
 watch_path = ["src", "assets"]
 
 [[web.proxy]]
-backend = "http://localhost:8000/admin/"
+backend = "http://localhost:8000/api/"

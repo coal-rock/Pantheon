@@ -14,34 +14,34 @@ pub fn Sidebar(should_show: Signal<bool>) -> Element {
             display: if *should_show.read() { None } else { Some("none") },
 
             SidebarElement{
-                text: "Agents",
+                text: "Home",
                 to: Route::Home {},
                 icon: rsx!(Icon { icon: FaRobot })
             }
 
             SidebarElement{
-                text: "Settings",
-                to: Route::Home {},
+                text: "Authenticate",
+                to: Route::Authenticate {},
                 icon: rsx!(Icon { icon: FaGear })
             }
 
-            SidebarElement{
-                text: "About",
-                to: Route::Home {},
-                icon: rsx!(Icon { icon: FaInfo })
-            }
-
-            SidebarElement{
-                text: "Downloads",
-                to: Route::Home {},
-                icon: rsx!(Icon { icon: FaDownload })
-            }
-
-            SidebarElement{
-                text: "Alerts",
-                to: Route::Home {},
-                icon: rsx!(Icon { icon: FaBell })
-            }
+            // SidebarElement{
+            //     text: "About",
+            //     to: Route::Home {},
+            //     icon: rsx!(Icon { icon: FaInfo })
+            // }
+            //
+            // SidebarElement{
+            //     text: "Downloads",
+            //     to: Route::Home {},
+            //     icon: rsx!(Icon { icon: FaDownload })
+            // }
+            //
+            // SidebarElement{
+            //     text: "Alerts",
+            //     to: Route::Home {},
+            //     icon: rsx!(Icon { icon: FaBell })
+            // }
         }
     }
 }

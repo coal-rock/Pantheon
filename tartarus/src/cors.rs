@@ -16,7 +16,10 @@ impl Fairing for CORS {
     }
 
     async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
-        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Origin",
+            "laptop-2.tail9155ab.ts.net",
+        ));
         response.set_header(Header::new(
             "Access-Control-Allow-Methods",
             "GET, POST, PUT, DELETE, OPTIONS",

@@ -91,7 +91,6 @@ async fn make_request(
     request: AgentResponse,
 ) -> Result<AgentInstruction> {
     let request = AgentResponse::serialize(&request)?;
-
     let response = agent
         .http_client
         .post(agent.url() + "/agent/monolith")

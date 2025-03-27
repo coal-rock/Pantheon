@@ -24,15 +24,10 @@ pub fn Authenticate() -> Element {
     let fetch_status = move |_| async move {
         loop {
             {
-                let mut api = api.write();
+                let api = api.read();
 
-                online.set(api.is_online(&host()).await);
-                authed.set(api.is_authed(&token()).await);
-
-                if online() {
-                    api.set_api_base(&host());
-                    api.set_token(&token());
-                }
+                online.set(api.check_host(&host()).await);
+                authed.set(api.check_auth(&host(), &token()).await);
             }
 
             async_std::task::sleep(Duration::from_secs(1)).await;
@@ -42,7 +37,9 @@ pub fn Authenticate() -> Element {
     rsx! {
         div {
             class: "flex flex-col h-screen w-screen",
-            onvisible: fetch_status,
+            onvisible: move |event| {
+                fetch_status(event)
+            },
 
             Navbar {
                 show_sidebar: Signal::new(false), // FIXME: Hack

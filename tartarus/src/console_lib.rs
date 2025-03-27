@@ -266,17 +266,11 @@ async fn exec(
         TargetIdentifier::Agent { agent: _ } => vec![get_agent(state, None, Some(target)).await?.id],
     };
 
-    let command_split = command.split(' ').collect::<Vec<&str>>();
-    // FIXME:command arg parsing should not be
-    // based around splitting on spaces, we should respect quotation marks
-
+    // FIXME: HACK
     let instruction = AgentInstructionBody::Command {
         command_id: 1, // FIXME: command_id should be unique, and generated
-        command: command_split[0].to_string(),
-        args: command_split[1..]
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect(),
+        command: "bash".to_string(),
+        args: vec!["-c".to_string(), command]
     };
 
     for agent_id in agent_ids {

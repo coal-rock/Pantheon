@@ -7,19 +7,21 @@ use std::time::Duration;
 use talaria::helper::*;
 use tokio::time::sleep;
 
-const BACKEND_SERVER_ADDR: &str = "http://127.0.0.1";
-const BACKEND_SERVER_PORT: u16 = 8000;
-const POLLING_INTERVAL_MILLIS: u64 = 10000;
+const PORT: u16 = env!("PORT", "environment variable `PORT` not defined");
+
+const HOST: &'static str = env!("HOST", "environment variable `HOST` not defined");
+
+const POLL_INTERVAL_MS: u64 = env!(
+    "POLL_INTERVAL_MS",
+    "environment variable `POLL_INTERVAL_MS not defined"
+)
+.parse()
+.expect("Invalid port");
 
 #[tokio::main]
 async fn main() {
-    let mut agent = AgentContext::new(
-        BACKEND_SERVER_ADDR,
-        BACKEND_SERVER_PORT,
-        POLLING_INTERVAL_MILLIS,
-    );
+    let mut agent = AgentContext::new(HOST, PORT, POLL_INTERVAL_MS);
 
-    // Main agent loop
     loop {
         match network::send_heartbeat(&mut agent).await {
             Ok(instruction) => {

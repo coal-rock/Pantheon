@@ -7,7 +7,7 @@ use sys_info;
 use talaria::protocol::*;
 
 pub struct AgentContext {
-    pub server_addr: String,
+    pub host: String,
     pub server_port: u16,
     pub agent_id: u64,
     pub polling_interval_millis: u64,
@@ -54,7 +54,7 @@ impl AgentContext {
     }
 
     // We loop here to prevent collisions,
-    // it's incredibly unlikely, but 10k ids 0.04mb so it doesn't quite matter
+    // it's incredibly unlikely, but 10k ids is 0.04mb so it doesn't quite matter
     /// Generate unique IDs for Packets, Commmands, and other structs
     pub fn gen_id(&mut self) -> u32 {
         loop {
@@ -75,13 +75,9 @@ impl AgentContext {
             .as_millis()
     }
 
-    pub fn url(&self) -> String {
-        format!("{}:{}", self.server_addr, self.server_port)
-    }
-
     pub fn new(server_addr: &str, server_port: u16, polling_interval_millis: u64) -> AgentContext {
         AgentContext {
-            server_addr: server_addr.to_string(),
+            host: server_addr.to_string(),
             server_port,
             agent_id: AgentContext::generate_deterministic_uuid(),
             polling_interval_millis: 10000,
