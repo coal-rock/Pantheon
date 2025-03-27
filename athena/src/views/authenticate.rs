@@ -16,18 +16,20 @@ pub fn Authenticate() -> Element {
     let host = use_synced_storage::<LocalStorage, String>("host".to_string(), || String::new());
     let token = use_synced_storage::<LocalStorage, String>("token".to_string(), || String::new());
 
-    // api.set_token(&token());
-    // api.set_api_base(&host());
-
     let mut api = use_context::<Signal<Api>>();
 
     let fetch_status = move |_| async move {
         loop {
             {
-                let api = api.read();
+                let mut api = api.write();
 
                 online.set(api.check_host(&host()).await);
                 authed.set(api.check_auth(&host(), &token()).await);
+
+                if online() {
+                    api.set_api_base(&host());
+                    api.set_token(&token());
+                }
             }
 
             async_std::task::sleep(Duration::from_secs(1)).await;
@@ -37,10 +39,7 @@ pub fn Authenticate() -> Element {
     rsx! {
         div {
             class: "flex flex-col h-screen w-screen",
-            onvisible: move |event| {
-                fetch_status(event)
-            },
-
+            onvisible: fetch_status,
             Navbar {
                 show_sidebar: Signal::new(false), // FIXME: Hack
                 anemic: true,
