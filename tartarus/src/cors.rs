@@ -1,8 +1,11 @@
 use rocket::{
     fairing::{Fairing, Info, Kind},
     http::Header,
-    Request, Response,
+    outcome::try_outcome,
+    Request, Response, State,
 };
+
+use crate::SharedState;
 
 pub struct CORS;
 
@@ -15,10 +18,13 @@ impl Fairing for CORS {
         }
     }
 
-    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+    async fn on_response<'r>(&self, req: &'r Request<'_>, response: &mut Response<'r>) {
+        let state = req.guard::<&State<SharedState>>().await.unwrap();
+        let config = &state.read().await.config;
+
         response.set_header(Header::new(
             "Access-Control-Allow-Origin",
-            "laptop-2.tail9155ab.ts.net",
+            config.cors.clone(),
         ));
         response.set_header(Header::new(
             "Access-Control-Allow-Methods",

@@ -97,7 +97,7 @@ impl Api {
 
         let path = url
             .join(&format!("/api/admin{}", "/tartarus_info"))
-            .unwrap();
+            .unwrap_or(Url::parse("http://0.0.0.0").unwrap());
 
         match self.client.get(path).send().await {
             Ok(_) => true,
@@ -113,11 +113,14 @@ impl Api {
 
         let path = url
             .join(&format!("/api/admin{}", "/tartarus_info"))
-            .unwrap();
+            .unwrap_or(Url::parse("http://0.0.0.0").unwrap());
 
         match self
             .client
-            .get(self.make_api_path("/tartarus_info").unwrap())
+            .get(
+                self.make_api_path("/tartarus_info")
+                    .unwrap_or(Url::parse("http://0.0.0.0").unwrap()),
+            )
             .header("Authorization", api_token)
             .send()
             .await
