@@ -97,6 +97,12 @@ jobs:
         with:
           name: tartarus-binary
           path: tartarus-bin/release/tartarus
+      
+      - name: Configure Athena Folder for Deployment
+        run: |
+          mkdir ./target/dx/athena/release/web/Pantheon/Pantheon
+          cp -r ./target/dx/athena/release/web/public/* ./target/dx/athena/release/web/Pantheon/Pantheon/
+          rm -rf ./target/dx/athena/release/web/public/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
