@@ -93,3 +93,9 @@ jobs:
         with:
           name: tartarus-binary
           path: tartarus-bin/release/tartarus
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/dx/athena/release/web/public
