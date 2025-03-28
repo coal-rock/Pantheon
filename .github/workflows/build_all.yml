@@ -63,7 +63,7 @@ jobs:
       - name: Build Hermes
         run: |
           cd hermes
-          CARGO_TARGET_DIR=../hermes-bin cargo build --release
+          CARGO_TARGET_DIR=../hermes-bin URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo build --release
 
       - name: Build Tartarus
         run: |
