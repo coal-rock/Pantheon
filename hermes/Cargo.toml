@@ -4,14 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reqwest = { version = "0.11", features = ["json"] }
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+reqwest = { version = "0.11" }
+tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
 talaria = { path = "../talaria" }
 sha2 = "0.10"
 sys-info = "0.9.1"
 mac_address = "1.1.7"
 rand = "0.8.5"
 anyhow = "1.0"
-ciborium = "0.2.2"

@@ -1650,12 +1650,9 @@ name = "hermes"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "ciborium",
  "mac_address",
  "rand",
  "reqwest 0.11.27",
- "serde",
- "serde_json",
  "sha2",
  "sys-info",
  "talaria",

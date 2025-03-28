@@ -93,7 +93,7 @@ async fn make_request(
     let request = AgentResponse::serialize(&request)?;
     let response = agent
         .http_client
-        .post(agent.url() + "/agent/monolith")
+        .post(agent.url.join("agent/monolith")?)
         .body(request)
         .send()
         .await?;

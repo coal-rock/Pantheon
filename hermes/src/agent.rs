@@ -1,14 +1,13 @@
 use mac_address::get_mac_address;
 use rand::Rng;
-use reqwest::Client;
+use reqwest::{Client, Url};
 use sha2::{Digest, Sha256};
 use std::time::SystemTime;
 use sys_info;
 use talaria::protocol::*;
 
 pub struct AgentContext {
-    pub host: String,
-    pub server_port: u16,
+    pub url: Url,
     pub agent_id: u64,
     pub polling_interval_millis: u64,
     pub http_client: Client,
@@ -75,12 +74,11 @@ impl AgentContext {
             .as_millis()
     }
 
-    pub fn new(server_addr: &str, server_port: u16, polling_interval_millis: u64) -> AgentContext {
+    pub fn new(url: &str, polling_interval_millis: u64) -> AgentContext {
         AgentContext {
-            host: server_addr.to_string(),
-            server_port,
+            url: Url::parse(url).unwrap(),
             agent_id: AgentContext::generate_deterministic_uuid(),
-            polling_interval_millis: 10000,
+            polling_interval_millis,
             http_client: Client::new(),
             rand: rand::thread_rng(),
             used_ids: vec![],
