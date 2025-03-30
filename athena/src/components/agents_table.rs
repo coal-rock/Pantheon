@@ -167,7 +167,11 @@ fn AgentList(
             }
             h1 {
                 class: "grow-5 shrink basis-0",
-                "IP"
+                "Internal IPv4"
+            }
+            h1 {
+                class: "grow-5 shrink basis-0",
+                "External IPv4"
             }
             h1 {
                 class: "grow-4 shrink basis-0",
@@ -211,7 +215,11 @@ fn AgentList(
                     }
                     h1 {
                         class: "grow-5 shrink basis-0",
-                        {agent.ip}
+                        {agent.internal_ip}
+                    }
+                    h1 {
+                        class: "grow-5 shrink basis-0",
+                        {agent.external_ip}
                     }
                     div {
                         class: "grow-4 shrink basis-0 flex flex-row items-center justify-center",
