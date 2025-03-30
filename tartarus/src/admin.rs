@@ -63,7 +63,8 @@ pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Jso
         agent_info.push(AgentInfo {
             name: agent.nickname,
             id: agent.id,
-            ip: agent.ip.to_string(),
+            external_ip: agent.external_ip.to_string(),
+            internal_ip: agent.internal_ip.to_string(),
             os: agent.os,
             status,
             ping,

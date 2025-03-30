@@ -33,7 +33,8 @@ async fn register_or_update(
                 nickname: None,
                 id: response.packet_header.agent_id,
                 os: response.packet_header.os.clone(),
-                ip: addr,
+                external_ip: addr,
+                internal_ip: response.packet_header.internal_ip.clone(),
                 last_packet_send: response.packet_header.timestamp,
                 last_packet_recv: current_time(),
                 network_history: vec![
@@ -79,6 +80,7 @@ pub async fn monolith(
                     packet_id: response.packet_header.packet_id,
                     os: OS::overlord(),
                     polling_interval_ms: 0,
+                    internal_ip: String::new(),
                 },
                 packet_body: AgentInstructionBody::Ok,
             }
@@ -96,6 +98,7 @@ pub async fn monolith(
                         packet_id: response.packet_header.packet_id,
                         os: OS::overlord(),
                         polling_interval_ms: 0,
+                        internal_ip: String::new(),
                     },
                     packet_body: AgentInstructionBody::Ok,
                 }
@@ -110,6 +113,7 @@ pub async fn monolith(
                         packet_id: response.packet_header.packet_id,
                         os: OS::overlord(),
                         polling_interval_ms: 0,
+                        internal_ip: String::new(),
                     },
                     packet_body: body.unwrap_or(AgentInstructionBody::Ok),
                 }
@@ -122,6 +126,7 @@ pub async fn monolith(
                 packet_id: response.packet_header.packet_id,
                 os: OS::overlord(),
                 polling_interval_ms: 0,
+                internal_ip: String::new(),
             },
             packet_body: AgentInstructionBody::Command {
                 command_id: 1, // Example command_id; replace with logic for unique IDs

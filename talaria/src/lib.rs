@@ -143,7 +143,7 @@ pub mod protocol {
         pub timestamp: u128,
         pub packet_id: u32,
         pub polling_interval_ms: u64,
-        pub local_ip: String,
+        pub internal_ip: String,
         pub os: OS,
     }
 
@@ -200,7 +200,9 @@ pub mod api {
         pub nickname: Option<String>,
         pub id: u64,
         pub os: OS,
-        pub ip: SocketAddr,
+        pub external_ip: SocketAddr,
+        // TODO: this maybe shouldn't be a String?
+        pub internal_ip: String,
         /// Timestamp of last packet sent from agent (in ms)
         pub last_packet_send: u128,
         /// Timestamp of when last packet from agent was received (in ms)
@@ -267,7 +269,8 @@ pub mod api {
         pub name: Option<String>,
         pub os: OS,
         pub id: u64,
-        pub ip: String,
+        pub external_ip: String,
+        pub internal_ip: String,
         pub status: bool,
         pub ping: u128,
     }
