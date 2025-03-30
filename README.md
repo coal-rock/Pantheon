@@ -11,7 +11,7 @@
 [About](#about) •
 [Demo](#demo)
 
-[![Build All](https://github.com/Dack985/Pantheon/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Dack985/Pantheon/actions/workflows/main.yml)
+[![Build All](https://github.com/Machina-Software/Pantheon/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/Machina-Software/Pantheon/actions/workflows/main.yml)
 
 </div>
 
