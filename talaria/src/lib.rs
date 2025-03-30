@@ -143,6 +143,7 @@ pub mod protocol {
         pub timestamp: u128,
         pub packet_id: u32,
         pub polling_interval_ms: u64,
+        pub local_ip: String,
         pub os: OS,
     }
 

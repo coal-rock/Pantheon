@@ -1,3 +1,4 @@
+use local_ip_address::local_ip;
 use mac_address::get_mac_address;
 use rand::Rng;
 use reqwest::{Client, Url};
@@ -46,11 +47,20 @@ impl AgentContext {
             sys_info::os_release().ok(),
         );
 
+        let local_ip = local_ip();
+        let local_ip = match local_ip {
+            Ok(ip) => ip.to_string(),
+            Err(_) => "?".to_string(),
+        };
+
+        println!("{}", local_ip);
+
         PacketHeader {
             agent_id: self.agent_id,
             timestamp: AgentContext::get_timestamp(),
             packet_id: self.gen_id(),
             polling_interval_ms: self.polling_interval_millis,
+            local_ip,
             os,
         }
     }
