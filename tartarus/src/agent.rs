@@ -1,6 +1,6 @@
-use serde::Serialize;
-use std::{net::SocketAddr, time::SystemTime};
+use std::net::SocketAddr;
 
+use crate::helper::current_time;
 use talaria::api::*;
 use talaria::protocol::*;
 
@@ -45,6 +45,7 @@ async fn register_or_update(
                     },
                 ],
                 queue: vec![],
+                polling_interval_ms: response.packet_header.polling_interval_ms,
             },
         );
     }
@@ -77,6 +78,7 @@ pub async fn monolith(
                     timestamp: current_time(),
                     packet_id: response.packet_header.packet_id,
                     os: OS::overlord(),
+                    polling_interval_ms: 0,
                 },
                 packet_body: AgentInstructionBody::Ok,
             }
@@ -93,6 +95,7 @@ pub async fn monolith(
                         timestamp: current_time(),
                         packet_id: response.packet_header.packet_id,
                         os: OS::overlord(),
+                        polling_interval_ms: 0,
                     },
                     packet_body: AgentInstructionBody::Ok,
                 }
@@ -106,6 +109,7 @@ pub async fn monolith(
                         timestamp: current_time(),
                         packet_id: response.packet_header.packet_id,
                         os: OS::overlord(),
+                        polling_interval_ms: 0,
                     },
                     packet_body: body.unwrap_or(AgentInstructionBody::Ok),
                 }
@@ -117,6 +121,7 @@ pub async fn monolith(
                 timestamp: current_time(),
                 packet_id: response.packet_header.packet_id,
                 os: OS::overlord(),
+                polling_interval_ms: 0,
             },
             packet_body: AgentInstructionBody::Command {
                 command_id: 1, // Example command_id; replace with logic for unique IDs
@@ -142,14 +147,6 @@ pub async fn monolith(
     state.statistics.log_send(instruction.len());
 
     instruction
-}
-
-// Helper to get current time in seconds since UNIX epoch
-fn current_time() -> u128 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_millis()
 }
 
 pub fn routes() -> Vec<rocket::Route> {

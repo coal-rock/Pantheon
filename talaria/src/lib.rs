@@ -135,6 +135,8 @@ pub mod protocol {
 
     // This struct should exclusively contain fields required for minimum viable operation
     // Other data should be locked behind other commands
+    //
+    // TODO: create a separate header for [Agent -> Server] and [Server -> Agent]
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct PacketHeader {
         pub agent_id: u64,
@@ -198,8 +200,11 @@ pub mod api {
         pub id: u64,
         pub os: OS,
         pub ip: SocketAddr,
+        /// Timestamp of last packet sent from agent (in ms)
         pub last_packet_send: u128,
+        /// Timestamp of when last packet from agent was received (in ms)
         pub last_packet_recv: u128,
+        pub polling_interval_ms: u64,
         pub network_history: Vec<NetworkHistoryEntry>,
         pub queue: Vec<AgentInstructionBody>,
     }

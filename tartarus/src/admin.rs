@@ -1,4 +1,5 @@
 use crate::auth::Auth;
+use crate::helper::current_time;
 use crate::SharedState;
 use rocket::serde::json::Json;
 use std::{collections::HashMap, path::Path};
@@ -49,17 +50,22 @@ pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Jso
 
     for (_, agent) in agents {
         // prevents overflow because for some reason we sometimes have negative latency
-        let ping = match agent.last_packet_send >= agent.last_packet_recv {
-            true => agent.last_packet_send - agent.last_packet_recv,
+        let ping = match agent.last_packet_recv >= agent.last_packet_send {
+            true => agent.last_packet_recv - agent.last_packet_send,
             false => 0,
         };
+
+        // TODO: make the timeout count for inactivity be configurable
+        // Currently timeout count is set to 3
+        let status =
+            (current_time() - agent.last_packet_recv) < (agent.polling_interval_ms * 3) as u128;
 
         agent_info.push(AgentInfo {
             name: agent.nickname,
             id: agent.id,
             ip: agent.ip.to_string(),
             os: agent.os,
-            status: true,
+            status,
             ping,
         });
     }
