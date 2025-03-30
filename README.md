@@ -41,7 +41,7 @@ Panthon/
 ## Getting Started
 Up-to-date builds can be found on either the [Releases](https://github.com/Machina-Software/Pantheon/releases) page or by pulling artifacts from [GitHub Actions](https://github.com/Machina-Software/Pantheon/actions).
 
-For proper deployments, it is currently necessary to manually build at least the agent, _Hermes_ from source, as its default configuration is baked into the binary to be as portable as possible. This can be accomplished with the following commands:
+For proper deployments, it is currently necessary to manually build at least the agent, _Hermes_, from source, as its default configuration is baked into the binary to be as portable as possible. This can be accomplished with the following commands:
 ```bash
 git clone https://github.com/Machina-Software/Pantheon
 cd Pantheon/hermes
