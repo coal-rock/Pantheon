@@ -32,10 +32,10 @@
 
 ```
 Panthon/
-├── athena/            # web-based frontend built using Dioxus
-├── hermes/            # cross-platform agent
-├── talaria/           # library implementing shared functionality between other components
-└── tartarus/          # server built using Rocket
+├── athena/     # web-based frontend built using Dioxus
+├── hermes/     # cross-platform agent
+├── talaria/    # library implementing shared functionality between other components
+└── tartarus/   # server built using Rocket
 ```
 
 ## Getting Started
