@@ -20,12 +20,12 @@
 </div>
 
 > [!WARNING]  
-> Panthon is very much still in pre-release software!
+> Panthon is very much still pre-release software!
 > 
 > If you're thinking about employing this in a competition environment, please feel free to reach out for help with deployment or with any issues that may arise, we're happy to help :)
 
 ## About
-**Pantheon** is a C2 Adversary Emulation Framework written entirely in Rust, striving to be *painlessly interactive*, *performant*, and *portable*.
+**Pantheon** is a C2 Adversary Emulation Framework written entirely in Rust. It strives to be *painlessly interactive*, *performant*, and *portable*.
 
 
 ## Components
@@ -39,9 +39,9 @@ Panthon/
 ```
 
 ## Getting Started
-Up to date builds can be found on either the [Releases](https://github.com/Machina-Software/Pantheon/releases) page, or by pulling artifacts from [GitHub Actions](https://github.com/Machina-Software/Pantheon/actions).
+Up-to-date builds can be found on either the [Releases](https://github.com/Machina-Software/Pantheon/releases) page or by pulling artifacts from [GitHub Actions](https://github.com/Machina-Software/Pantheon/actions).
 
-For proper deployments, it is currently necessary to manually build at least the agent, _hermes_ from source, as it's default configuration is baked in the binary as to be as portable as possible. This can be accomplished with the following commands:
+For proper deployments, it is currently necessary to manually build at least the agent, _Hermes_ from source, as its default configuration is baked into the binary to be as portable as possible. This can be accomplished with the following commands:
 ```bash
 git clone https://github.com/Machina-Software/Pantheon
 cd Pantheon/hermes
