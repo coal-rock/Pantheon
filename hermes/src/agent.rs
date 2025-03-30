@@ -39,6 +39,8 @@ impl AgentContext {
     }
 
     pub fn generate_packet_header(&mut self) -> PacketHeader {
+        // TODO: querying OS data every single packet might be slow and suspicious
+        // in the future, store this in the context struct, and poll on startup
         let os = OS::from(
             &sys_info::os_type().unwrap_or(String::new()),
             sys_info::os_release().ok(),
@@ -48,6 +50,7 @@ impl AgentContext {
             agent_id: self.agent_id,
             timestamp: AgentContext::get_timestamp(),
             packet_id: self.gen_id(),
+            polling_interval_ms: self.polling_interval_millis,
             os,
         }
     }

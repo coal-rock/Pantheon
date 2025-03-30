@@ -133,11 +133,14 @@ pub mod protocol {
         }
     }
 
+    // This struct should exclusively contain fields required for minimum viable operation
+    // Other data should be locked behind other commands
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct PacketHeader {
         pub agent_id: u64,
         pub timestamp: u128,
         pub packet_id: u32,
+        pub polling_interval_ms: u64,
         pub os: OS,
     }
 
