@@ -1,3 +1,7 @@
+// these are tracked separately both for performance,
+// and because the network_history arrays have limits
+// for the sake of memory-- and are thus unreliable
+// for such metrics
 #[derive(Clone, Default)]
 pub struct Statistics {
     pub packets_sent: u64,

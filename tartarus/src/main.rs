@@ -80,18 +80,6 @@ async fn main() -> Result<(), rocket::Error> {
     print!("{}", toml::to_string_pretty(&config.clone()).unwrap());
     println!("--------------------------\n");
 
-    match config.binary_path.is_dir() {
-        true => println!("Binary directory exists"),
-        false => println!("Binary directory does not exist"),
-    }
-
-    if !config.binary_path.join("windows.exe").is_file() {
-        println!("Binary 'windows.exe' not found");
-    }
-    if !config.binary_path.join("linux").is_file() {
-        println!("Binary 'linux' not found");
-    }
-
     // Initialize shared state for active listeners
     let shared_state = State::from(config).to_shared_state();
 

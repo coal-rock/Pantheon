@@ -1,3 +1,4 @@
+#![feature(vec_deque_pop_if)]
 pub mod protocol {
     use anyhow::Result;
     use bincode::{Decode, Encode};
@@ -187,7 +188,7 @@ pub mod protocol {
 pub mod api {
     use crate::protocol::*;
     use serde::{Deserialize, Serialize};
-    use std::net::SocketAddr;
+    use std::{collections::VecDeque, net::SocketAddr};
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub enum NetworkHistoryEntry {
@@ -208,23 +209,43 @@ pub mod api {
         /// Timestamp of when last packet from agent was received (in ms)
         pub last_packet_recv: u128,
         pub polling_interval_ms: u64,
-        pub network_history: Vec<NetworkHistoryEntry>,
+        pub network_history: VecDeque<NetworkHistoryEntry>,
         pub queue: Vec<AgentInstructionBody>,
     }
 
     impl Agent {
         // appends a response to the network history, used for logging
-        pub fn push_response(&mut self, response: &AgentResponse) {
+        pub fn push_response(&mut self, response: &AgentResponse, history_max_len: Option<usize>) {
+            let length = self.network_history.len().clone();
+
             self.network_history
-                .push(NetworkHistoryEntry::AgentResponse {
+                .pop_front_if(|_| match history_max_len {
+                    Some(max_len) => length == max_len,
+                    None => false,
+                });
+
+            self.network_history
+                .push_back(NetworkHistoryEntry::AgentResponse {
                     response: response.clone(),
                 })
         }
 
         // appends an instruction to the network history, used for logging
-        pub fn push_instruction(&mut self, instruction: &AgentInstruction) {
+        pub fn push_instruction(
+            &mut self,
+            instruction: &AgentInstruction,
+            history_max_len: Option<usize>,
+        ) {
+            let length = self.network_history.len().clone();
+
             self.network_history
-                .push(NetworkHistoryEntry::AgentInstruction {
+                .pop_front_if(|_| match history_max_len {
+                    Some(max_len) => length == max_len,
+                    None => false,
+                });
+
+            self.network_history
+                .push_back(NetworkHistoryEntry::AgentInstruction {
                     instruction: instruction.clone(),
                 })
         }

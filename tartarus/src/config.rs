@@ -7,6 +7,7 @@ pub struct Config {
     pub address: IpAddr,
     pub binary_path: PathBuf,
     pub token: Option<String>,
+    pub history_buf_len: Option<usize>,
     pub cors: String,
 }
 
@@ -18,6 +19,7 @@ impl Default for Config {
             binary_path: PathBuf::from("binaries/"),
             token: Some("bb123#123".to_string()),
             cors: String::from("*"),
+            history_buf_len: Some(1000),
         }
     }
 }

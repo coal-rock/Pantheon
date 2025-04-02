@@ -3,3 +3,4 @@ address = "0.0.0.0"
 binary_path = "binaries/"
 token = "bb123#123"
 cors = "http://localhost:8080"
+history_buff_len = 1000

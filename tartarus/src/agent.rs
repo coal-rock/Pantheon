@@ -18,12 +18,13 @@ async fn register_or_update(
 
     if state.agents.contains_key(&agent_id) {
         // update agent if found
+        let config = state.config.clone();
         let agent = state.agents.get_mut(&agent_id).unwrap();
         log::info!("Updated Agent {} at {:?}", agent.id, addr);
         agent.last_packet_send = response.packet_header.timestamp;
         agent.last_packet_recv = current_time();
-        agent.push_response(response);
-        agent.push_instruction(instruction);
+        agent.push_response(response, config.history_buf_len);
+        agent.push_instruction(instruction, config.history_buf_len);
         return;
     } else {
         // add new agent if not found
@@ -44,7 +45,8 @@ async fn register_or_update(
                     NetworkHistoryEntry::AgentInstruction {
                         instruction: instruction.clone(),
                     },
-                ],
+                ]
+                .into(),
                 queue: vec![],
                 polling_interval_ms: response.packet_header.polling_interval_ms,
             },

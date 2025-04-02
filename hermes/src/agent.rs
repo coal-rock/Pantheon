@@ -4,7 +4,8 @@ use rand::Rng;
 use reqwest::{Client, Url};
 use sha2::{Digest, Sha256};
 use std::time::SystemTime;
-use sys_info;
+use sysinfo;
+use sysinfo::{Components, Disks, Networks, System};
 use talaria::protocol::*;
 
 pub struct AgentContext {
@@ -21,10 +22,10 @@ impl AgentContext {
     // Takes the Sha256 hash of aformentioned data,
     // Returns the first 64 bits of the aformentioned hash
     pub fn generate_deterministic_uuid() -> u64 {
-        let hostname: String = sys_info::hostname().unwrap();
-        let os_version: String = sys_info::os_release().unwrap();
-        let cpu_num: u32 = sys_info::cpu_num().unwrap();
-        let os_type: String = sys_info::os_type().unwrap();
+        let hostname: String = System::host_name().unwrap();
+        let os_version: String = System::os_version().unwrap();
+        let cpu_num: u32 = System::physical_core_count().unwrap() as u32;
+        let os_type: String = "linux".to_string();
         let mac_address: [u8; 6] = get_mac_address().unwrap().unwrap().bytes();
 
         let unique_info = format!(
@@ -42,10 +43,7 @@ impl AgentContext {
     pub fn generate_packet_header(&mut self) -> PacketHeader {
         // TODO: querying OS data every single packet might be slow and suspicious
         // in the future, store this in the context struct, and poll on startup
-        let os = OS::from(
-            &sys_info::os_type().unwrap_or(String::new()),
-            sys_info::os_release().ok(),
-        );
+        let os = OS::from("linux", System::os_version());
 
         let internal_ip = local_ip();
         let internal_ip = match internal_ip {
