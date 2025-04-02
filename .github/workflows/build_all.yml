@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.12.2
@@ -59,44 +59,44 @@ jobs:
           cd athena
           dx build --platform web --release
 
-      # - name: Build Athena (Desktop)
-      #   run: |
-      #     cd athena
-      #     dx build --platform desktop --release
+      - name: Build Athena (Desktop)
+        run: |
+          cd athena
+          dx build --platform desktop --release
 
-      # - name: Build Hermes
-      #   run: |
-      #     cd hermes
-      #     CARGO_TARGET_DIR=../hermes-bin URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo build --release
+      - name: Build Hermes
+        run: |
+          cd hermes
+          CARGO_TARGET_DIR=../hermes-bin URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo build --release
 
-      # - name: Build Tartarus
-      #   run: |
-      #     cd tartarus
-      #     CARGO_TARGET_DIR=../tartarus-bin cargo build --release
+      - name: Build Tartarus
+        run: |
+          cd tartarus
+          CARGO_TARGET_DIR=../tartarus-bin cargo build --release
 
-      # - name: Upload Athena Web Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: athena-web-build
-      #     path: target/dx/athena/release/web/public
+      - name: Upload Athena Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: athena-web-build
+          path: target/dx/athena/release/web/public
 
-      # - name: Upload Athena Desktop Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: athena-desktop-build
-      #     path: target/dx/athena/release/linux/app
+      - name: Upload Athena Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: athena-desktop-build
+          path: target/dx/athena/release/linux/app
 
-      # - name: Upload Hermes Binary Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: hermes-binary
-      #     path: hermes-bin/release/hermes
+      - name: Upload Hermes Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hermes-binary
+          path: hermes-bin/release/hermes
 
-      # - name: Upload Tartarus Binary Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: tartarus-binary
-      #     path: tartarus-bin/release/tartarus
+      - name: Upload Tartarus Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tartarus-binary
+          path: tartarus-bin/release/tartarus
       
       - name: Configure Athena Folder for Deployment
         run: |
