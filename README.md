@@ -15,7 +15,8 @@
 [Supported Platforms](#supported-platforms) •
 [Demo](#demo)
 
-[![Build All](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml)
+[![Build All](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml) [![Discord](https://discord.gg/knyExCkJQD)](https://discord.gg/knyExCkJQD)
+
 
 </div>
 
