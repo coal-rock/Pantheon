@@ -33,7 +33,7 @@
 ## Components
 
 ```
-Panthon/
+Pantheon/
 ├── athena/     # web-based frontend built using Dioxus
 ├── hermes/     # cross-platform agent
 ├── talaria/    # library implementing shared functionality between other components
