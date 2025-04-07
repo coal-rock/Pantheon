@@ -1,5 +1,4 @@
 use crate::auth::Auth;
-use crate::helper::current_time;
 use crate::SharedState;
 use rocket::serde::json::Json;
 use std::{collections::HashMap, path::Path};
@@ -55,18 +54,13 @@ pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Jso
             false => 0,
         };
 
-        // TODO: make the timeout count for inactivity be configurable
-        // Currently timeout count is set to 3
-        let status =
-            (current_time() - agent.last_packet_recv) < (agent.polling_interval_ms * 3) as u128;
-
         agent_info.push(AgentInfo {
+            status: agent.is_active(),
             name: agent.nickname,
             id: agent.id,
             external_ip: agent.external_ip.to_string(),
             internal_ip: agent.internal_ip.to_string(),
             os: agent.os,
-            status,
             ping,
         });
     }
@@ -123,12 +117,15 @@ pub async fn tartarus_stats(
 
     Json(TartarusStats {
         registered_agents: agents.len() as u64,
-        active_agents: agents.len() as u64, // TODO: fix
+        active_agents: agents
+            .iter()
+            .map(|(_id, agent)| agent.is_active() as u64)
+            .sum(),
         packets_sent: statistics.packets_sent,
         packets_recv: statistics.packets_recv,
-        average_response_latency: statistics.get_average_latency(), // safe
-        total_traffic: statistics.get_total_traffic(),              //safe
-        windows_agents: 0,                                          // TODO: fix
+        average_response_latency: statistics.get_average_latency(),
+        total_traffic: statistics.get_total_traffic(),
+        windows_agents: 0, // TODO: fix
         linux_agents: agents.len() as u64,
     })
 }

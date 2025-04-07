@@ -14,8 +14,6 @@ mod cors;
 mod state;
 mod statistics;
 
-pub mod helper;
-
 use crate::console_interface::start_console;
 use config::Config;
 use state::{SharedState, State};

@@ -186,7 +186,7 @@ pub mod protocol {
 }
 
 pub mod api {
-    use crate::protocol::*;
+    use crate::{helper::current_time, protocol::*};
     use serde::{Deserialize, Serialize};
     use std::{collections::VecDeque, net::SocketAddr};
 
@@ -282,6 +282,12 @@ pub mod api {
 
         pub fn pop_instruction(&mut self) -> Option<AgentInstructionBody> {
             self.queue.pop()
+        }
+
+        pub fn is_active(&self) -> bool {
+            // TODO: make the timeout count for inactivity be configurable
+            // Currently timeout count is set to 3
+            (current_time() - self.last_packet_recv) < (self.polling_interval_ms * 3).into()
         }
     }
 
@@ -820,6 +826,13 @@ pub mod helper {
             }
         };
     }
-
     pub use devlog;
+
+    use std::time::SystemTime;
+    pub fn current_time() -> u128 {
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+    }
 }
