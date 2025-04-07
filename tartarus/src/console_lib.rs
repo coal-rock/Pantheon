@@ -22,6 +22,9 @@ pub async fn evaluate_command(
         Command::Exec { agents, command } => {
                 exec(state, agents, command, command_context.current_target).await
             }
+        Command::Eval{ agents, script } => {
+                eval(state, agents, script, command_context.current_target).await
+            }
         Command::ListAgents => list_agents(state).await,
         Command::Ping { agents } => todo().await,
         Command::Status { agents } => todo().await,
@@ -284,6 +287,35 @@ async fn exec(
     })
 }
 
+async fn eval(
+    state: &SharedState,
+    agents: Option<TargetIdentifier>,
+    script: String,
+    current_target: Option<TargetIdentifier>,
+) -> Result<ConsoleResponse, ConsoleError> {
+    let target = get_target(current_target, agents)?;
+
+    let agent_ids = match target {
+        TargetIdentifier::Group { group: _} => get_group(state, None, Some(target)).await?,
+        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state, None, Some(target)).await?.id],
+    };
+
+    let instruction = AgentInstructionBody::Script {
+        script
+    };
+
+    for agent_id in agent_ids {
+        modify_agent(state, async |agent| {
+            agent.queue_instruction(&instruction);
+        }, None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: agent_id }})).await?;
+    }
+
+    Ok(ConsoleResponse {
+        output: format!("script queued successfully"),
+        new_target: NewTarget::NoChange,
+    })
+}
+
 async fn status(
     state: &SharedState,
     agents: Option<TargetIdentifier>,
@@ -320,6 +352,7 @@ Commands:
     add_agents_to_group <group_name> <agent1> <agent2>          | Adds agents to a group
     remove_agents_from_group <group_name> <agent1> <agent2>     | Removes agents from a group
     exec [target] <command>                                     | Executes a shell command on an agent or group
+    eval [target] <rhai>                                        | Executes rhai code on an agent or group
     list                                                        | Lists agents
     list_groups                                                 | Lists groups
     ping [target]                                               | Pings an agent or group

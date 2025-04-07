@@ -6,13 +6,15 @@ pub struct ScriptingEngine {
 }
 
 impl ScriptingEngine {
-    pub fn new() {
+    pub fn new() -> ScriptingEngine {
         let mut engine = Engine::new();
         let module = exported_module!(hermes);
         engine.register_static_module("hermes", module.into());
+
+        ScriptingEngine { engine }
     }
 
-    async fn eval(&mut self, script: &str) -> Result<(), Box<EvalAltResult>> {
+    pub async fn execute(&mut self, script: &str) -> Result<(), Box<EvalAltResult>> {
         let ast = self.engine.compile(script)?;
         let mut scope = Scope::new();
         scope.push("hello_world", 1337);

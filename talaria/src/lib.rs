@@ -391,6 +391,10 @@ pub mod console {
             agents: Option<TargetIdentifier>,
             command: String,
         },
+        Eval {
+            agents: Option<TargetIdentifier>,
+            script: String,
+        },
         ListAgents,
         ListGroups,
         Ping {
@@ -673,6 +677,17 @@ pub mod console {
                     3 => Ok(Command::Exec {
                         agents: Some(self.parse_target_ident()?),
                         command: self.consume()?.to_string(),
+                    }),
+                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
+                },
+                "eval" => match self.source.len() {
+                    2 => Ok(Command::Eval {
+                        agents: None,
+                        script: self.consume()?.to_string(),
+                    }),
+                    3 => Ok(Command::Eval {
+                        agents: Some(self.parse_target_ident()?),
+                        script: self.consume()?.to_string(),
                     }),
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },

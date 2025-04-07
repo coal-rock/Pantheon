@@ -86,8 +86,6 @@ async fn eval(state: Arc<RwLock<State>>) {
         devlog!("Evaluating instruction: {:#?}", instruction);
 
         match instruction {
-            // provisional as to not break #main branch
-            // FIXME: replace this in the migration to Rhai
             AgentInstructionBody::Command {
                 ref command,
                 ref command_id,
@@ -121,7 +119,10 @@ async fn eval(state: Arc<RwLock<State>>) {
 
                 state.write().await.push_response(response_body);
             }
-            _ => {}
+            AgentInstructionBody::Script { script } => {
+                scripting.execute(&script).await;
+            }
+            AgentInstructionBody::Ok => {}
         }
     }
 }
