@@ -1,5 +1,4 @@
 #V2
-list 
 nickname 16997889695821924545 john
 list 
 connect jogn 
@@ -99,3 +98,4 @@ lsit
 list 
 help
 eval 6034718805809558355 print(`fortnite`);
+eval 6034718805809558355 sleepaslkdjasldk(;

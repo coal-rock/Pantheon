@@ -11,6 +11,7 @@ use talaria::helper::*;
 use talaria::protocol::*;
 use tokio::process::Command;
 use tokio::sync::RwLock;
+use tokio::task;
 use tokio::time::{self, Duration};
 const URL: &'static str = env!("URL", "environment variable `URL` not defined");
 
@@ -34,8 +35,8 @@ async fn main() {
         }
     };
 
-    let poll = tokio::spawn(poll(state.clone()));
-    let eval = tokio::spawn(eval(state.clone()));
+    let poll = task::spawn(poll(state.clone()));
+    let eval = task::spawn(eval(state.clone()));
 
     let _ = tokio::join!(poll, eval);
 }
@@ -72,7 +73,6 @@ async fn poll(state: Arc<RwLock<State>>) {
 
 async fn eval(state: Arc<RwLock<State>>) {
     let mut interval = time::interval(Duration::from_millis(100));
-    let mut scripting = ScriptingEngine::new();
 
     loop {
         interval.tick().await;
@@ -120,7 +120,11 @@ async fn eval(state: Arc<RwLock<State>>) {
                 state.write().await.push_response(response_body);
             }
             AgentInstructionBody::Script { script } => {
-                scripting.execute(&script).await;
+                task::spawn_blocking(move || {
+                    let mut engine = ScriptingEngine::new();
+                    engine.execute(&script);
+                })
+                .await;
             }
             AgentInstructionBody::Ok => {}
         }

@@ -14,11 +14,10 @@ impl ScriptingEngine {
         ScriptingEngine { engine }
     }
 
-    pub async fn execute(&mut self, script: &str) -> Result<(), Box<EvalAltResult>> {
+    pub fn execute(&mut self, script: &str) -> Result<(), Box<EvalAltResult>> {
         let ast = self.engine.compile(script)?;
         let mut scope = Scope::new();
         scope.push("hello_world", 1337);
-
         self.engine.run_ast_with_scope(&mut scope, &ast)?;
         Ok(())
     }
