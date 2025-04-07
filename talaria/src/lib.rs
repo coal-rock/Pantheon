@@ -93,6 +93,9 @@ pub mod protocol {
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
+        Script {
+            script: String,
+        },
         Command {
             command: String,
             command_id: u32,
@@ -109,6 +112,7 @@ pub mod protocol {
                     command_id: _,
                     args: _,
                 } => "Command",
+                AgentInstructionBody::Script { script: _ } => "Script",
                 AgentInstructionBody::Ok => "Ok",
             }
         }
@@ -124,6 +128,7 @@ pub mod protocol {
                     command, command_id, args
                 ),
                 AgentInstructionBody::Ok => String::from("None"),
+                AgentInstructionBody::Script { script } => script.into(),
             }
         }
     }

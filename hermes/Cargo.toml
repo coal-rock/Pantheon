@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+rhai = { version = "1.21.0" }
 reqwest = { version = "0.12.15" }
 tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread", "process"] }
 talaria = { path = "../talaria" }

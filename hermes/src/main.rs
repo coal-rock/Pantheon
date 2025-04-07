@@ -1,7 +1,9 @@
 pub mod agent;
 pub mod network;
+pub mod scripting;
 pub mod state;
 
+use scripting::ScriptingEngine;
 use state::State;
 use std::process::Output;
 use std::sync::Arc;
@@ -70,6 +72,7 @@ async fn poll(state: Arc<RwLock<State>>) {
 
 async fn eval(state: Arc<RwLock<State>>) {
     let mut interval = time::interval(Duration::from_millis(100));
+    let mut scripting = ScriptingEngine::new();
 
     loop {
         interval.tick().await;
