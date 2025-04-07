@@ -150,7 +150,6 @@ pub mod protocol {
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
-        pub packet_header: PacketHeader,
         pub packet_body: AgentInstructionBody,
     }
 

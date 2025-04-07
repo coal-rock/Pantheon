@@ -8,8 +8,8 @@ use anyhow::Result;
 pub struct State {
     network: Network,
     agent: AgentContext,
-    instructions: VecDeque<AgentInstruction>,
-    responses: VecDeque<AgentResponse>,
+    instructions: VecDeque<AgentInstructionBody>,
+    responses: VecDeque<AgentResponseBody>,
 }
 
 impl State {
@@ -20,5 +20,37 @@ impl State {
             responses: vec![].into(),
             agent: AgentContext::new(poll_interval_ms)?,
         })
+    }
+
+    pub fn get_polling_interval(&self) -> u64 {
+        self.agent.polling_interval_millis
+    }
+
+    pub fn has_pending_responses(&self) -> bool {
+        !self.responses.is_empty()
+    }
+
+    pub fn has_pending_instructions(&self) -> bool {
+        !self.instructions.is_empty()
+    }
+
+    pub fn get_pending_response(&mut self) -> Option<AgentResponseBody> {
+        self.responses.pop_front()
+    }
+
+    pub fn get_pending_instruction(&mut self) -> Option<AgentInstructionBody> {
+        self.instructions.pop_back()
+    }
+
+    pub fn push_instruction(&mut self, instruction: AgentInstructionBody) {
+        self.instructions.push_back(instruction);
+    }
+
+    pub fn gen_response(&mut self, response_body: AgentResponseBody) -> AgentResponse {
+        self.network.gen_response(response_body, &mut self.agent)
+    }
+
+    pub async fn send_response(&self, response: AgentResponse) -> Result<AgentInstruction> {
+        self.network.send_response(response).await
     }
 }

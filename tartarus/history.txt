@@ -1,5 +1,4 @@
 #V2
-create_group #fortnite
 list_groups
 add_to_group fortnite 
 add_to_group #fortnite 
@@ -99,3 +98,4 @@ list_groups
 add_agent_to_group balls asdasd
 add_agents_to_group balls asdasd
 exit 
+fg

