@@ -31,7 +31,6 @@ pub async fn evaluate_command(
         Command::Clear => clear().await,
         Command::ListGroups => list_groups(state).await,
         Command::Help => help().await,
-        Command::SpawnShell { agents } => todo().await
     }
 }
 
@@ -296,16 +295,6 @@ async fn status(
     todo!()
 }
 
-async fn spawn_shell(
-    state: &SharedState,
-    agents: Option<TargetIdentifier>,
-    current_target: Option<TargetIdentifier>,
-) -> ConsoleResponse {
-    let mut state = state.write().await;
-
-    todo!()
-}
-
 
 async fn help() -> Result<ConsoleResponse, ConsoleError> {
     let output: String = 
@@ -331,7 +320,6 @@ Commands:
     add_agents_to_group <group_name> <agent1> <agent2>          | Adds agents to a group
     remove_agents_from_group <group_name> <agent1> <agent2>     | Removes agents from a group
     exec [target] <command>                                     | Executes a shell command on an agent or group
-    spawn_shell [target]                                        | Spawns a reverse shell on the agent or group
     list                                                        | Lists agents
     list_groups                                                 | Lists groups
     ping [target]                                               | Pings an agent or group

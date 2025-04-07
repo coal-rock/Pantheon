@@ -98,9 +98,7 @@ pub mod protocol {
             command_id: u32,
             args: Vec<String>,
         },
-        RequestHeartbeat,
         Ok,
-        SpawnShell,
     }
 
     impl AgentInstructionBody {
@@ -111,9 +109,7 @@ pub mod protocol {
                     command_id: _,
                     args: _,
                 } => "Command",
-                AgentInstructionBody::RequestHeartbeat => "RequestHeartbeat",
                 AgentInstructionBody::Ok => "Ok",
-                AgentInstructionBody::SpawnShell => "SpawnShell",
             }
         }
 
@@ -127,9 +123,7 @@ pub mod protocol {
                     "Command: {}\nCommand ID: {}\nArgs: {:#?}",
                     command, command_id, args
                 ),
-                AgentInstructionBody::RequestHeartbeat => String::from("None"),
                 AgentInstructionBody::Ok => String::from("None"),
-                AgentInstructionBody::SpawnShell => String::from("None"),
             }
         }
     }
@@ -391,9 +385,6 @@ pub mod console {
         Exec {
             agents: Option<TargetIdentifier>,
             command: String,
-        },
-        SpawnShell {
-            agents: Option<TargetIdentifier>,
         },
         ListAgents,
         ListGroups,
@@ -677,13 +668,6 @@ pub mod console {
                     3 => Ok(Command::Exec {
                         agents: Some(self.parse_target_ident()?),
                         command: self.consume()?.to_string(),
-                    }),
-                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
-                },
-                "spawn_shell" => match self.source.len() {
-                    0 => Ok(Command::SpawnShell { agents: None }),
-                    1 => Ok(Command::SpawnShell {
-                        agents: Some(self.parse_target_ident()?),
                     }),
                     _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
                 },

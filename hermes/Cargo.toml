@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 reqwest = { version = "0.12.15" }
-tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread", "process"] }
 talaria = { path = "../talaria" }
 sha2 = "0.10"
 sysinfo = "0.34.1"

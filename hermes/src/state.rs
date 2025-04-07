@@ -39,11 +39,15 @@ impl State {
     }
 
     pub fn get_pending_instruction(&mut self) -> Option<AgentInstructionBody> {
-        self.instructions.pop_back()
+        self.instructions.pop_front()
     }
 
     pub fn push_instruction(&mut self, instruction: AgentInstructionBody) {
         self.instructions.push_back(instruction);
+    }
+
+    pub fn push_response(&mut self, response_body: AgentResponseBody) {
+        self.responses.push_back(response_body);
     }
 
     pub fn gen_response(&mut self, response_body: AgentResponseBody) -> AgentResponse {
