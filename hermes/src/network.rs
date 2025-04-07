@@ -1,5 +1,6 @@
 use local_ip_address::local_ip;
-use rand::Rng;
+use rand::rngs::{OsRng, StdRng};
+use rand::{Rng, SeedableRng, TryRngCore};
 use reqwest::{Client, Url};
 use std::sync::{Arc, RwLock};
 use talaria::helper::current_time;
@@ -9,7 +10,7 @@ use crate::agent::AgentContext;
 
 pub struct Network {
     url: Url,
-    rand: rand::rngs::ThreadRng,
+    rand: StdRng,
     used_packet_ids: Vec<u32>,
     http_client: Client,
 }
@@ -46,9 +47,12 @@ impl Network {
     }
 
     pub fn new(url: Url) -> Network {
+        let mut seed = [0u8; 32];
+        OsRng.try_fill_bytes(&mut seed).unwrap();
+
         Network {
             url,
-            rand: rand::rng(),
+            rand: rand::rngs::StdRng::from_seed(seed),
             used_packet_ids: vec![].into(),
             http_client: Client::new(),
         }
