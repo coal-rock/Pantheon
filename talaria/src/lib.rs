@@ -14,8 +14,8 @@ pub mod protocol {
         pub fn from(os_type: &str, os_string: Option<String>) -> OS {
             OS {
                 os_type: match os_type.to_lowercase().as_str() {
-                    "linux" => OSType::Linux,
-                    "windows" => OSType::Windows,
+                    "Linux" => OSType::Linux,
+                    "Windows" => OSType::Windows,
                     _ => OSType::Other,
                 },
                 os_string,

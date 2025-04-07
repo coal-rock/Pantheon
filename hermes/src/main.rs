@@ -6,7 +6,6 @@ use agent::AgentContext;
 use std::time::Duration;
 use talaria::helper::*;
 use tokio::time::sleep;
-
 const URL: &'static str = env!("URL", "environment variable `URL` not defined");
 
 const POLL_INTERVAL_MS: &'static str = env!(

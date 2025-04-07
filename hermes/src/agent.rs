@@ -13,6 +13,7 @@ pub struct AgentContext {
     pub agent_id: u64,
     pub polling_interval_millis: u64,
     pub http_client: Client,
+    pub os: OS,
     rand: rand::rngs::ThreadRng,
     used_ids: Vec<u32>,
 }
@@ -25,7 +26,7 @@ impl AgentContext {
         let hostname: String = System::host_name().unwrap();
         let os_version: String = System::os_version().unwrap();
         let cpu_num: u32 = System::physical_core_count().unwrap() as u32;
-        let os_type: String = "linux".to_string();
+        let os_type: String = System::name().unwrap();
         let mac_address: [u8; 6] = get_mac_address().unwrap().unwrap().bytes();
 
         let unique_info = format!(
@@ -41,12 +42,7 @@ impl AgentContext {
     }
 
     pub fn generate_packet_header(&mut self) -> PacketHeader {
-        // TODO: querying OS data every single packet might be slow and suspicious
-        // in the future, store this in the context struct, and poll on startup
-        let os = OS::from("linux", System::os_version());
-
-        let internal_ip = local_ip();
-        let internal_ip = match internal_ip {
+        let internal_ip = match local_ip() {
             Ok(ip) => ip.to_string(),
             Err(_) => "?".to_string(),
         };
@@ -57,7 +53,7 @@ impl AgentContext {
             packet_id: self.gen_id(),
             polling_interval_ms: self.polling_interval_millis,
             internal_ip,
-            os,
+            os: self.os.clone(),
         }
     }
 
@@ -84,6 +80,8 @@ impl AgentContext {
     }
 
     pub fn new(url: &str, polling_interval_millis: u64) -> AgentContext {
+        let os = OS::from(&System::name().unwrap(), System::long_os_version());
+
         AgentContext {
             url: Url::parse(url).unwrap(),
             agent_id: AgentContext::generate_deterministic_uuid(),
@@ -91,6 +89,7 @@ impl AgentContext {
             http_client: Client::new(),
             rand: rand::thread_rng(),
             used_ids: vec![],
+            os,
         }
     }
 }
