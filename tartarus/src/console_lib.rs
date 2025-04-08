@@ -85,7 +85,7 @@ async fn create_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u64> = vec![];
+    let mut agent_ids: Vec<u128> = vec![];
     
     {
         let state = state.read().await;
@@ -129,7 +129,7 @@ async fn add_agents_to_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u64> = vec![];
+    let mut agent_ids: Vec<u128> = vec![];
 
     for ident in agents {
         agent_ids.push(get_agent(state.clone(), None, Some(ident.into())).await?.id);
@@ -155,7 +155,7 @@ async fn remove_agents_from_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u64> = vec![];
+    let mut agent_ids: Vec<u128> = vec![];
 
     for ident in agents {
         let agent = get_agent(state.clone(), None, Some(ident.into())).await?;
@@ -434,7 +434,7 @@ async fn get_agent(state: SharedState, implicit: Option<TargetIdentifier>, expli
 
     let agent_ident = expect_agent_ident(implicit, explicit)?;
     
-    let agent = match state.get_agent(&agent_ident) {
+    let agent = match state.get_agent_by_ident(&agent_ident) {
         Some(agent) => agent.clone(),
         None => match agent_ident {
             AgentIdentifier::Nickname { nickname } => return Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
@@ -451,7 +451,7 @@ where
 {
     let mut state = state.write().await;
     let agent_ident = expect_agent_ident(implicit, explicit)?;
-    let agent = state.get_agent_mut(&agent_ident);
+    let agent = state.get_agent_by_ident_mut(&agent_ident);
 
     
     match agent {
@@ -463,7 +463,7 @@ where
     }
 }
 
-async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u64>, ConsoleError> {
+async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u128>, ConsoleError> {
     let state = state.read().await;
 
     let group_ident = expect_group_ident(implicit, explicit)?;
@@ -477,7 +477,7 @@ async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, expli
 
 async fn modify_group<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
 where 
-    F: AsyncFnOnce(&mut Vec<u64>)
+    F: AsyncFnOnce(&mut Vec<u128>)
 {
     let mut state = state.write().await;
     let group_ident = expect_group_ident(implicit, explicit)?;

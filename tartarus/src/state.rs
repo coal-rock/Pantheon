@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use talaria::api::*;
 use talaria::console::*;
+use talaria::protocol::*;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
@@ -11,13 +13,57 @@ use crate::statistics::Statistics;
 #[derive(Default, Clone)]
 pub struct State {
     pub config: Config,
-    pub agents: HashMap<u64, Agent>,
-    pub groups: HashMap<String, Vec<u64>>,
     pub statistics: Statistics,
+    pub agents: HashMap<u128, Agent>,
+    pub groups: HashMap<String, Vec<u128>>,
+    // TODO: This being sequential isn't the best idea, but it works for now
+    curr_packet_id: u32,
 }
 
 impl State {
-    pub fn get_agent(&self, ident: &AgentIdentifier) -> Option<&Agent> {
+    pub fn get_agent(&self, agent_id: &u128) -> Option<&Agent> {
+        self.agents.get(&agent_id)
+    }
+
+    // this shouldn't be public because we can't trust the caller to not mess up state
+    fn get_agent_mut(&mut self, agent_id: &u128) -> Option<&mut Agent> {
+        self.agents.get_mut(&agent_id)
+    }
+
+    pub fn gen_packet_id(&mut self) -> u32 {
+        self.curr_packet_id += 1;
+        self.curr_packet_id - 1
+    }
+
+    /// Attempts to register an agent
+    ///
+    /// Returns `true` if agent was not previously present
+    /// Returns `false` if agent already exists
+    pub fn try_register_agent(&mut self, response: &AgentResponse, ext_ip: &SocketAddr) -> bool {
+        let agent_id = response.header.agent_id;
+
+        match self.get_agent(&agent_id) {
+            Some(_) => return false,
+            None => {}
+        };
+
+        let agent = Agent::from_response(response.clone(), *ext_ip);
+        self.agents.insert(agent_id, agent);
+
+        true
+    }
+
+    /// Attempts to get any pending instructions
+    ///
+    /// returns `None` if agent isn't found, or if queue is empty
+    pub fn pop_instruction(&mut self, agent_id: &u128) -> Option<AgentInstructionBody> {
+        match self.agents.get_mut(&agent_id) {
+            Some(agent) => agent.pop_instruction(),
+            None => None,
+        }
+    }
+
+    pub fn get_agent_by_ident(&self, ident: &AgentIdentifier) -> Option<&Agent> {
         match ident {
             AgentIdentifier::Nickname { nickname } => {
                 for (_, agent) in &self.agents {
@@ -32,7 +78,8 @@ impl State {
         return None;
     }
 
-    pub fn get_agent_mut(&mut self, ident: &AgentIdentifier) -> Option<&mut Agent> {
+    ///TODO:this shouldn't be pub
+    pub fn get_agent_by_ident_mut(&mut self, ident: &AgentIdentifier) -> Option<&mut Agent> {
         match ident {
             AgentIdentifier::Nickname { nickname } => {
                 for (id, agent) in self.agents.clone() {
@@ -53,6 +100,7 @@ impl State {
             agents: HashMap::new(),
             groups: HashMap::new(),
             statistics: Statistics::default(),
+            curr_packet_id: 0,
         }
     }
 

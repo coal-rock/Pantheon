@@ -8,7 +8,7 @@ use anyhow::Result;
 pub struct State {
     network: Network,
     agent: AgentContext,
-    instructions: VecDeque<(u32, AgentInstructionBody)>,
+    instructions: VecDeque<(Option<u32>, AgentInstructionBody)>,
     responses: VecDeque<(Option<u32>, AgentResponseBody)>,
 }
 
@@ -38,11 +38,11 @@ impl State {
         self.responses.pop_front()
     }
 
-    pub fn get_pending_instruction(&mut self) -> Option<(u32, AgentInstructionBody)> {
+    pub fn get_pending_instruction(&mut self) -> Option<(Option<u32>, AgentInstructionBody)> {
         self.instructions.pop_front()
     }
 
-    pub fn push_instruction(&mut self, instruction: AgentInstructionBody, packet_id: u32) {
+    pub fn push_instruction(&mut self, instruction: AgentInstructionBody, packet_id: Option<u32>) {
         self.instructions.push_back((packet_id, instruction));
     }
 

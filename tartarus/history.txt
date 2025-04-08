@@ -1,8 +1,4 @@
 #V2
-test 
-exec ls
-list 
-nick 
 nickname 2833411257688766487 coal
 connect coal 
 exec ls 
@@ -99,3 +95,7 @@ eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0
 exec 6034718805809558355 "sleep 1000"
 list 
 exec 6034718805809558355 "sleep 1000"
+exec "sleep 100"
+list 
+exec 111320913367571053044124007302573560832 "sleep 100000"
+exec 111320913367571053044124007302573560832 "sleep 10"

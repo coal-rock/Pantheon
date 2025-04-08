@@ -1,7 +1,5 @@
 use anyhow::Result;
 use local_ip_address::local_ip;
-use rand::rngs::{OsRng, StdRng};
-use rand::{Rng, SeedableRng, TryRngCore};
 use reqwest::{Client, Url};
 use talaria::helper::current_time;
 use talaria::protocol::*;
@@ -10,7 +8,6 @@ use crate::agent::AgentContext;
 
 pub struct Network {
     url: Url,
-    rand: StdRng,
     http_client: Client,
 }
 
@@ -64,12 +61,8 @@ impl Network {
     }
 
     pub fn new(url: Url) -> Network {
-        let mut seed = [0u8; 32];
-        OsRng.try_fill_bytes(&mut seed).unwrap();
-
         Network {
             url,
-            rand: rand::rngs::StdRng::from_seed(seed),
             http_client: Client::new(),
         }
     }

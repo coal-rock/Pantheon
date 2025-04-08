@@ -1,58 +1,9 @@
 use std::net::SocketAddr;
 
-use talaria::api::*;
 use talaria::helper::current_time;
 use talaria::protocol::*;
 
 use crate::SharedState;
-
-// Register or update egent in the state
-async fn register_or_update(
-    state: &rocket::State<SharedState>,
-    response: &AgentResponse,
-    instruction: &AgentInstruction,
-    addr: SocketAddr,
-) {
-    let mut state = state.inner().write().await;
-    let agent_id = response.header.agent_id;
-
-    if state.agents.contains_key(&agent_id) {
-        // update agent if found
-        let config = state.config.clone();
-        let agent = state.agents.get_mut(&agent_id).unwrap();
-        log::info!("Updated Agent {} at {:?}", agent.id, addr);
-        agent.last_packet_send = response.header.timestamp;
-        agent.last_packet_recv = current_time();
-        agent.push_response(response, config.history_buf_len);
-        agent.push_instruction(instruction, config.history_buf_len);
-        return;
-    } else {
-        // add new agent if not found
-        state.agents.insert(
-            response.header.agent_id,
-            Agent {
-                nickname: None,
-                id: response.header.agent_id,
-                os: response.header.os.clone(),
-                external_ip: addr,
-                internal_ip: response.header.internal_ip.clone(),
-                last_packet_send: response.header.timestamp,
-                last_packet_recv: current_time(),
-                network_history: vec![
-                    NetworkHistoryEntry::AgentResponse {
-                        response: response.clone(),
-                    },
-                    NetworkHistoryEntry::AgentInstruction {
-                        instruction: instruction.clone(),
-                    },
-                ]
-                .into(),
-                queue: vec![],
-                polling_interval_ms: response.header.polling_interval_ms,
-            },
-        );
-    }
-}
 
 #[post("/monolith", data = "<input>")]
 pub async fn monolith(
@@ -61,41 +12,50 @@ pub async fn monolith(
     input: Vec<u8>,
 ) -> Vec<u8> {
     let response = AgentResponse::deserialize(&input).unwrap();
-    let packet_body = response.body.clone();
 
-    let instruction_body = match packet_body {
-        AgentResponseBody::CommandResponse {
-            command,
-            status_code,
-            stdout,
-            stderr,
-        } => todo!(),
-        AgentResponseBody::Ok => AgentInstructionBody::Ok,
-        AgentResponseBody::SystemInfo {} => todo!(),
-        AgentResponseBody::Heartbeat => todo!(),
-        AgentResponseBody::Error => todo!(),
+    state
+        .write()
+        .await
+        .try_register_agent(&response, &remote_addr);
+
+    let instruction_body = state
+        .write()
+        .await
+        .pop_instruction(&response.header.agent_id);
+
+    let (packet_id, instruction_body) = match instruction_body {
+        Some(instruction_body) => (Some(state.write().await.gen_packet_id()), instruction_body),
+        None => (None, AgentInstructionBody::Ok),
     };
 
     let instruction = AgentInstruction {
         header: InstructionHeader {
-            packet_id: response.header.packet_id,
+            packet_id,
+            timestamp: current_time(),
         },
-        body: todo!(),
+        body: instruction_body,
     };
 
-    register_or_update(state, &response, &instruction, remote_addr).await;
+    println!(
+        "[{}] {} -> ",
+        response.header.packet_id.unwrap_or(50),
+        response.body.variant()
+    );
 
-    // respond to agent with instruction
+    println!(
+        "[{}] {} <- ",
+        instruction.header.packet_id.unwrap_or(50),
+        instruction.body.variant()
+    );
+
     let instruction = AgentInstruction::serialize(&instruction).unwrap();
 
-    let state = &mut state.write().await;
-    state.statistics.log_recv(input.len());
+    {
+        let mut state = state.write().await;
 
-    state
-        .statistics
-        .log_latency(current_time() - response.header.timestamp);
-
-    state.statistics.log_send(instruction.len());
+        state.statistics.log_send(instruction.len());
+        state.statistics.log_recv(input.len());
+    }
 
     instruction
 }

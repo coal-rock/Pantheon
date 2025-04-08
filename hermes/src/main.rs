@@ -106,7 +106,7 @@ async fn eval(state: Arc<RwLock<State>>) {
             state
                 .write()
                 .await
-                .push_response(response_body, Some(instruction.0));
+                .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Script { script } => {
             task::spawn_blocking(move || {

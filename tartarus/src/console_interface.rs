@@ -28,7 +28,7 @@ pub async fn start_console(shared_state: SharedState) {
                 match command {
                     Ok(command) => {
                         let response = console_lib::evaluate_command(
-                            shared_state,
+                            shared_state.clone(),
                             CommandContext {
                                 command,
                                 current_target: console.get_target(),
