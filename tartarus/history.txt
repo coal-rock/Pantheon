@@ -1,11 +1,4 @@
 #V2
-add__to_group #fortnite johh
-add_to_group #fortnite johh
-list 
-add_to_group #fortnite john
-list_groups 
-list 
-ls
 test 
 exec ls
 list 
@@ -99,3 +92,10 @@ eval 6034718805809558355 "let x = 100000; loop { x-= 1; print(x); if x <= 0 { br
 eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
 list 
 eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(`fuck shit`); if x <= 0 { break; }}"
+eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+exec 6034718805809558355 "sleep 1000"
+eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
+exec 6034718805809558355 "sleep 1000"
+list 
+exec 6034718805809558355 "sleep 1000"

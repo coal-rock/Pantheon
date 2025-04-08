@@ -270,7 +270,6 @@ async fn exec(
 
     // FIXME: HACK
     let instruction = AgentInstructionBody::Command {
-        command_id: 1, // FIXME: command_id should be unique, and generated
         command: "bash".to_string(),
         args: vec!["-c".to_string(), command]
     };

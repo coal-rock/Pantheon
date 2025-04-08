@@ -41,7 +41,6 @@ pub mod protocol {
     pub enum AgentResponseBody {
         CommandResponse {
             command: String,
-            command_id: u32,
             status_code: i32,
             stdout: String,
             stderr: String,
@@ -59,7 +58,6 @@ pub mod protocol {
             match self {
                 AgentResponseBody::CommandResponse {
                     command: _,
-                    command_id: _,
                     status_code: _,
                     stdout: _,
                     stderr: _,
@@ -75,13 +73,12 @@ pub mod protocol {
             match self {
                 AgentResponseBody::CommandResponse {
                     command,
-                    command_id,
                     status_code,
                     stdout,
                     stderr,
                 } => format!(
-                    "Command: {}\nCommand ID: {}\nStatus Code: {}\nstdout: {}\nstderr: {}",
-                    command, command_id, status_code, stdout, stderr
+                    "Command: {}\nStatus Code: {}\nstdout: {}\nstderr: {}",
+                    command, status_code, stdout, stderr
                 ),
                 AgentResponseBody::Ok { packet_id } => format!("Packet ID: {}", packet_id),
                 AgentResponseBody::SystemInfo {} => String::from("None"),
@@ -93,14 +90,8 @@ pub mod protocol {
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
-        Script {
-            script: String,
-        },
-        Command {
-            command: String,
-            command_id: u32,
-            args: Vec<String>,
-        },
+        Script { script: String },
+        Command { command: String, args: Vec<String> },
         Ok,
     }
 
@@ -109,7 +100,6 @@ pub mod protocol {
             match self {
                 AgentInstructionBody::Command {
                     command: _,
-                    command_id: _,
                     args: _,
                 } => "Command",
                 AgentInstructionBody::Script { script: _ } => "Script",
@@ -119,14 +109,9 @@ pub mod protocol {
 
         pub fn inner_value(&self) -> String {
             match self {
-                AgentInstructionBody::Command {
-                    command,
-                    command_id,
-                    args,
-                } => format!(
-                    "Command: {}\nCommand ID: {}\nArgs: {:#?}",
-                    command, command_id, args
-                ),
+                AgentInstructionBody::Command { command, args } => {
+                    format!("Command: {}\nArgs: {:#?}", command, args)
+                }
                 AgentInstructionBody::Ok => String::from("None"),
                 AgentInstructionBody::Script { script } => script.into(),
             }
@@ -135,21 +120,25 @@ pub mod protocol {
 
     // This struct should exclusively contain fields required for minimum viable operation
     // Other data should be locked behind other commands
-    //
-    // TODO: create a separate header for [Agent -> Server] and [Server -> Agent]
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
-    pub struct PacketHeader {
+    pub struct ResponseHeader {
         pub agent_id: u64,
         pub timestamp: u128,
-        pub packet_id: u32,
+        pub packet_id: Option<u32>,
         pub polling_interval_ms: u64,
         pub internal_ip: String,
         pub os: OS,
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
+    pub struct InstructionHeader {
+        pub packet_id: u32,
+    }
+
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
-        pub packet_body: AgentInstructionBody,
+        pub header: InstructionHeader,
+        pub body: AgentInstructionBody,
     }
 
     impl AgentInstruction {
@@ -166,8 +155,8 @@ pub mod protocol {
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentResponse {
-        pub packet_header: PacketHeader,
-        pub packet_body: AgentResponseBody,
+        pub header: ResponseHeader,
+        pub body: AgentResponseBody,
     }
 
     impl AgentResponse {

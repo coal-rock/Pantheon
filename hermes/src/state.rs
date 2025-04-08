@@ -8,8 +8,8 @@ use anyhow::Result;
 pub struct State {
     network: Network,
     agent: AgentContext,
-    instructions: VecDeque<AgentInstructionBody>,
-    responses: VecDeque<AgentResponseBody>,
+    instructions: VecDeque<(u32, AgentInstructionBody)>,
+    responses: VecDeque<(Option<u32>, AgentResponseBody)>,
 }
 
 impl State {
@@ -34,24 +34,29 @@ impl State {
         !self.instructions.is_empty()
     }
 
-    pub fn get_pending_response(&mut self) -> Option<AgentResponseBody> {
+    pub fn get_pending_response(&mut self) -> Option<(Option<u32>, AgentResponseBody)> {
         self.responses.pop_front()
     }
 
-    pub fn get_pending_instruction(&mut self) -> Option<AgentInstructionBody> {
+    pub fn get_pending_instruction(&mut self) -> Option<(u32, AgentInstructionBody)> {
         self.instructions.pop_front()
     }
 
-    pub fn push_instruction(&mut self, instruction: AgentInstructionBody) {
-        self.instructions.push_back(instruction);
+    pub fn push_instruction(&mut self, instruction: AgentInstructionBody, packet_id: u32) {
+        self.instructions.push_back((packet_id, instruction));
     }
 
-    pub fn push_response(&mut self, response_body: AgentResponseBody) {
-        self.responses.push_back(response_body);
+    pub fn push_response(&mut self, response: AgentResponseBody, packet_id: Option<u32>) {
+        self.responses.push_back((packet_id, response));
     }
 
-    pub fn gen_response(&mut self, response_body: AgentResponseBody) -> AgentResponse {
-        self.network.gen_response(response_body, &mut self.agent)
+    pub fn gen_response(
+        &mut self,
+        response_body: AgentResponseBody,
+        packet_id: Option<u32>,
+    ) -> AgentResponse {
+        self.network
+            .gen_response(response_body, &mut self.agent, packet_id)
     }
 
     pub async fn send_response(&self, response: AgentResponse) -> Result<AgentInstruction> {

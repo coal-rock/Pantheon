@@ -14,14 +14,14 @@ async fn register_or_update(
     addr: SocketAddr,
 ) {
     let mut state = state.write().await;
-    let agent_id = response.packet_header.agent_id;
+    let agent_id = response.header.agent_id;
 
     if state.agents.contains_key(&agent_id) {
         // update agent if found
         let config = state.config.clone();
         let agent = state.agents.get_mut(&agent_id).unwrap();
         log::info!("Updated Agent {} at {:?}", agent.id, addr);
-        agent.last_packet_send = response.packet_header.timestamp;
+        agent.last_packet_send = response.header.timestamp;
         agent.last_packet_recv = current_time();
         agent.push_response(response, config.history_buf_len);
         agent.push_instruction(instruction, config.history_buf_len);
@@ -29,14 +29,14 @@ async fn register_or_update(
     } else {
         // add new agent if not found
         state.agents.insert(
-            response.packet_header.agent_id,
+            response.header.agent_id,
             Agent {
                 nickname: None,
-                id: response.packet_header.agent_id,
-                os: response.packet_header.os.clone(),
+                id: response.header.agent_id,
+                os: response.header.os.clone(),
                 external_ip: addr,
-                internal_ip: response.packet_header.internal_ip.clone(),
-                last_packet_send: response.packet_header.timestamp,
+                internal_ip: response.header.internal_ip.clone(),
+                last_packet_send: response.header.timestamp,
                 last_packet_recv: current_time(),
                 network_history: vec![
                     NetworkHistoryEntry::AgentResponse {
@@ -48,7 +48,7 @@ async fn register_or_update(
                 ]
                 .into(),
                 queue: vec![],
-                polling_interval_ms: response.packet_header.polling_interval_ms,
+                polling_interval_ms: response.header.polling_interval_ms,
             },
         );
     }
@@ -62,13 +62,12 @@ pub async fn monolith(
     input: Vec<u8>,
 ) -> Vec<u8> {
     let response = AgentResponse::deserialize(&input).unwrap();
-    let packet_body = response.packet_body.clone();
+    let packet_body = response.body.clone();
 
     // Generate an instruction based on the received response
     let instruction = match packet_body {
         AgentResponseBody::CommandResponse {
             command: _,
-            command_id: _,
             status_code: _,
             stdout,
             stderr,
@@ -76,30 +75,33 @@ pub async fn monolith(
             log::info!("Command Output:\nstdout: {}\nstderr: {}", stdout, stderr);
 
             AgentInstruction {
-                packet_body: AgentInstructionBody::Ok,
+                header: InstructionHeader { packet_id: 1 },
+                body: AgentInstructionBody::Ok,
             }
         }
         AgentResponseBody::Heartbeat => {
             let mut state = state.write().await;
 
-            let agent = state.agents.get_mut(&response.packet_header.agent_id);
+            let agent = state.agents.get_mut(&response.header.agent_id);
 
             if agent.is_none() {
                 AgentInstruction {
-                    packet_body: AgentInstructionBody::Ok,
+                    header: InstructionHeader { packet_id: 1 },
+                    body: AgentInstructionBody::Ok,
                 }
             } else {
                 let agent = agent.unwrap();
                 let body = agent.pop_instruction();
 
                 AgentInstruction {
-                    packet_body: body.unwrap_or(AgentInstructionBody::Ok),
+                    header: InstructionHeader { packet_id: 1 },
+                    body: body.unwrap_or(AgentInstructionBody::Ok),
                 }
             }
         }
         _ => AgentInstruction {
-            packet_body: AgentInstructionBody::Command {
-                command_id: 1, // Example command_id; replace with logic for unique IDs
+            header: InstructionHeader { packet_id: 1 },
+            body: AgentInstructionBody::Command {
                 command: "echo".into(),
                 args: vec!["Hello from server!".into()],
             },
@@ -117,7 +119,7 @@ pub async fn monolith(
 
     state
         .statistics
-        .log_latency(current_time() - response.packet_header.timestamp);
+        .log_latency(current_time() - response.header.timestamp);
 
     state.statistics.log_send(instruction.len());
 
