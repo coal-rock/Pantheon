@@ -8,7 +8,6 @@ use tokio::sync::RwLock;
 use crate::config::Config;
 use crate::statistics::Statistics;
 
-// Shared state for active listeners
 #[derive(Default, Clone)]
 pub struct State {
     pub config: Config,
@@ -62,5 +61,4 @@ impl State {
     }
 }
 
-// Wrap in Arc and RwLock for safe concurrent access
 pub type SharedState = Arc<RwLock<State>>;

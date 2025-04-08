@@ -14,8 +14,8 @@ pub mod protocol {
         pub fn from(os_type: &str, os_string: Option<String>) -> OS {
             OS {
                 os_type: match os_type.to_lowercase().as_str() {
-                    "Linux" => OSType::Linux,
-                    "Windows" => OSType::Windows,
+                    "linux" => OSType::Linux,
+                    "windows" => OSType::Windows,
                     _ => OSType::Other,
                 },
                 os_string,
@@ -45,9 +45,7 @@ pub mod protocol {
             stdout: String,
             stderr: String,
         },
-        Ok {
-            packet_id: u32,
-        },
+        Ok,
         SystemInfo {},
         Heartbeat,
         Error,
@@ -62,7 +60,7 @@ pub mod protocol {
                     stdout: _,
                     stderr: _,
                 } => "CommandResponse",
-                AgentResponseBody::Ok { packet_id: _ } => "Ok",
+                AgentResponseBody::Ok => "Ok",
                 AgentResponseBody::SystemInfo {} => "SystemInfo",
                 AgentResponseBody::Heartbeat => "Heartbeat",
                 AgentResponseBody::Error => "Error",
@@ -80,7 +78,7 @@ pub mod protocol {
                     "Command: {}\nStatus Code: {}\nstdout: {}\nstderr: {}",
                     command, status_code, stdout, stderr
                 ),
-                AgentResponseBody::Ok { packet_id } => format!("Packet ID: {}", packet_id),
+                AgentResponseBody::Ok => String::from("None"),
                 AgentResponseBody::SystemInfo {} => String::from("None"),
                 AgentResponseBody::Heartbeat => String::from("None"),
                 AgentResponseBody::Error => String::from("None"),
@@ -133,6 +131,7 @@ pub mod protocol {
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct InstructionHeader {
         pub packet_id: u32,
+        pub timestamp: u128,
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
@@ -175,12 +174,97 @@ pub mod protocol {
 pub mod api {
     use crate::{helper::current_time, protocol::*};
     use serde::{Deserialize, Serialize};
-    use std::{collections::VecDeque, net::SocketAddr};
+    use std::{
+        collections::{BTreeSet, HashMap},
+        net::SocketAddr,
+        usize,
+    };
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub enum NetworkHistoryEntry {
-        AgentInstruction { instruction: AgentInstruction },
-        AgentResponse { response: AgentResponse },
+    pub struct NetworkHistoryEntry {
+        instruction: AgentInstruction,
+        response: Option<AgentResponse>,
+    }
+
+    /// Layer of abstraction over NetworkHistory.
+    ///
+    /// Maps timestamp -> ID and then ID -> Entry,
+    /// meaning we get O(1) lookups basically for free.
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct NetworkHistoryStore {
+        by_id: HashMap<u32, NetworkHistoryEntry>,
+        by_timestamp: BTreeSet<(u128, u32)>,
+        capacity: usize,
+    }
+
+    impl NetworkHistoryStore {
+        pub fn new(capacity: usize) -> NetworkHistoryStore {
+            NetworkHistoryStore {
+                by_id: HashMap::new(),
+                by_timestamp: BTreeSet::new(),
+                capacity,
+            }
+        }
+
+        /// Inserts or overwrite entry
+        pub fn insert(&mut self, entry: NetworkHistoryEntry) {
+            let packet_id = entry.instruction.header.packet_id;
+            let timestamp = entry.instruction.header.timestamp;
+
+            self.by_id.insert(packet_id, entry);
+            self.by_timestamp.insert((timestamp, packet_id));
+
+            // trim if we are over capacity
+            if self.by_id.len() > self.capacity {
+                if let Some(&(oldest_ts, oldest_id)) = self.by_timestamp.iter().next() {
+                    self.by_id.remove(&oldest_id);
+                    self.by_timestamp.remove(&(oldest_ts, oldest_id));
+                }
+            }
+        }
+
+        /// O(1)
+        pub fn get(&self, packet_id: u32) -> Option<&NetworkHistoryEntry> {
+            self.by_id.get(&packet_id)
+        }
+
+        /// Retrieves all hitherto entries in order of
+        /// the instruction timestamp
+        pub fn get_all(&self) -> Vec<&NetworkHistoryEntry> {
+            self.by_timestamp
+                .iter()
+                .filter_map(|&(_, packet_id)| self.by_id.get(&packet_id))
+                .collect()
+        }
+
+        /// Creates new entry containing AgentInstruction
+        pub fn push_instruction(&mut self, instruction: AgentInstruction) {
+            self.insert(NetworkHistoryEntry {
+                instruction,
+                response: None,
+            })
+        }
+
+        /// Adds response to existing entry containing an instruction
+        pub fn push_response(&mut self, response: AgentResponse) {
+            // returns early if response contains no ID
+            let entry = match response.header.packet_id {
+                Some(packet_id) => self.get(packet_id),
+                None => return,
+            };
+
+            // returns early if NetworkHistory does not contain matching ID
+            // we should never be here(?)
+            let entry = match entry {
+                Some(entry) => entry,
+                None => return,
+            };
+
+            self.insert(NetworkHistoryEntry {
+                instruction: entry.instruction.clone(),
+                response: Some(response),
+            });
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -196,7 +280,7 @@ pub mod api {
         /// Timestamp of when last packet from agent was received (in ms)
         pub last_packet_recv: u128,
         pub polling_interval_ms: u64,
-        pub network_history: VecDeque<NetworkHistoryEntry>,
+        pub network_history: NetworkHistoryStore,
         pub queue: Vec<AgentInstructionBody>,
     }
 

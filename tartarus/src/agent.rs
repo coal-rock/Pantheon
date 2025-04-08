@@ -13,7 +13,7 @@ async fn register_or_update(
     instruction: &AgentInstruction,
     addr: SocketAddr,
 ) {
-    let mut state = state.write().await;
+    let mut state = state.inner().write().await;
     let agent_id = response.header.agent_id;
 
     if state.agents.contains_key(&agent_id) {
@@ -54,7 +54,6 @@ async fn register_or_update(
     }
 }
 
-// Route to handle agent responses and issue instructions
 #[post("/monolith", data = "<input>")]
 pub async fn monolith(
     state: &rocket::State<SharedState>,
@@ -64,51 +63,26 @@ pub async fn monolith(
     let response = AgentResponse::deserialize(&input).unwrap();
     let packet_body = response.body.clone();
 
-    // Generate an instruction based on the received response
-    let instruction = match packet_body {
+    let instruction_body = match packet_body {
         AgentResponseBody::CommandResponse {
-            command: _,
-            status_code: _,
+            command,
+            status_code,
             stdout,
             stderr,
-        } => {
-            log::info!("Command Output:\nstdout: {}\nstderr: {}", stdout, stderr);
-
-            AgentInstruction {
-                header: InstructionHeader { packet_id: 1 },
-                body: AgentInstructionBody::Ok,
-            }
-        }
-        AgentResponseBody::Heartbeat => {
-            let mut state = state.write().await;
-
-            let agent = state.agents.get_mut(&response.header.agent_id);
-
-            if agent.is_none() {
-                AgentInstruction {
-                    header: InstructionHeader { packet_id: 1 },
-                    body: AgentInstructionBody::Ok,
-                }
-            } else {
-                let agent = agent.unwrap();
-                let body = agent.pop_instruction();
-
-                AgentInstruction {
-                    header: InstructionHeader { packet_id: 1 },
-                    body: body.unwrap_or(AgentInstructionBody::Ok),
-                }
-            }
-        }
-        _ => AgentInstruction {
-            header: InstructionHeader { packet_id: 1 },
-            body: AgentInstructionBody::Command {
-                command: "echo".into(),
-                args: vec!["Hello from server!".into()],
-            },
-        },
+        } => todo!(),
+        AgentResponseBody::Ok => AgentInstructionBody::Ok,
+        AgentResponseBody::SystemInfo {} => todo!(),
+        AgentResponseBody::Heartbeat => todo!(),
+        AgentResponseBody::Error => todo!(),
     };
 
-    // Update agent state
+    let instruction = AgentInstruction {
+        header: InstructionHeader {
+            packet_id: response.header.packet_id,
+        },
+        body: todo!(),
+    };
+
     register_or_update(state, &response, &instruction, remote_addr).await;
 
     // respond to agent with instruction

@@ -3,7 +3,7 @@ use crate::SharedState;
 use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use talaria::console::*;
 
-pub async fn start_console(shared_state: &SharedState) {
+pub async fn start_console(shared_state: SharedState) {
     let mut rl = Editor::<(), FileHistory>::new().unwrap();
 
     // Load command history if it exists
@@ -71,7 +71,6 @@ pub async fn start_console(shared_state: &SharedState) {
         }
     }
 
-    // Save command history
     rl.save_history("history.txt").unwrap_or_else(|err| {
         eprintln!("Failed to save history: {:?}", err);
     });

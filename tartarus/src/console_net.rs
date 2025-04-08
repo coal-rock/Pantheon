@@ -10,7 +10,7 @@ pub async fn monolith(
     state: &rocket::State<SharedState>,
     command_context: Json<CommandContext>,
 ) -> Json<Result<ConsoleResponse, ConsoleError>> {
-    Json(console_lib::evaluate_command(state, command_context.0).await)
+    Json(console_lib::evaluate_command(state.inner().clone(), command_context.0).await)
 }
 
 pub fn routes() -> Vec<Route> {

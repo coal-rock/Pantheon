@@ -3,7 +3,7 @@ use talaria::{api::Agent, console::*, protocol::*};
 use std::sync::{Arc, Mutex};
 
 pub async fn evaluate_command(
-    state: &SharedState,
+    state: SharedState,
     command_context: CommandContext,
 ) -> Result<ConsoleResponse, ConsoleError> {
     match command_context.command {
@@ -38,7 +38,7 @@ pub async fn evaluate_command(
 }
 
 async fn connect(
-    state: &SharedState,
+    state: SharedState,
     target: TargetIdentifier,
     current_target: Option<TargetIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
@@ -81,7 +81,7 @@ async fn todo() -> Result<ConsoleResponse, ConsoleError> {
 }
 
 async fn create_group(
-    state: &SharedState,
+    state: SharedState,
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
@@ -96,7 +96,7 @@ async fn create_group(
     }
 
     for ident in &agents {
-        agent_ids.push(get_agent(state, None, Some((*ident).clone().into())).await?.id);
+        agent_ids.push(get_agent(state.clone(), None, Some((*ident).clone().into())).await?.id);
     }
 
     agent_ids.dedup();
@@ -112,7 +112,7 @@ async fn create_group(
     })
 }
 
-async fn delete_group(state: &SharedState, group_name: String) -> Result<ConsoleResponse, ConsoleError> {
+async fn delete_group(state: SharedState, group_name: String) -> Result<ConsoleResponse, ConsoleError> {
     let mut state = state.write().await;
 
     match state.groups.remove(&group_name) {
@@ -125,14 +125,14 @@ async fn delete_group(state: &SharedState, group_name: String) -> Result<Console
 }
 
 async fn add_agents_to_group(
-    state: &SharedState,
+    state: SharedState,
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
     let mut agent_ids: Vec<u64> = vec![];
 
     for ident in agents {
-        agent_ids.push(get_agent(state, None, Some(ident.into())).await?.id);
+        agent_ids.push(get_agent(state.clone(), None, Some(ident.into())).await?.id);
     }
 
     agent_ids.dedup();
@@ -151,14 +151,14 @@ async fn add_agents_to_group(
 }
 
 async fn remove_agents_from_group(
-    state: &SharedState,
+    state: SharedState,
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
     let mut agent_ids: Vec<u64> = vec![];
 
     for ident in agents {
-        let agent = get_agent(state, None, Some(ident.into())).await?;
+        let agent = get_agent(state.clone(), None, Some(ident.into())).await?;
         agent_ids.push(agent.id);
     }
 
@@ -187,7 +187,7 @@ async fn clear() -> Result<ConsoleResponse, ConsoleError> {
     })
 }
 
-async fn list_agents(state: &SharedState) -> Result<ConsoleResponse, ConsoleError> {
+async fn list_agents(state: SharedState) -> Result<ConsoleResponse, ConsoleError> {
     let state = state.read().await;
     let mut output = String::new();
 
@@ -209,7 +209,7 @@ async fn list_agents(state: &SharedState) -> Result<ConsoleResponse, ConsoleErro
     })
 }
 
-async fn list_groups(state: &SharedState) -> Result<ConsoleResponse, ConsoleError> {
+async fn list_groups(state: SharedState) -> Result<ConsoleResponse, ConsoleError> {
     let groups = state.read().await.groups.clone();
     let mut output = String::new();
 
@@ -217,7 +217,7 @@ async fn list_groups(state: &SharedState) -> Result<ConsoleResponse, ConsoleErro
         output.push_str(&format!("#{}:\n", group_name));
 
         for id in ids {
-            let agent = get_agent(state, None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: *id} })).await?;
+            let agent = get_agent(state.clone(), None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: *id} })).await?;
 
             output.push_str(
                 format!(
@@ -238,7 +238,7 @@ async fn list_groups(state: &SharedState) -> Result<ConsoleResponse, ConsoleErro
 }
 
 async fn nickname(
-    state: &SharedState,
+    state: SharedState,
     current_target: Option<TargetIdentifier>,
     agent: Option<AgentIdentifier>,
     nickname: String,
@@ -256,7 +256,7 @@ async fn nickname(
 }
 
 async fn exec(
-    state: &SharedState,
+    state: SharedState,
     agents: Option<TargetIdentifier>,
     command: String,
     current_target: Option<TargetIdentifier>,
@@ -264,8 +264,8 @@ async fn exec(
     let target = get_target(current_target, agents)?;
 
     let agent_ids = match target {
-        TargetIdentifier::Group { group: _} => get_group(state, None, Some(target)).await?,
-        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state, None, Some(target)).await?.id],
+        TargetIdentifier::Group { group: _} => get_group(state.clone(), None, Some(target)).await?,
+        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state.clone(), None, Some(target)).await?.id],
     };
 
     // FIXME: HACK
@@ -275,7 +275,7 @@ async fn exec(
     };
 
     for agent_id in agent_ids {
-        modify_agent(state, async |agent| {
+        modify_agent(state.clone(), async |agent| {
             agent.queue_instruction(&instruction);
         }, None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: agent_id }})).await?;
     }
@@ -287,7 +287,7 @@ async fn exec(
 }
 
 async fn eval(
-    state: &SharedState,
+    state: SharedState,
     agents: Option<TargetIdentifier>,
     script: String,
     current_target: Option<TargetIdentifier>,
@@ -295,8 +295,8 @@ async fn eval(
     let target = get_target(current_target, agents)?;
 
     let agent_ids = match target {
-        TargetIdentifier::Group { group: _} => get_group(state, None, Some(target)).await?,
-        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state, None, Some(target)).await?.id],
+        TargetIdentifier::Group { group: _} => get_group(state.clone(), None, Some(target)).await?,
+        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state.clone(), None, Some(target)).await?.id],
     };
 
     let instruction = AgentInstructionBody::Script {
@@ -304,7 +304,7 @@ async fn eval(
     };
 
     for agent_id in agent_ids {
-        modify_agent(state, async |agent| {
+        modify_agent(state.clone(), async |agent| {
             agent.queue_instruction(&instruction);
         }, None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: agent_id }})).await?;
     }
@@ -316,7 +316,7 @@ async fn eval(
 }
 
 async fn status(
-    state: &SharedState,
+    state: SharedState,
     agents: Option<TargetIdentifier>,
     current_target: Option<TargetIdentifier>,
 ) -> ConsoleResponse {
@@ -429,7 +429,7 @@ fn expect_group_ident(implicit: Option<TargetIdentifier>, explicit: Option<Targe
     }
 }
 
-async fn get_agent(state: &SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Agent, ConsoleError> {
+async fn get_agent(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Agent, ConsoleError> {
     let state = state.read().await;
 
     let agent_ident = expect_agent_ident(implicit, explicit)?;
@@ -445,7 +445,7 @@ async fn get_agent(state: &SharedState, implicit: Option<TargetIdentifier>, expl
     Ok(agent)
 }
 
-async fn modify_agent<F>(state: &SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
+async fn modify_agent<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
 where 
     F: AsyncFnOnce(&mut Agent)
 {
@@ -463,7 +463,7 @@ where
     }
 }
 
-async fn get_group(state: &SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u64>, ConsoleError> {
+async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u64>, ConsoleError> {
     let state = state.read().await;
 
     let group_ident = expect_group_ident(implicit, explicit)?;
@@ -475,7 +475,7 @@ async fn get_group(state: &SharedState, implicit: Option<TargetIdentifier>, expl
 }
 
 
-async fn modify_group<F>(state: &SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
+async fn modify_group<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
 where 
     F: AsyncFnOnce(&mut Vec<u64>)
 {
