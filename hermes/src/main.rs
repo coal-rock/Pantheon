@@ -114,6 +114,13 @@ async fn eval(state: Arc<RwLock<State>>) {
                 engine.execute(&script);
             })
             .await;
+
+            let response_body = AgentResponseBody::ScriptResponse;
+
+            state
+                .write()
+                .await
+                .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Ok => {}
     }

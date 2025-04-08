@@ -44,6 +44,7 @@ pub mod protocol {
             stdout: String,
             stderr: String,
         },
+        ScriptResponse,
         Ok,
         SystemInfo {},
         Heartbeat,
@@ -63,6 +64,7 @@ pub mod protocol {
                 AgentResponseBody::SystemInfo {} => "SystemInfo",
                 AgentResponseBody::Heartbeat => "Heartbeat",
                 AgentResponseBody::Error => "Error",
+                AgentResponseBody::ScriptResponse => "ScriptResponse",
             }
         }
 
@@ -81,6 +83,7 @@ pub mod protocol {
                 AgentResponseBody::SystemInfo {} => String::from("None"),
                 AgentResponseBody::Heartbeat => String::from("None"),
                 AgentResponseBody::Error => String::from("None"),
+                AgentResponseBody::ScriptResponse => String::from("None"),
             }
         }
     }
