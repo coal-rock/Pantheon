@@ -14,19 +14,19 @@ use crate::statistics::Statistics;
 pub struct State {
     pub config: Config,
     pub statistics: Statistics,
-    pub agents: HashMap<u128, Agent>,
-    pub groups: HashMap<String, Vec<u128>>,
+    pub agents: HashMap<u64, Agent>,
+    pub groups: HashMap<String, Vec<u64>>,
     // TODO: This being sequential isn't the best idea, but it works for now
     curr_packet_id: u32,
 }
 
 impl State {
-    pub fn get_agent(&self, agent_id: &u128) -> Option<&Agent> {
+    pub fn get_agent(&self, agent_id: &u64) -> Option<&Agent> {
         self.agents.get(&agent_id)
     }
 
     // this shouldn't be public because we can't trust the caller to not mess up state
-    pub fn get_agent_mut(&mut self, agent_id: &u128) -> Option<&mut Agent> {
+    pub fn get_agent_mut(&mut self, agent_id: &u64) -> Option<&mut Agent> {
         self.agents.get_mut(&agent_id)
     }
 
@@ -56,7 +56,7 @@ impl State {
     /// Attempts to get any pending instructions
     ///
     /// returns `None` if agent isn't found, or if queue is empty
-    pub fn pop_instruction(&mut self, agent_id: &u128) -> Option<AgentInstructionBody> {
+    pub fn pop_instruction(&mut self, agent_id: &u64) -> Option<AgentInstructionBody> {
         match self.agents.get_mut(&agent_id) {
             Some(agent) => agent.pop_instruction(),
             None => None,
@@ -65,7 +65,7 @@ impl State {
 
     pub fn get_network_history(
         &self,
-        agent_id: &u128,
+        agent_id: &u64,
         depth: usize,
     ) -> Option<Vec<&NetworkHistoryEntry>> {
         let agent = match self.get_agent(agent_id) {
@@ -76,14 +76,14 @@ impl State {
         Some(agent.network_history.get_all(depth))
     }
 
-    pub fn push_instruction_to_history(&mut self, instruction: &AgentInstruction, agent_id: &u128) {
+    pub fn push_instruction_to_history(&mut self, instruction: &AgentInstruction, agent_id: &u64) {
         match self.get_agent_mut(&agent_id) {
             Some(agent) => agent.network_history.push_instruction(instruction.clone()),
             None => return,
         };
     }
 
-    pub fn push_response_to_history(&mut self, response: &AgentResponse, agent_id: &u128) {
+    pub fn push_response_to_history(&mut self, response: &AgentResponse, agent_id: &u64) {
         match self.get_agent_mut(&agent_id) {
             Some(agent) => agent.network_history.push_response(response.clone()),
             None => return,

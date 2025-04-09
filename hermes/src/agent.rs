@@ -6,7 +6,7 @@ use sysinfo::System;
 use talaria::protocol::*;
 
 pub struct AgentContext {
-    pub agent_id: u128,
+    pub agent_id: u64,
     pub polling_interval_millis: u64,
     pub os: OS,
 }
@@ -15,7 +15,7 @@ impl AgentContext {
     // Mashes together a bunch of staticish system information,
     // Takes the Sha256 hash of aformentioned data,
     // Returns the first 64 bits of the aformentioned hash
-    fn generate_deterministic_uuid() -> Result<u128> {
+    fn generate_deterministic_uuid() -> Result<u64> {
         // TODO: proper
         let hostname: String = System::host_name().ok_or(anyhow!("unable to get hostname"))?;
         let os_version: String = System::os_version().ok_or(anyhow!("unable to get os version"))?;
@@ -34,7 +34,7 @@ impl AgentContext {
         hasher.update(unique_info.as_bytes());
         let hash = hasher.finalize();
 
-        Ok(u128::from_be_bytes(hash[0..16].try_into()?))
+        Ok(u64::from_be_bytes(hash[0..8].try_into()?))
     }
 
     pub fn new(polling_interval_millis: u64) -> Result<AgentContext> {

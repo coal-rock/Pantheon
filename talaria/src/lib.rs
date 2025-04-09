@@ -123,7 +123,7 @@ pub mod protocol {
     // Other data should be locked behind other commands
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct ResponseHeader {
-        pub agent_id: u128,
+        pub agent_id: u64,
         pub timestamp: u128,
         pub packet_id: Option<u32>,
         pub polling_interval_ms: u64,
@@ -278,7 +278,7 @@ pub mod api {
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct Agent {
         pub nickname: Option<String>,
-        pub id: u128,
+        pub id: u64,
         pub os: OS,
         pub external_ip: SocketAddr,
         // TODO: this maybe shouldn't be a String?
@@ -334,7 +334,7 @@ pub mod api {
     pub struct AgentInfo {
         pub name: Option<String>,
         pub os: OS,
-        pub id: u128,
+        pub id: u64,
         pub external_ip: String,
         pub internal_ip: String,
         pub status: bool,
@@ -379,7 +379,7 @@ pub mod console {
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum AgentIdentifier {
         Nickname { nickname: String },
-        ID { id: u128 },
+        ID { id: u64 },
     }
 
     impl Into<TargetIdentifier> for AgentIdentifier {
@@ -476,7 +476,7 @@ pub mod console {
 
     pub enum Token {
         CommandName { command_name: String },
-        AgentID { id: u128 },
+        AgentID { id: u64 },
         AgentNickname { nickname: String },
         GroupIdentifier { identifier: String },
     }
@@ -615,13 +615,13 @@ pub mod console {
             }
         }
 
-        pub fn parse_agent_id(&mut self) -> Result<u128, CommandError> {
+        pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
             let token = self.consume()?;
             let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
             match next_char {
                 '0'..='9' => {
-                    let id = token.parse::<u128>();
+                    let id = token.parse::<u64>();
 
                     match id {
                         Ok(id) => Ok(id),

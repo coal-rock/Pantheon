@@ -85,7 +85,7 @@ async fn create_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u128> = vec![];
+    let mut agent_ids: Vec<u64> = vec![];
     
     {
         let state = state.read().await;
@@ -129,7 +129,7 @@ async fn add_agents_to_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u128> = vec![];
+    let mut agent_ids: Vec<u64> = vec![];
 
     for ident in agents {
         agent_ids.push(get_agent(state.clone(), None, Some(ident.into())).await?.id);
@@ -155,7 +155,7 @@ async fn remove_agents_from_group(
     group_name: String,
     agents: Vec<AgentIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u128> = vec![];
+    let mut agent_ids: Vec<u64> = vec![];
 
     for ident in agents {
         let agent = get_agent(state.clone(), None, Some(ident.into())).await?;
@@ -463,7 +463,7 @@ where
     }
 }
 
-async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u128>, ConsoleError> {
+async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u64>, ConsoleError> {
     let state = state.read().await;
 
     let group_ident = expect_group_ident(implicit, explicit)?;
@@ -477,7 +477,7 @@ async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, expli
 
 async fn modify_group<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
 where 
-    F: AsyncFnOnce(&mut Vec<u128>)
+    F: AsyncFnOnce(&mut Vec<u64>)
 {
     let mut state = state.write().await;
     let group_ident = expect_group_ident(implicit, explicit)?;

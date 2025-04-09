@@ -10,7 +10,7 @@ use talaria::api::*;
 pub async fn get_agents(
     _auth: Auth,
     state: &rocket::State<SharedState>,
-) -> Json<HashMap<u128, Agent>> {
+) -> Json<HashMap<u64, Agent>> {
     Json(state.read().await.agents.clone())
 }
 
@@ -20,7 +20,7 @@ pub async fn get_agents(
 pub async fn get_agent_history(
     _auth: Auth,
     state: &rocket::State<SharedState>,
-    agent_id: u128,
+    agent_id: u64,
     count: usize,
 ) -> Option<Json<Vec<NetworkHistoryEntry>>> {
     let agents = state.read().await.agents.clone();
@@ -41,7 +41,7 @@ pub async fn get_agent_history(
 /// Retrieves basic info about agent
 #[get("/list_agents")]
 pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
-    let agents: HashMap<u128, Agent> = state.read().await.agents.clone();
+    let agents: HashMap<u64, Agent> = state.read().await.agents.clone();
     let mut agent_info: Vec<AgentInfo> = vec![];
 
     for (_, agent) in agents {
