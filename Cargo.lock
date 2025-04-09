@@ -198,6 +198,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
+ "base62",
  "bytesize",
  "dioxus",
  "dioxus-free-icons",
@@ -267,6 +268,15 @@ dependencies = [
  "object",
  "rustc-demangle",
  "windows-targets 0.52.6",
+]
+
+[[package]]
+name = "base62"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10e52a7bcb1d6beebee21fb5053af9e3cbb7a7ed1a4909e534040e676437ab1f"
+dependencies = [
+ "rustversion",
 ]
 
 [[package]]

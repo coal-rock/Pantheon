@@ -22,6 +22,14 @@ impl State {
         })
     }
 
+    pub fn set_ping(&mut self, ping: u32) {
+        self.agent.ping = Some(ping);
+    }
+
+    pub fn get_ping(&self) -> Option<u32> {
+        self.agent.ping
+    }
+
     pub fn get_polling_interval(&self) -> u64 {
         self.agent.polling_interval_millis
     }
@@ -59,7 +67,9 @@ impl State {
             .gen_response(response_body, &mut self.agent, packet_id)
     }
 
-    pub async fn send_response(&self, response: AgentResponse) -> Result<AgentInstruction> {
+    /// Serializes and sends a response.
+    /// Returns `Result<(PingMicroseconds, AgentInstruction)>`
+    pub async fn send_response(&self, response: AgentResponse) -> Result<(u32, AgentInstruction)> {
         self.network.send_response(response).await
     }
 }

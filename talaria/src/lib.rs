@@ -123,6 +123,7 @@ pub mod protocol {
     // Other data should be locked behind other commands
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct ResponseHeader {
+        pub ping: Option<u32>,
         pub agent_id: u64,
         pub timestamp: u128,
         pub packet_id: Option<u32>,
@@ -283,10 +284,12 @@ pub mod api {
         pub external_ip: SocketAddr,
         // TODO: this maybe shouldn't be a String?
         pub internal_ip: String,
-        /// Timestamp of last packet sent from agent (in ms)
+        /// Timestamp of last packet sent from agent (in ms, client time)
         pub last_packet_send: u128,
-        /// Timestamp of when last packet from agent was received (in ms)
+        /// Timestamp of when last packet from agent was received (in ms, server time)
         pub last_packet_recv: u128,
+        /// RTT latency measured in microseconds, will be None for first packet exchange
+        pub ping: Option<u32>,
         pub polling_interval_ms: u64,
         pub network_history: NetworkHistoryStore,
         pub instruction_queue: VecDeque<AgentInstructionBody>,
@@ -308,6 +311,7 @@ pub mod api {
                 polling_interval_ms: response.header.polling_interval_ms,
                 network_history,
                 instruction_queue: vec![].into(),
+                ping: None,
             }
         }
 
@@ -338,7 +342,8 @@ pub mod api {
         pub external_ip: String,
         pub internal_ip: String,
         pub status: bool,
-        pub ping: u128,
+        /// Ping measured in milliseconds
+        pub ping: Option<f32>,
     }
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -878,5 +883,12 @@ pub mod helper {
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_millis()
+    }
+
+    pub fn current_time_micro() -> u128 {
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_micros()
     }
 }

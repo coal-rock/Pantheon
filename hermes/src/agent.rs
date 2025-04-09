@@ -7,6 +7,7 @@ use talaria::protocol::*;
 
 pub struct AgentContext {
     pub agent_id: u64,
+    pub ping: Option<u32>,
     pub polling_interval_millis: u64,
     pub os: OS,
 }
@@ -44,6 +45,7 @@ impl AgentContext {
             agent_id: AgentContext::generate_deterministic_uuid()?,
             polling_interval_millis,
             os,
+            ping: None,
         })
     }
 }

@@ -240,7 +240,7 @@ fn AgentList(
                     }
                     h1 {
                         class: "grow-2 shrink basis-0",
-                        {agent.ping.to_string() + "ms"}
+                        {agent.ping.map(|x| format!("{:.2}ms", x)).unwrap_or("?".to_string())}
                     }
                 }
                 hr{}

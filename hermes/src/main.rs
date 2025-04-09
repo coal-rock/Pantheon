@@ -55,13 +55,15 @@ async fn poll(state: Arc<RwLock<State>>) {
         let instruction = state.read().await.send_response(response).await;
 
         match instruction {
-            Ok(instruction) => {
+            Ok((ping, instruction)) => {
                 devlog!("Got instruction: {:#?}", instruction);
                 let _ = task::spawn(eval(state.clone()));
                 state
                     .write()
                     .await
                     .push_instruction(instruction.body, instruction.header.packet_id);
+
+                state.write().await.set_ping(ping);
             }
             Err(err) => {
                 devlog!("Failed to properly communicate with server: {:#?}", err);

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use local_ip_address::local_ip;
 use reqwest::{Client, Url};
-use talaria::helper::current_time;
+use talaria::helper::{current_time, current_time_micro};
 use talaria::protocol::*;
 
 use crate::agent::AgentContext;
@@ -29,6 +29,7 @@ impl Network {
             polling_interval_ms: agent.polling_interval_millis,
             internal_ip,
             os: agent.os.clone(),
+            ping: agent.ping,
         }
     }
 
@@ -46,18 +47,26 @@ impl Network {
         }
     }
 
-    pub async fn send_response(&self, response: AgentResponse) -> Result<AgentInstruction> {
+    pub async fn send_response(&self, response: AgentResponse) -> Result<(u32, AgentInstruction)> {
+        let serialized_response = AgentResponse::serialize(&response)?;
+
+        let time_before = current_time_micro();
+
         let net_response = self
             .http_client
             .post(self.url.join("agent/monolith")?)
-            .body(AgentResponse::serialize(&response)?)
+            .body(serialized_response)
             .send()
             .await?;
+
+        let time_after = current_time_micro();
+
+        let ping = (time_after - time_before) as u32;
 
         let bytes = net_response.bytes().await?;
         let instruction = AgentInstruction::deserialize(&bytes.to_vec());
 
-        Ok(instruction?)
+        Ok((ping, instruction?))
     }
 
     pub fn new(url: Url) -> Network {

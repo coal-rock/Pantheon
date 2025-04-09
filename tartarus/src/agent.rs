@@ -23,6 +23,7 @@ pub async fn monolith(
             Some(agent) => {
                 agent.last_packet_send = response.header.timestamp;
                 agent.last_packet_recv = current_time;
+                agent.ping = response.header.ping;
             }
             None => {}
         }
@@ -77,6 +78,11 @@ pub async fn monolith(
 
         state.statistics.log_send(instruction_serialized.len());
         state.statistics.log_recv(input.len());
+
+        match response.header.ping {
+            Some(ping) => state.statistics.log_latency(ping),
+            None => {}
+        }
 
         match packet_id {
             Some(_) => {
