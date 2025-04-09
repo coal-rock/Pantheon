@@ -63,6 +63,33 @@ impl State {
         }
     }
 
+    pub fn get_network_history(
+        &self,
+        agent_id: &u128,
+        depth: usize,
+    ) -> Option<Vec<&NetworkHistoryEntry>> {
+        let agent = match self.get_agent(agent_id) {
+            Some(agent) => agent,
+            None => return None,
+        };
+
+        Some(agent.network_history.get_all(depth))
+    }
+
+    pub fn push_instruction_to_history(&mut self, instruction: &AgentInstruction, agent_id: &u128) {
+        match self.get_agent_mut(&agent_id) {
+            Some(agent) => agent.network_history.push_instruction(instruction.clone()),
+            None => return,
+        };
+    }
+
+    pub fn push_response_to_history(&mut self, response: &AgentResponse, agent_id: &u128) {
+        match self.get_agent_mut(&agent_id) {
+            Some(agent) => agent.network_history.push_response(response.clone()),
+            None => return,
+        };
+    }
+
     pub fn get_agent_by_ident(&self, ident: &AgentIdentifier) -> Option<&Agent> {
         match ident {
             AgentIdentifier::Nickname { nickname } => {

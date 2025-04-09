@@ -1,9 +1,7 @@
-use std::net::SocketAddr;
-
-use talaria::helper::current_time;
-use talaria::protocol::*;
-
 use crate::SharedState;
+use std::net::SocketAddr;
+use talaria::helper::current_time;
+use talaria::{devlog, protocol::*};
 
 #[post("/monolith", data = "<input>")]
 pub async fn monolith(
@@ -36,28 +34,55 @@ pub async fn monolith(
         body: instruction_body,
     };
 
-    println!(
-        "[{}] {} -> ",
-        response.header.packet_id.unwrap_or(50),
+    devlog!(
+        "\n[{}] {} -> ",
+        response
+            .header
+            .packet_id
+            .map_or(" ".to_string(), |num| num.to_string()),
         response.body.variant()
     );
 
-    println!(
+    devlog!(
         "[{}] {} <- ",
-        instruction.header.packet_id.unwrap_or(50),
+        instruction
+            .header
+            .packet_id
+            .map_or(" ".to_string(), |num| num.to_string()),
         instruction.body.variant()
     );
 
-    let instruction = AgentInstruction::serialize(&instruction).unwrap();
+    devlog!(
+        "({:#?})",
+        state
+            .read()
+            .await
+            .get_network_history(&response.header.agent_id, 10)
+            .unwrap()
+    );
+
+    let instruction_serialized = AgentInstruction::serialize(&instruction).unwrap();
 
     {
         let mut state = state.write().await;
 
-        state.statistics.log_send(instruction.len());
+        state.statistics.log_send(instruction_serialized.len());
         state.statistics.log_recv(input.len());
+
+        match packet_id {
+            Some(_) => {
+                state.push_instruction_to_history(&instruction, &response.header.agent_id);
+            }
+            None => {}
+        }
+
+        match response.header.packet_id {
+            Some(_) => state.push_response_to_history(&response, &response.header.agent_id),
+            None => {}
+        }
     }
 
-    instruction
+    instruction_serialized
 }
 
 pub fn routes() -> Vec<rocket::Route> {
