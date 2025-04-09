@@ -7,6 +7,7 @@ use talaria::protocol::*;
 
 pub struct AgentContext {
     pub agent_id: u64,
+    pub ping: Option<u32>,
     pub polling_interval_millis: u64,
     pub os: OS,
 }
@@ -21,8 +22,7 @@ impl AgentContext {
         let os_version: String = System::os_version().ok_or(anyhow!("unable to get os version"))?;
         let cpu_num = System::physical_core_count().ok_or(anyhow!("unable to get core count"))?;
         let os_type: String = System::name().ok_or(anyhow!("unable to get system name"))?;
-        let mac_address: [u8; 6] = get_mac_address()
-            .unwrap()
+        let mac_address: [u8; 6] = get_mac_address()?
             .ok_or(anyhow!("unable to get mac addr"))?
             .bytes();
 
@@ -39,12 +39,13 @@ impl AgentContext {
     }
 
     pub fn new(polling_interval_millis: u64) -> Result<AgentContext> {
-        let os = OS::from(&System::name().unwrap(), System::long_os_version());
+        let os = OS::from(&std::env::consts::OS, System::long_os_version());
 
         Ok(AgentContext {
             agent_id: AgentContext::generate_deterministic_uuid()?,
             polling_interval_millis,
             os,
+            ping: None,
         })
     }
 }

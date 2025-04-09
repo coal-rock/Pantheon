@@ -93,7 +93,7 @@ pub fn AgentsOverview(id: i32) -> Element {
                     class: "flex flex-col grow shrink basis-0 gap-2",
                     Statistic {
                         text: "Average Response Latency:",
-                        value: format!("{:.0}ms", avg_response_latency().unwrap_or(0.0)),
+                        value: avg_response_latency().map(|l| format!("{:.2}ms", l/1000.0)).unwrap_or("?".to_string()),
                         icon: rsx!{Icon {
                             icon: FaClock,
                         }}

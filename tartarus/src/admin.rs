@@ -25,35 +25,26 @@ pub async fn get_agent_history(
 ) -> Option<Json<Vec<NetworkHistoryEntry>>> {
     let agents = state.read().await.agents.clone();
 
-    // FIXME: slow and evil
     match agents.get(&agent_id) {
         Some(agent) => Some(Json(
             agent
                 .network_history
-                .clone()
-                .iter()
-                .rev()
-                .take(count)
-                .map(|x| x.clone())
-                .collect::<Vec<NetworkHistoryEntry>>(),
+                .get_all(count)
+                .into_iter()
+                .cloned()
+                .collect(),
         )),
         None => None,
     }
 }
 
-// Retrieves basic info about agent
+/// Retrieves basic info about agent
 #[get("/list_agents")]
 pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Json<Vec<AgentInfo>> {
     let agents: HashMap<u64, Agent> = state.read().await.agents.clone();
     let mut agent_info: Vec<AgentInfo> = vec![];
 
     for (_, agent) in agents {
-        // prevents overflow because for some reason we sometimes have negative latency
-        let ping = match agent.last_packet_recv >= agent.last_packet_send {
-            true => agent.last_packet_recv - agent.last_packet_send,
-            false => 0,
-        };
-
         agent_info.push(AgentInfo {
             status: agent.is_active(),
             name: agent.nickname,
@@ -61,7 +52,7 @@ pub async fn list_agents(_auth: Auth, state: &rocket::State<SharedState>) -> Jso
             external_ip: agent.external_ip.to_string(),
             internal_ip: agent.internal_ip.to_string(),
             os: agent.os,
-            ping,
+            ping: agent.ping.map(|p| p as f32 / 1000.0),
         });
     }
 

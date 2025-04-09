@@ -1,4 +1,3 @@
-#![feature(vec_deque_pop_if)]
 pub mod protocol {
     use anyhow::Result;
     use bincode::{Decode, Encode};
@@ -12,10 +11,11 @@ pub mod protocol {
 
     impl OS {
         pub fn from(os_type: &str, os_string: Option<String>) -> OS {
+            println!("os type: {}", os_type);
             OS {
                 os_type: match os_type.to_lowercase().as_str() {
-                    "Linux" => OSType::Linux,
-                    "Windows" => OSType::Windows,
+                    "linux" => OSType::Linux,
+                    "windows" => OSType::Windows,
                     _ => OSType::Other,
                 },
                 os_string,
@@ -41,14 +41,12 @@ pub mod protocol {
     pub enum AgentResponseBody {
         CommandResponse {
             command: String,
-            command_id: u32,
             status_code: i32,
             stdout: String,
             stderr: String,
         },
-        Ok {
-            packet_id: u32,
-        },
+        ScriptResponse,
+        Ok,
         SystemInfo {},
         Heartbeat,
         Error,
@@ -59,15 +57,15 @@ pub mod protocol {
             match self {
                 AgentResponseBody::CommandResponse {
                     command: _,
-                    command_id: _,
                     status_code: _,
                     stdout: _,
                     stderr: _,
                 } => "CommandResponse",
-                AgentResponseBody::Ok { packet_id: _ } => "Ok",
+                AgentResponseBody::Ok => "Ok",
                 AgentResponseBody::SystemInfo {} => "SystemInfo",
                 AgentResponseBody::Heartbeat => "Heartbeat",
                 AgentResponseBody::Error => "Error",
+                AgentResponseBody::ScriptResponse => "ScriptResponse",
             }
         }
 
@@ -75,32 +73,26 @@ pub mod protocol {
             match self {
                 AgentResponseBody::CommandResponse {
                     command,
-                    command_id,
                     status_code,
                     stdout,
                     stderr,
                 } => format!(
-                    "Command: {}\nCommand ID: {}\nStatus Code: {}\nstdout: {}\nstderr: {}",
-                    command, command_id, status_code, stdout, stderr
+                    "Command: {}\nStatus Code: {}\nstdout: {}\nstderr: {}",
+                    command, status_code, stdout, stderr
                 ),
-                AgentResponseBody::Ok { packet_id } => format!("Packet ID: {}", packet_id),
+                AgentResponseBody::Ok => String::from("None"),
                 AgentResponseBody::SystemInfo {} => String::from("None"),
                 AgentResponseBody::Heartbeat => String::from("None"),
                 AgentResponseBody::Error => String::from("None"),
+                AgentResponseBody::ScriptResponse => String::from("None"),
             }
         }
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
-        Script {
-            script: String,
-        },
-        Command {
-            command: String,
-            command_id: u32,
-            args: Vec<String>,
-        },
+        Script { script: String },
+        Command { command: String, args: Vec<String> },
         Ok,
     }
 
@@ -109,7 +101,6 @@ pub mod protocol {
             match self {
                 AgentInstructionBody::Command {
                     command: _,
-                    command_id: _,
                     args: _,
                 } => "Command",
                 AgentInstructionBody::Script { script: _ } => "Script",
@@ -119,14 +110,9 @@ pub mod protocol {
 
         pub fn inner_value(&self) -> String {
             match self {
-                AgentInstructionBody::Command {
-                    command,
-                    command_id,
-                    args,
-                } => format!(
-                    "Command: {}\nCommand ID: {}\nArgs: {:#?}",
-                    command, command_id, args
-                ),
+                AgentInstructionBody::Command { command, args } => {
+                    format!("Command: {}\nArgs: {:#?}", command, args)
+                }
                 AgentInstructionBody::Ok => String::from("None"),
                 AgentInstructionBody::Script { script } => script.into(),
             }
@@ -135,39 +121,45 @@ pub mod protocol {
 
     // This struct should exclusively contain fields required for minimum viable operation
     // Other data should be locked behind other commands
-    //
-    // TODO: create a separate header for [Agent -> Server] and [Server -> Agent]
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
-    pub struct PacketHeader {
+    pub struct ResponseHeader {
+        pub ping: Option<u32>,
         pub agent_id: u64,
         pub timestamp: u128,
-        pub packet_id: u32,
+        pub packet_id: Option<u32>,
         pub polling_interval_ms: u64,
         pub internal_ip: String,
         pub os: OS,
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
+    pub struct InstructionHeader {
+        pub packet_id: Option<u32>,
+        pub timestamp: u128,
+    }
+
+    #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentInstruction {
-        pub packet_body: AgentInstructionBody,
+        pub header: InstructionHeader,
+        pub body: AgentInstructionBody,
     }
 
     impl AgentInstruction {
-        pub fn serialize(response: &AgentInstruction) -> Result<Vec<u8>> {
+        pub fn serialize(instruction: &AgentInstruction) -> Result<Vec<u8>> {
             let config = bincode::config::standard();
-            Ok(bincode::encode_to_vec(response, config)?)
+            Ok(bincode::encode_to_vec(instruction, config)?)
         }
 
-        pub fn deserialize(response: &Vec<u8>) -> Result<AgentInstruction> {
+        pub fn deserialize(instruction: &Vec<u8>) -> Result<AgentInstruction> {
             let config = bincode::config::standard();
-            Ok(bincode::decode_from_slice(response, config)?.0)
+            Ok(bincode::decode_from_slice(instruction, config)?.0)
         }
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub struct AgentResponse {
-        pub packet_header: PacketHeader,
-        pub packet_body: AgentResponseBody,
+        pub header: ResponseHeader,
+        pub body: AgentResponseBody,
     }
 
     impl AgentResponse {
@@ -186,12 +178,102 @@ pub mod protocol {
 pub mod api {
     use crate::{helper::current_time, protocol::*};
     use serde::{Deserialize, Serialize};
-    use std::{collections::VecDeque, net::SocketAddr};
+    use std::{
+        collections::{BTreeSet, HashMap, VecDeque},
+        net::SocketAddr,
+        usize,
+    };
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub enum NetworkHistoryEntry {
-        AgentInstruction { instruction: AgentInstruction },
-        AgentResponse { response: AgentResponse },
+    pub struct NetworkHistoryEntry {
+        instruction: AgentInstruction,
+        response: Option<AgentResponse>,
+    }
+
+    /// Layer of abstraction over NetworkHistory.
+    ///
+    /// Maps timestamp -> ID and then ID -> Entry,
+    /// meaning we get O(1) lookups basically for free.
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct NetworkHistoryStore {
+        by_id: HashMap<u32, NetworkHistoryEntry>,
+        by_timestamp: BTreeSet<(u128, u32)>,
+        capacity: usize,
+    }
+
+    impl NetworkHistoryStore {
+        pub fn new(capacity: usize) -> NetworkHistoryStore {
+            NetworkHistoryStore {
+                by_id: HashMap::new(),
+                by_timestamp: BTreeSet::new(),
+                capacity,
+            }
+        }
+
+        /// Inserts or overwrite entry
+        pub fn insert(&mut self, entry: NetworkHistoryEntry) {
+            let packet_id = match entry.instruction.header.packet_id {
+                Some(packet_id) => packet_id,
+                None => return,
+            };
+
+            let timestamp = entry.instruction.header.timestamp;
+
+            self.by_id.insert(packet_id, entry);
+            self.by_timestamp.insert((timestamp, packet_id));
+
+            // trim if we are over capacity
+            if self.by_id.len() > self.capacity {
+                if let Some(&(oldest_ts, oldest_id)) = self.by_timestamp.iter().next() {
+                    self.by_id.remove(&oldest_id);
+                    self.by_timestamp.remove(&(oldest_ts, oldest_id));
+                }
+            }
+        }
+
+        /// O(1)
+        pub fn get(&self, packet_id: u32) -> Option<&NetworkHistoryEntry> {
+            self.by_id.get(&packet_id)
+        }
+
+        /// Retrieves all hitherto entries in order of
+        /// the instruction timestamp
+        pub fn get_all(&self, depth: usize) -> Vec<&NetworkHistoryEntry> {
+            self.by_timestamp
+                .iter()
+                .filter_map(|&(_, packet_id)| self.by_id.get(&packet_id))
+                .take(depth)
+                .collect()
+        }
+
+        /// Creates new entry containing AgentInstruction
+        pub fn push_instruction(&mut self, instruction: AgentInstruction) {
+            self.insert(NetworkHistoryEntry {
+                instruction,
+                response: None,
+            })
+        }
+
+        /// Adds response to existing entry containing an instruction
+        pub fn push_response(&mut self, response: AgentResponse) {
+            // returns early if response contains no ID
+            let entry = match response.header.packet_id {
+                Some(packet_id) => self.get(packet_id),
+                None => return,
+            };
+
+            // returns early if NetworkHistory does not contain matching ID
+            // we should never be here(?)
+            let entry = match entry {
+                Some(entry) => entry,
+                None => return,
+            };
+
+            self.insert(NetworkHistoryEntry {
+                instruction: entry.instruction.clone(),
+                response: Some(response),
+            });
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -202,72 +284,35 @@ pub mod api {
         pub external_ip: SocketAddr,
         // TODO: this maybe shouldn't be a String?
         pub internal_ip: String,
-        /// Timestamp of last packet sent from agent (in ms)
+        /// Timestamp of last packet sent from agent (in ms, client time)
         pub last_packet_send: u128,
-        /// Timestamp of when last packet from agent was received (in ms)
+        /// Timestamp of when last packet from agent was received (in ms, server time)
         pub last_packet_recv: u128,
+        /// RTT latency measured in microseconds, will be None for first packet exchange
+        pub ping: Option<u32>,
         pub polling_interval_ms: u64,
-        pub network_history: VecDeque<NetworkHistoryEntry>,
-        pub queue: Vec<AgentInstructionBody>,
+        pub network_history: NetworkHistoryStore,
+        pub instruction_queue: VecDeque<AgentInstructionBody>,
     }
 
     impl Agent {
-        // appends a response to the network history, used for logging
-        pub fn push_response(&mut self, response: &AgentResponse, history_max_len: Option<usize>) {
-            let length = self.network_history.len().clone();
+        pub fn from_response(response: AgentResponse, external_ip: SocketAddr) -> Agent {
+            // TODO: poll max size from config
+            let network_history = NetworkHistoryStore::new(1000);
 
-            self.network_history
-                .pop_front_if(|_| match history_max_len {
-                    Some(max_len) => length == max_len,
-                    None => false,
-                });
-
-            self.network_history
-                .push_back(NetworkHistoryEntry::AgentResponse {
-                    response: response.clone(),
-                })
-        }
-
-        // appends an instruction to the network history, used for logging
-        pub fn push_instruction(
-            &mut self,
-            instruction: &AgentInstruction,
-            history_max_len: Option<usize>,
-        ) {
-            let length = self.network_history.len().clone();
-
-            self.network_history
-                .pop_front_if(|_| match history_max_len {
-                    Some(max_len) => length == max_len,
-                    None => false,
-                });
-
-            self.network_history
-                .push_back(NetworkHistoryEntry::AgentInstruction {
-                    instruction: instruction.clone(),
-                })
-        }
-
-        pub fn get_response_history(&self) -> Vec<AgentResponse> {
-            self.network_history
-                .iter()
-                .filter_map(|x| match x {
-                    NetworkHistoryEntry::AgentInstruction { instruction: _ } => None,
-                    NetworkHistoryEntry::AgentResponse { response } => Some(response.clone()),
-                })
-                .collect()
-        }
-
-        pub fn get_instruction_history(&self) -> Vec<AgentInstruction> {
-            self.network_history
-                .iter()
-                .filter_map(|x| match x {
-                    NetworkHistoryEntry::AgentInstruction { instruction } => {
-                        Some(instruction.clone())
-                    }
-                    NetworkHistoryEntry::AgentResponse { response: _ } => None,
-                })
-                .collect()
+            Agent {
+                nickname: None,
+                id: response.header.agent_id,
+                os: response.header.os,
+                external_ip,
+                internal_ip: response.header.internal_ip,
+                last_packet_send: response.header.timestamp,
+                last_packet_recv: current_time(),
+                polling_interval_ms: response.header.polling_interval_ms,
+                network_history,
+                instruction_queue: vec![].into(),
+                ping: None,
+            }
         }
 
         pub fn set_nickname(&mut self, nickname: Option<String>) {
@@ -275,11 +320,11 @@ pub mod api {
         }
 
         pub fn queue_instruction(&mut self, instruction: &AgentInstructionBody) {
-            self.queue.push(instruction.clone());
+            self.instruction_queue.push_back(instruction.clone());
         }
 
         pub fn pop_instruction(&mut self) -> Option<AgentInstructionBody> {
-            self.queue.pop()
+            self.instruction_queue.pop_front()
         }
 
         pub fn is_active(&self) -> bool {
@@ -297,7 +342,8 @@ pub mod api {
         pub external_ip: String,
         pub internal_ip: String,
         pub status: bool,
-        pub ping: u128,
+        /// Ping measured in milliseconds
+        pub ping: Option<f32>,
     }
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -837,5 +883,12 @@ pub mod helper {
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_millis()
+    }
+
+    pub fn current_time_micro() -> u128 {
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_micros()
     }
 }

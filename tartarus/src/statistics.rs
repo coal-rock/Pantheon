@@ -8,7 +8,7 @@ pub struct Statistics {
     pub packets_recv: u64,
     pub bytes_sent: u64,
     pub bytes_recv: u64,
-    pub latencies: Vec<u128>,
+    pub latencies: Vec<u32>,
 }
 
 impl Statistics {
@@ -22,7 +22,8 @@ impl Statistics {
         self.bytes_recv += len as u64;
     }
 
-    pub fn log_latency(&mut self, latency: u128) {
+    /// Logs RTT latency in microseconds
+    pub fn log_latency(&mut self, latency: u32) {
         self.latencies.push(latency);
     }
 
@@ -30,12 +31,13 @@ impl Statistics {
         self.bytes_recv + self.bytes_sent
     }
 
+    /// Returns average RTT latency in microseconds
     pub fn get_average_latency(&self) -> f32 {
         // prevent divide by zero
         if self.latencies.len() == 0 {
             return 0.0;
         }
 
-        self.latencies.iter().sum::<u128>() as f32 / self.latencies.len() as f32
+        self.latencies.iter().sum::<u32>() as f32 / self.latencies.len() as f32
     }
 }

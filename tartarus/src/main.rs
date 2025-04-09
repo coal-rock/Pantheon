@@ -22,7 +22,6 @@ use cors::CORS;
 use rocket::{Build, Rocket};
 use std::{fs, path::PathBuf};
 
-// Rocket instance with shared state
 async fn rocket(shared_state: SharedState) -> Rocket<Build> {
     let config = shared_state.read().await.config.clone();
 
@@ -78,17 +77,12 @@ async fn main() -> Result<(), rocket::Error> {
     print!("{}", toml::to_string_pretty(&config.clone()).unwrap());
     println!("--------------------------\n");
 
-    // Initialize shared state for active listeners
     let shared_state = State::from(config).to_shared_state();
 
-    // Launch the Rocket server in a separate task
-    tokio::spawn({
-        let shared_state = shared_state.clone();
-        async move { rocket(shared_state).await.launch().await }
-    });
+    let rocket = tokio::spawn(rocket(shared_state.clone()).await.launch());
+    let console = tokio::spawn(start_console(shared_state.clone()));
 
-    // Start the interactive console
-    start_console(&shared_state).await;
+    let _ = tokio::join!(rocket, console);
 
     Ok(())
 }

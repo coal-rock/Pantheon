@@ -1,60 +1,8 @@
-use std::net::SocketAddr;
-
-use talaria::api::*;
-use talaria::helper::current_time;
-use talaria::protocol::*;
-
 use crate::SharedState;
+use std::net::SocketAddr;
+use talaria::helper::current_time;
+use talaria::{devlog, protocol::*};
 
-// Register or update egent in the state
-async fn register_or_update(
-    state: &rocket::State<SharedState>,
-    response: &AgentResponse,
-    instruction: &AgentInstruction,
-    addr: SocketAddr,
-) {
-    let mut state = state.write().await;
-    let agent_id = response.packet_header.agent_id;
-
-    if state.agents.contains_key(&agent_id) {
-        // update agent if found
-        let config = state.config.clone();
-        let agent = state.agents.get_mut(&agent_id).unwrap();
-        log::info!("Updated Agent {} at {:?}", agent.id, addr);
-        agent.last_packet_send = response.packet_header.timestamp;
-        agent.last_packet_recv = current_time();
-        agent.push_response(response, config.history_buf_len);
-        agent.push_instruction(instruction, config.history_buf_len);
-        return;
-    } else {
-        // add new agent if not found
-        state.agents.insert(
-            response.packet_header.agent_id,
-            Agent {
-                nickname: None,
-                id: response.packet_header.agent_id,
-                os: response.packet_header.os.clone(),
-                external_ip: addr,
-                internal_ip: response.packet_header.internal_ip.clone(),
-                last_packet_send: response.packet_header.timestamp,
-                last_packet_recv: current_time(),
-                network_history: vec![
-                    NetworkHistoryEntry::AgentResponse {
-                        response: response.clone(),
-                    },
-                    NetworkHistoryEntry::AgentInstruction {
-                        instruction: instruction.clone(),
-                    },
-                ]
-                .into(),
-                queue: vec![],
-                polling_interval_ms: response.packet_header.polling_interval_ms,
-            },
-        );
-    }
-}
-
-// Route to handle agent responses and issue instructions
 #[post("/monolith", data = "<input>")]
 pub async fn monolith(
     state: &rocket::State<SharedState>,
@@ -62,66 +10,94 @@ pub async fn monolith(
     input: Vec<u8>,
 ) -> Vec<u8> {
     let response = AgentResponse::deserialize(&input).unwrap();
-    let packet_body = response.packet_body.clone();
+    let current_time = current_time();
 
-    // Generate an instruction based on the received response
-    let instruction = match packet_body {
-        AgentResponseBody::CommandResponse {
-            command: _,
-            command_id: _,
-            status_code: _,
-            stdout,
-            stderr,
-        } => {
-            log::info!("Command Output:\nstdout: {}\nstderr: {}", stdout, stderr);
+    let instruction_body = {
+        let mut state = state.write().await;
 
-            AgentInstruction {
-                packet_body: AgentInstructionBody::Ok,
+        state.try_register_agent(&response, &remote_addr);
+
+        let agent = state.get_agent_mut(&response.header.agent_id);
+
+        match agent {
+            Some(agent) => {
+                agent.last_packet_send = response.header.timestamp;
+                agent.last_packet_recv = current_time;
+                agent.ping = response.header.ping;
             }
+            None => {}
         }
-        AgentResponseBody::Heartbeat => {
-            let mut state = state.write().await;
 
-            let agent = state.agents.get_mut(&response.packet_header.agent_id);
-
-            if agent.is_none() {
-                AgentInstruction {
-                    packet_body: AgentInstructionBody::Ok,
-                }
-            } else {
-                let agent = agent.unwrap();
-                let body = agent.pop_instruction();
-
-                AgentInstruction {
-                    packet_body: body.unwrap_or(AgentInstructionBody::Ok),
-                }
-            }
-        }
-        _ => AgentInstruction {
-            packet_body: AgentInstructionBody::Command {
-                command_id: 1, // Example command_id; replace with logic for unique IDs
-                command: "echo".into(),
-                args: vec!["Hello from server!".into()],
-            },
-        },
+        state.pop_instruction(&response.header.agent_id)
     };
 
-    // Update agent state
-    register_or_update(state, &response, &instruction, remote_addr).await;
+    let (packet_id, instruction_body) = match instruction_body {
+        Some(instruction_body) => (Some(state.write().await.gen_packet_id()), instruction_body),
+        None => (None, AgentInstructionBody::Ok),
+    };
 
-    // respond to agent with instruction
-    let instruction = AgentInstruction::serialize(&instruction).unwrap();
+    let instruction = AgentInstruction {
+        header: InstructionHeader {
+            packet_id,
+            timestamp: current_time,
+        },
+        body: instruction_body,
+    };
 
-    let state = &mut state.write().await;
-    state.statistics.log_recv(input.len());
+    devlog!(
+        "\n[{}] {} -> ",
+        response
+            .header
+            .packet_id
+            .map_or(" ".to_string(), |num| num.to_string()),
+        response.body.variant()
+    );
 
-    state
-        .statistics
-        .log_latency(current_time() - response.packet_header.timestamp);
+    devlog!(
+        "[{}] {} <- ",
+        instruction
+            .header
+            .packet_id
+            .map_or(" ".to_string(), |num| num.to_string()),
+        instruction.body.variant()
+    );
 
-    state.statistics.log_send(instruction.len());
+    devlog!(
+        "({:#?})",
+        state
+            .read()
+            .await
+            .get_network_history(&response.header.agent_id, 10)
+            .unwrap()
+    );
 
-    instruction
+    let instruction_serialized = AgentInstruction::serialize(&instruction).unwrap();
+
+    {
+        let mut state = state.write().await;
+
+        state.statistics.log_send(instruction_serialized.len());
+        state.statistics.log_recv(input.len());
+
+        match response.header.ping {
+            Some(ping) => state.statistics.log_latency(ping),
+            None => {}
+        }
+
+        match packet_id {
+            Some(_) => {
+                state.push_instruction_to_history(&instruction, &response.header.agent_id);
+            }
+            None => {}
+        }
+
+        match response.header.packet_id {
+            Some(_) => state.push_response_to_history(&response, &response.header.agent_id),
+            None => {}
+        }
+    }
+
+    instruction_serialized
 }
 
 pub fn routes() -> Vec<rocket::Route> {

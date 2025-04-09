@@ -46,22 +46,24 @@ async fn poll(state: Arc<RwLock<State>>) {
     loop {
         interval.tick().await;
 
-        let response_body = match state.write().await.get_pending_response() {
+        let response = match state.write().await.get_pending_response() {
             Some(response) => response,
-            None => AgentResponseBody::Heartbeat,
+            None => (None, AgentResponseBody::Heartbeat),
         };
 
-        let response = state.write().await.gen_response(response_body);
+        let response = state.write().await.gen_response(response.1, response.0);
         let instruction = state.read().await.send_response(response).await;
 
         match instruction {
-            Ok(instruction) => {
+            Ok((ping, instruction)) => {
                 devlog!("Got instruction: {:#?}", instruction);
                 let _ = task::spawn(eval(state.clone()));
                 state
                     .write()
                     .await
-                    .push_instruction(instruction.packet_body);
+                    .push_instruction(instruction.body, instruction.header.packet_id);
+
+                state.write().await.set_ping(ping);
             }
             Err(err) => {
                 devlog!("Failed to properly communicate with server: {:#?}", err);
@@ -78,18 +80,12 @@ async fn eval(state: Arc<RwLock<State>>) {
 
     devlog!("Evaluating instruction: {:#?}", instruction);
 
-    match instruction {
+    match instruction.1 {
         AgentInstructionBody::Command {
             ref command,
-            ref command_id,
             ref args,
         } => {
-            devlog!(
-                "Executing Command: {:?}, ID: {:?}, Args: {:?}",
-                command,
-                command_id,
-                args
-            );
+            devlog!("Executing Command: {:?}, Args: {:?}", command, args);
 
             // Execute the received command with arguments
             let output: Output = Command::new(command).args(args).output().await.unwrap();
@@ -104,13 +100,15 @@ async fn eval(state: Arc<RwLock<State>>) {
 
             let response_body = AgentResponseBody::CommandResponse {
                 command: command.to_string(),
-                command_id: *command_id,
                 status_code,
                 stdout,
                 stderr,
             };
 
-            state.write().await.push_response(response_body);
+            state
+                .write()
+                .await
+                .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Script { script } => {
             task::spawn_blocking(move || {
@@ -118,6 +116,13 @@ async fn eval(state: Arc<RwLock<State>>) {
                 engine.execute(&script);
             })
             .await;
+
+            let response_body = AgentResponseBody::ScriptResponse;
+
+            state
+                .write()
+                .await
+                .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Ok => {}
     }
