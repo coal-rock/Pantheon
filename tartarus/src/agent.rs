@@ -10,16 +10,25 @@ pub async fn monolith(
     input: Vec<u8>,
 ) -> Vec<u8> {
     let response = AgentResponse::deserialize(&input).unwrap();
+    let current_time = current_time();
 
-    state
-        .write()
-        .await
-        .try_register_agent(&response, &remote_addr);
+    let instruction_body = {
+        let mut state = state.write().await;
 
-    let instruction_body = state
-        .write()
-        .await
-        .pop_instruction(&response.header.agent_id);
+        state.try_register_agent(&response, &remote_addr);
+
+        let agent = state.get_agent_mut(&response.header.agent_id);
+
+        match agent {
+            Some(agent) => {
+                agent.last_packet_send = response.header.timestamp;
+                agent.last_packet_recv = current_time;
+            }
+            None => {}
+        }
+
+        state.pop_instruction(&response.header.agent_id)
+    };
 
     let (packet_id, instruction_body) = match instruction_body {
         Some(instruction_body) => (Some(state.write().await.gen_packet_id()), instruction_body),
@@ -29,7 +38,7 @@ pub async fn monolith(
     let instruction = AgentInstruction {
         header: InstructionHeader {
             packet_id,
-            timestamp: current_time(),
+            timestamp: current_time,
         },
         body: instruction_body,
     };

@@ -11,6 +11,7 @@ pub mod protocol {
 
     impl OS {
         pub fn from(os_type: &str, os_string: Option<String>) -> OS {
+            println!("os type: {}", os_type);
             OS {
                 os_type: match os_type.to_lowercase().as_str() {
                     "linux" => OSType::Linux,

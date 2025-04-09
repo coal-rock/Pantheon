@@ -26,7 +26,7 @@ impl State {
     }
 
     // this shouldn't be public because we can't trust the caller to not mess up state
-    fn get_agent_mut(&mut self, agent_id: &u128) -> Option<&mut Agent> {
+    pub fn get_agent_mut(&mut self, agent_id: &u128) -> Option<&mut Agent> {
         self.agents.get_mut(&agent_id)
     }
 

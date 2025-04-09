@@ -82,7 +82,7 @@ async fn main() -> Result<(), rocket::Error> {
     let rocket = tokio::spawn(rocket(shared_state.clone()).await.launch());
     let console = tokio::spawn(start_console(shared_state.clone()));
 
-    tokio::join!(rocket, console);
+    let _ = tokio::join!(rocket, console);
 
     Ok(())
 }

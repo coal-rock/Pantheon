@@ -38,7 +38,7 @@ impl AgentContext {
     }
 
     pub fn new(polling_interval_millis: u64) -> Result<AgentContext> {
-        let os = OS::from(&System::name().unwrap(), System::long_os_version());
+        let os = OS::from(&std::env::consts::OS, System::long_os_version());
 
         Ok(AgentContext {
             agent_id: AgentContext::generate_deterministic_uuid()?,
