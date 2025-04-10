@@ -684,6 +684,13 @@ pub mod console {
             };
         }
 
+        pub fn parse_opt_target_ident(&mut self) -> Result<Option<TargetIdentifier>, CommandError> {
+            match self.is_at_end() {
+                true => Ok(None),
+                false => self.parse_target_ident().map(|x| Some(x)),
+            }
+        }
+
         pub fn parse_target_ident_vec(&mut self) -> Result<Vec<TargetIdentifier>, CommandError> {
             let mut targets = vec![];
 
@@ -718,6 +725,13 @@ pub mod console {
                     nickname: self.parse_agent_nickname()?,
                 }),
                 _ => Err(CommandError::InvalidAgentIdentifier),
+            }
+        }
+
+        pub fn parse_opt_agent_ident(&mut self) -> Result<Option<AgentIdentifier>, CommandError> {
+            match self.is_at_end() {
+                true => Ok(None),
+                false => self.parse_agent_ident().map(|x| Some(x)),
             }
         }
 
