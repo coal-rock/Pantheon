@@ -423,34 +423,117 @@ pub mod console {
         }
     }
 
+    pub trait CommandHelp {
+        fn help() -> String;
+    }
+
+    impl<T: IntoEnumIterator + EnumProperty> CommandHelp for T {
+        fn help() -> String {
+            let mut output = String::new();
+            let mut lines = vec![];
+
+            let mut longest_len = 0;
+            for command in T::iter() {
+                let mut line = String::new();
+
+                line.push_str("   ");
+                line.push_str(command.get_str("command").unwrap());
+
+                let mut args = vec![];
+
+                // Strum doesn't allow us to define non-primitives as props,
+                // so for now we're doing this. Moderately hacky, but fine.
+                command.get_str("arg1").map(|x| args.push(x));
+                command.get_str("arg2").map(|x| args.push(x));
+                command.get_str("arg3").map(|x| args.push(x));
+                command.get_str("arg4").map(|x| args.push(x));
+
+                match args.len() > 0 {
+                    true => line.push_str(" "),
+                    false => {}
+                }
+
+                line.push_str(&args.join(" "));
+                lines.push(line.clone());
+
+                if line.len() > longest_len {
+                    longest_len = line.len();
+                }
+            }
+
+            let target_width = longest_len + 3;
+            for (idx, command) in Command::iter().enumerate() {
+                output.push_str(&lines[idx]);
+                output.push_str(&" ".repeat(target_width - lines[idx].len()));
+                output.push_str("| ");
+                output.push_str(command.get_str("description").unwrap());
+                output.push_str("\n");
+            }
+
+            output
+        }
+    }
+
     #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
     pub enum Command {
-        #[strum(props(command = "connect"))]
+        #[strum(props(
+            command = "connect",
+            arg1 = "<target>",
+            description = "Connects to an agent or group"
+        ))]
         Connect { agent: TargetIdentifier },
 
-        #[strum(props(command = "disconnect"))]
+        #[strum(props(
+            command = "disconnect",
+            description = "Disconnects from an agent or group"
+        ))]
         Disconnect,
 
-        #[strum(props(command = "nickname"))]
+        #[strum(props(
+            command = "nickname",
+            arg1 = "<set | get | clear>",
+            arg2 = "[agent]",
+            description = "Modifies nicknames"
+        ))]
         Nickname(NicknameCommand),
 
-        #[strum(props(command = "group"))]
+        #[strum(props(
+            command = "group",
+            arg1 = "<create | delete | add | remove | clear>",
+            arg2 = "<group>",
+            arg3 = "[agent..]",
+            description = "Modifies groups",
+        ))]
         Group(GroupCommand),
 
-        #[strum(props(command = "show"))]
+        #[strum(props(
+            command = "show",
+            arg1 = "<agents | groups | server | scripts | [target]>",
+            description = "Displays information",
+        ))]
         Show(ShowCommand),
 
-        #[strum(props(command = "run"))]
+        #[strum(props(
+            command = "run",
+            arg1 = "<script | rhai | shell>",
+            arg2 = "[target]",
+            arg3 = "<name | content | command>",
+            description = "Executes payload on specified target"
+        ))]
         Run(RunCommand),
 
-        #[strum(props(command = "remove"))]
+        #[strum(props(
+            command = "remove",
+            arg1 = "[target..]",
+            description = "Kills agent and disconnects from Tartarus"
+        ))]
         Remove { target: Vec<TargetIdentifier> },
 
-        #[strum(props(command = "clear"))]
+        #[strum(props(command = "clear", description = "Clears the screen"))]
         Clear,
 
         #[default]
-        #[strum(props(command = "help"))]
+        #[strum(props(command = "help", description = "Displays help menu"))]
         Help,
     }
 
@@ -466,7 +549,7 @@ pub mod console {
         #[strum(props(command = "scripts"))]
         Scripts,
         #[strum(props(command = ""))]
-        Target(TargetIdentifier),
+        Target(Option<TargetIdentifier>),
     }
 
     #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
@@ -477,10 +560,10 @@ pub mod console {
             nickname: String,
         },
         #[strum(props(command = "get"))]
-        Get { agent: AgentIdentifier },
+        Get { agent: Option<AgentIdentifier> },
 
         #[strum(props(command = "clear"))]
-        Clear { agent: AgentIdentifier },
+        Clear { agent: Option<AgentIdentifier> },
 
         #[default]
         None,
@@ -516,13 +599,22 @@ pub mod console {
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, Default, EnumIter)]
     pub enum RunCommand {
         #[strum(props(command = "script"))]
-        Script { script_name: String },
+        Script {
+            target: Option<TargetIdentifier>,
+            script_name: String,
+        },
 
         #[strum(props(command = "rhai"))]
-        Rhai { scripts_contents: String },
+        Rhai {
+            target: Option<TargetIdentifier>,
+            scripts_contents: String,
+        },
 
         #[strum(props(command = "shell"))]
-        Shell { shell_command: String },
+        Shell {
+            target: Option<TargetIdentifier>,
+            shell_command: String,
+        },
 
         #[default]
         None,
@@ -542,7 +634,7 @@ pub mod console {
         GroupMustStartWithPound,
         #[error("agent must start with @")]
         AgentMustStartWithAt,
-        #[error("identifier must start with @ or #")]
+        #[error("target must start with @ or #")]
         IdentifierMustStartWith,
         #[error("invalid agent identifier")]
         InvalidAgentIdentifier,
@@ -550,14 +642,18 @@ pub mod console {
         ExpectedArgument,
         #[error("expected script name")]
         ExpectedScriptName,
-        #[error("expected group identifier name")]
+        #[error("expected group")]
         ExpectedGroupIdentifier,
-        #[error("expected agent identifier")]
+        #[error("expected agent")]
         ExpectedAgentIdentifier,
-        #[error("expected agent nickname")]
+        #[error("expected target")]
+        ExpectedIdentifier,
+        #[error("expected nickname")]
         ExpectedAgentNickname,
         #[error("expected command")]
         ExpectedCommand,
+        #[error("expected one of the following commands:\n   {}", ._0.join("\n   "))]
+        ExpectedCommandSpecific(Vec<String>),
         #[error("unexpected argument: \"{arg}\"")]
         UnexpectedArgument { arg: String },
         #[error("expected {args} args")]
@@ -657,12 +753,12 @@ pub mod console {
             self.source[self.pos..].join(" ")
         }
 
-        pub fn peek(&mut self) -> Result<&str, CommandError> {
+        pub fn peek(&mut self, err: CommandError) -> Result<&str, CommandError> {
             if !self.is_at_end() {
                 return Ok(&self.source[self.pos]);
             }
 
-            Err(CommandError::ExpectedArgument)
+            Err(err)
         }
 
         pub fn is_at_end(&self) -> bool {
@@ -670,7 +766,7 @@ pub mod console {
         }
 
         pub fn parse_target_ident(&mut self) -> Result<TargetIdentifier, CommandError> {
-            let token = self.peek()?;
+            let token = self.peek(CommandError::ExpectedIdentifier)?;
             let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
             // match on first char
@@ -702,7 +798,7 @@ pub mod console {
                 // this implementation breaks down if .peek() starts
                 // doing additional error handling (which it shouldn't?)
                 {
-                    match self.peek() {
+                    match self.peek(CommandError::ParsingError) {
                         Ok(token) => {
                             match token.chars().next().ok_or(CommandError::ExpectedArgument)? {
                                 '@' | '#' => Ok(Some(self.parse_target_ident()?)),
@@ -713,8 +809,8 @@ pub mod console {
                     }
                 }
                 false => {
-                    let mut chars = self.peek()?.chars();
-                    let predicate = chars.next().ok_or(CommandError::ExpectedArgument)?;
+                    let mut chars = self.peek(CommandError::ExpectedIdentifier)?.chars();
+                    let predicate = chars.next().ok_or(CommandError::ExpectedIdentifier)?;
 
                     match predicate == '@' || predicate == '#' {
                         true => Ok(Some(self.parse_target_ident()?)),
@@ -747,7 +843,7 @@ pub mod console {
         }
 
         pub fn parse_agent_ident(&mut self) -> Result<AgentIdentifier, CommandError> {
-            let token = self.peek()?;
+            let token = self.peek(CommandError::ExpectedAgentIdentifier)?;
 
             let mut chars = token.chars();
             let predicate = chars.next().ok_or(CommandError::ParsingError)?;
@@ -781,14 +877,14 @@ pub mod console {
                 // this implementation breaks down if .peek() starts
                 // doing additional error handling (which it shouldn't?)
                 {
-                    match self.peek() {
+                    match self.peek(CommandError::ParsingError) {
                         Ok(_) => Ok(Some(self.parse_agent_ident()?)),
                         Err(_) => Ok(None),
                     }
                 }
                 false => {
-                    let mut chars = self.peek()?.chars();
-                    let predicate = chars.next().ok_or(CommandError::ExpectedArgument)?;
+                    let mut chars = self.peek(CommandError::ExpectedAgentIdentifier)?.chars();
+                    let predicate = chars.next().ok_or(CommandError::ExpectedAgentIdentifier)?;
 
                     match predicate == '@' {
                         true => Ok(Some(self.parse_agent_ident()?)),
@@ -856,7 +952,18 @@ pub mod console {
             T: IntoEnumIterator + EnumProperty,
             T::Iterator: Iterator<Item = T>,
         {
-            let command_str = self.consume(CommandError::ExpectedCommand)?;
+            let command_str = match self.consume(CommandError::ExpectedCommand) {
+                Ok(command_str) => command_str,
+                Err(_) => {
+                    return Err(CommandError::ExpectedCommandSpecific(
+                        T::iter()
+                            .map(|x| x.get_str("command"))
+                            .filter_map(|x| x)
+                            .map(|x| x.to_string())
+                            .collect(),
+                    ))
+                }
+            };
 
             // TODO: this doesn't account for instances where two
             // commands start with the same pattern, in such a case,
@@ -909,14 +1016,14 @@ pub mod console {
         pub fn parse_nickname_command(&mut self) -> Result<NicknameCommand, CommandError> {
             Ok(match self.parse_command::<NicknameCommand>()? {
                 NicknameCommand::Set { .. } => NicknameCommand::Set {
-                    agent: Some(self.parse_agent_ident()?),
+                    agent: self.parse_opt_agent_ident(false)?,
                     nickname: self.parse_agent_nickname()?,
                 },
                 NicknameCommand::Get { .. } => NicknameCommand::Get {
-                    agent: self.parse_agent_ident()?,
+                    agent: self.parse_opt_agent_ident(true)?,
                 },
                 NicknameCommand::Clear { .. } => NicknameCommand::Clear {
-                    agent: self.parse_agent_ident()?,
+                    agent: self.parse_opt_agent_ident(true)?,
                 },
                 NicknameCommand::None => NicknameCommand::None,
             })
@@ -952,20 +1059,22 @@ pub mod console {
                 ShowCommand::Groups => ShowCommand::Groups,
                 ShowCommand::Server => ShowCommand::Server,
                 ShowCommand::Scripts => ShowCommand::Scripts,
-                ShowCommand::Target(_) => ShowCommand::Target(self.parse_target_ident()?),
+                ShowCommand::Target(_) => ShowCommand::Target(self.parse_opt_target_ident(true)?),
             })
         }
 
         pub fn parse_run_command(&mut self) -> Result<RunCommand, CommandError> {
             Ok(match self.parse_command::<RunCommand>()? {
-                // FIXME: create proper method for parsing script name
                 RunCommand::Script { .. } => RunCommand::Script {
-                    script_name: self.parse_agent_nickname()?,
+                    target: self.parse_opt_target_ident(false)?,
+                    script_name: self.parse_script_name()?,
                 },
                 RunCommand::Rhai { .. } => RunCommand::Rhai {
+                    target: self.parse_opt_target_ident(false)?,
                     scripts_contents: self.parse_agent_nickname()?,
                 },
                 RunCommand::Shell { .. } => RunCommand::Shell {
+                    target: self.parse_opt_target_ident(false)?,
                     shell_command: self.parse_agent_nickname()?,
                 },
                 RunCommand::None => RunCommand::None,

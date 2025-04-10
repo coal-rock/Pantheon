@@ -3558,6 +3558,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e08d8363704e6c71fc928674353e6b7c23dcea9d82d7012c8faf2a3a025f8d0"
 
 [[package]]
+name = "structz-macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5de99c0f5c602594f5e5dc391d579238b3a02459b05599cc72d7bfc2d712000"
+dependencies = [
+ "quote",
+ "syn 2.0.100",
+]
+
+[[package]]
 name = "strum"
 version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3683,6 +3693,8 @@ dependencies = [
  "rustyline",
  "serde",
  "serde_json",
+ "structz-macros",
+ "strum",
  "sysinfo",
  "talaria",
  "tokio",

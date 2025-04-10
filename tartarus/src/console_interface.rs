@@ -24,7 +24,6 @@ pub async fn start_console(shared_state: SharedState) {
                 let _ = rl.add_history_entry(line.as_str());
                 let command_str = line.trim();
                 let command = console.handle_command(command_str.to_string());
-
                 match command {
                     Ok(command) => {
                         let response = console_lib::evaluate_command(
