@@ -673,6 +673,8 @@ pub mod console {
                 targets.push(self.parse_target_ident()?);
             }
 
+            targets.dedup();
+
             Ok(targets)
         }
 
@@ -707,6 +709,8 @@ pub mod console {
             while !self.is_at_end() {
                 agents.push(self.parse_agent_ident()?);
             }
+
+            agents.dedup();
 
             Ok(agents)
         }
