@@ -542,6 +542,8 @@ pub mod console {
         InvalidAgentIdentifier,
         #[error("expected an argument")]
         ExpectedArgument,
+        #[error("unexpected argument: \"{arg}\"")]
+        UnexpectedArgument { arg: String },
         #[error("expected {args} args")]
         ExpectedNArgs { args: u64 },
         #[error("expected {args1} or {args2} args")]
@@ -633,6 +635,10 @@ pub mod console {
             }
 
             Err(CommandError::ExpectedArgument)
+        }
+
+        pub fn consume_to_end(&mut self) -> String {
+            self.source[self.pos..].join(" ")
         }
 
         pub fn peek(&mut self) -> Result<&str, CommandError> {
@@ -786,6 +792,12 @@ pub mod console {
                 Command::Show(_) => Command::Show(self.parse_show_command()?),
                 Command::Run(_) => Command::Run(self.parse_run_command()?),
             });
+
+            if !self.is_at_end() {
+                return Err(CommandError::UnexpectedArgument {
+                    arg: self.consume_to_end(),
+                });
+            }
 
             println!("{:#?}", command);
             command
