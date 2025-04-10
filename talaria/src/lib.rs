@@ -473,7 +473,7 @@ pub mod console {
     pub enum NicknameCommand {
         #[strum(props(command = "set"))]
         Set {
-            agent: AgentIdentifier,
+            agent: Option<AgentIdentifier>,
             nickname: String,
         },
         #[strum(props(command = "get"))]
@@ -540,6 +540,10 @@ pub mod console {
         InvalidScriptName,
         #[error("group must start with #")]
         GroupMustStartWithPound,
+        #[error("agent must start with @")]
+        AgentMustStartWithAt,
+        #[error("identifier must start with @ or #")]
+        IdentifierMustStartWith,
         #[error("invalid agent identifier")]
         InvalidAgentIdentifier,
         #[error("expected an argument")]
@@ -676,18 +680,47 @@ pub mod console {
                         group: self.parse_group_ident()?,
                     })
                 }
-                _ => {
+                '@' => {
                     return Ok(TargetIdentifier::Agent {
                         agent: self.parse_agent_ident()?,
                     })
                 }
+                _ => return Err(CommandError::IdentifierMustStartWith),
             };
         }
 
-        pub fn parse_opt_target_ident(&mut self) -> Result<Option<TargetIdentifier>, CommandError> {
-            match self.is_at_end() {
-                true => Ok(None),
-                false => self.parse_target_ident().map(|x| Some(x)),
+        pub fn parse_opt_target_ident(
+            &mut self,
+            last_arg: bool,
+        ) -> Result<Option<TargetIdentifier>, CommandError> {
+            match last_arg {
+                true =>
+                // his is a little bit of a hack,
+                // but it's very ergonomic to use-- and i'm not sure how to
+                // implement this in a nicer way
+                //
+                // this implementation breaks down if .peek() starts
+                // doing additional error handling (which it shouldn't?)
+                {
+                    match self.peek() {
+                        Ok(token) => {
+                            match token.chars().next().ok_or(CommandError::ExpectedArgument)? {
+                                '@' | '#' => Ok(Some(self.parse_target_ident()?)),
+                                _ => Err(CommandError::IdentifierMustStartWith),
+                            }
+                        }
+                        Err(_) => Ok(None),
+                    }
+                }
+                false => {
+                    let mut chars = self.peek()?.chars();
+                    let predicate = chars.next().ok_or(CommandError::ExpectedArgument)?;
+
+                    match predicate == '@' || predicate == '#' {
+                        true => Ok(Some(self.parse_target_ident()?)),
+                        false => Ok(None),
+                    }
+                }
             }
         }
 
@@ -715,9 +748,16 @@ pub mod console {
 
         pub fn parse_agent_ident(&mut self) -> Result<AgentIdentifier, CommandError> {
             let token = self.peek()?;
-            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
-            match next_char {
+            let mut chars = token.chars();
+            let predicate = chars.next().ok_or(CommandError::ParsingError)?;
+            let first_char = chars.next().ok_or(CommandError::ParsingError)?;
+
+            if predicate != '@' {
+                return Err(CommandError::AgentMustStartWithAt);
+            }
+
+            match first_char {
                 '0'..='9' => Ok(AgentIdentifier::ID {
                     id: self.parse_agent_id()?,
                 }),
@@ -728,10 +768,33 @@ pub mod console {
             }
         }
 
-        pub fn parse_opt_agent_ident(&mut self) -> Result<Option<AgentIdentifier>, CommandError> {
-            match self.is_at_end() {
-                true => Ok(None),
-                false => self.parse_agent_ident().map(|x| Some(x)),
+        pub fn parse_opt_agent_ident(
+            &mut self,
+            last_arg: bool,
+        ) -> Result<Option<AgentIdentifier>, CommandError> {
+            match last_arg {
+                true =>
+                // his is a little bit of a hack,
+                // but it's very ergonomic to use-- and i'm not sure how to
+                // implement this in a nicer way
+                //
+                // this implementation breaks down if .peek() starts
+                // doing additional error handling (which it shouldn't?)
+                {
+                    match self.peek() {
+                        Ok(_) => Ok(Some(self.parse_agent_ident()?)),
+                        Err(_) => Ok(None),
+                    }
+                }
+                false => {
+                    let mut chars = self.peek()?.chars();
+                    let predicate = chars.next().ok_or(CommandError::ExpectedArgument)?;
+
+                    match predicate == '@' {
+                        true => Ok(Some(self.parse_agent_ident()?)),
+                        false => Ok(None),
+                    }
+                }
             }
         }
 
@@ -749,11 +812,18 @@ pub mod console {
 
         pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
             let token = self.consume(CommandError::ExpectedAgentIdentifier)?;
-            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
-            match next_char {
+            let mut chars = token.chars().peekable();
+            let predicate = chars.next().ok_or(CommandError::ParsingError)?;
+            let first_char = chars.peek().ok_or(CommandError::ParsingError)?;
+
+            if predicate != '@' {
+                return Err(CommandError::AgentMustStartWithAt);
+            }
+
+            match first_char {
                 '0'..='9' => {
-                    let id = token.parse::<u64>();
+                    let id = chars.collect::<String>().parse::<u64>();
 
                     match id {
                         Ok(id) => Ok(id),
@@ -766,10 +836,17 @@ pub mod console {
 
         pub fn parse_agent_nickname(&mut self) -> Result<String, CommandError> {
             let token = self.consume(CommandError::ExpectedAgentNickname)?;
-            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
-            match next_char {
-                'a'..='z' | 'A'..='Z' => Ok(token.to_string()),
+            let mut chars = token.chars().peekable();
+            let predicate = chars.next().ok_or(CommandError::ParsingError)?;
+            let first_char = chars.peek().ok_or(CommandError::ParsingError)?;
+
+            if predicate != '@' {
+                return Err(CommandError::AgentMustStartWithAt);
+            }
+
+            match first_char {
+                'a'..='z' | 'A'..='Z' => Ok(chars.collect()),
                 _ => Err(CommandError::InvalidAgentNickname),
             }
         }
@@ -832,7 +909,7 @@ pub mod console {
         pub fn parse_nickname_command(&mut self) -> Result<NicknameCommand, CommandError> {
             Ok(match self.parse_command::<NicknameCommand>()? {
                 NicknameCommand::Set { .. } => NicknameCommand::Set {
-                    agent: self.parse_agent_ident()?,
+                    agent: Some(self.parse_agent_ident()?),
                     nickname: self.parse_agent_nickname()?,
                 },
                 NicknameCommand::Get { .. } => NicknameCommand::Get {
