@@ -1,15 +1,81 @@
+use std::collections::HashSet;
+
 use crate::console_lib;
 use crate::SharedState;
+use rustyline::hint::Hint;
+use rustyline::hint::Hinter;
+use rustyline::Context;
+use rustyline::Helper;
 use rustyline::{error::ReadlineError, history::FileHistory, Editor};
+use rustyline::{Completer, Highlighter, Validator};
+
 use talaria::console::*;
 
-pub async fn start_console(shared_state: SharedState) {
-    let mut rl = Editor::<(), FileHistory>::new().unwrap();
+#[derive(Completer, Helper, Validator, Highlighter)]
+struct DIYHinter {}
 
+#[derive(Hash, Debug, PartialEq, Eq)]
+struct CommandHint {
+    display: String,
+    complete_up_to: usize,
+}
+
+impl Hint for CommandHint {
+    fn display(&self) -> &str {
+        &self.display
+    }
+
+    fn completion(&self) -> Option<&str> {
+        if self.complete_up_to > 0 {
+            Some(&self.display[..self.complete_up_to])
+        } else {
+            None
+        }
+    }
+}
+
+impl CommandHint {
+    fn new(line: &str, text: &str) -> Self {
+        Self {
+            display: text.into(),
+            complete_up_to: line.len(),
+        }
+    }
+
+    fn suffix(&self, strip_chars: usize) -> Self {
+        Self {
+            display: self.display[strip_chars..].to_owned(),
+            complete_up_to: self.complete_up_to.saturating_sub(strip_chars),
+        }
+    }
+}
+
+impl Hinter for DIYHinter {
+    type Hint = CommandHint;
+
+    fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<CommandHint> {
+        if line.is_empty() || pos < line.len() {
+            return None;
+        }
+        let console = Console::new(None);
+
+        match console.auto_complete(line.to_string()) {
+            Some(complete) => Some(CommandHint::new(line, &complete.replacen(line, "", 1))),
+            None => None,
+        }
+    }
+}
+
+pub async fn start_console(shared_state: SharedState) {
+    let mut rl = Editor::<DIYHinter, FileHistory>::new().unwrap();
+    let h = DIYHinter {};
+    rl.set_helper(Some(h));
     // Load command history if it exists
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
+
+    // rl.set_completion_ty;
 
     let mut console = Console::new(None);
 

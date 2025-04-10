@@ -1,10 +1,4 @@
 #V2
-a
-g
-g a 
-connect as
-connect @as
-connect @asasdlkakssj
 connect @123123
 sh
 a
@@ -72,3 +66,36 @@ show "" @123
 show "" 123
 show "" #123
 nickname set @123 123
+connect 
+ls 
+help 
+ls -a 
+help
+aslkjlkjaslkdja
+sdas
+da
+sd
+asdlk
+asdlkasd
+a
+asdlkasd
+h
+asd
+a
+hel
+get key 
+help
+helphelp
+help
+help help
+h help
+help
+h help
+show
+disconnect ddisconnect disconnectdisconnectdisconnectdisconnectdisconnectdisconnect
+disconnect disconnect 
+show 
+show
+shoowow
+showow
+show
