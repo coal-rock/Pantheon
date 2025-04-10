@@ -536,12 +536,24 @@ pub mod console {
         InvalidAgentId,
         #[error("invalid agent nickname")]
         InvalidAgentNickname,
+        #[error("invalid script name")]
+        InvalidScriptName,
         #[error("group must start with #")]
         GroupMustStartWithPound,
         #[error("invalid agent identifier")]
         InvalidAgentIdentifier,
         #[error("expected an argument")]
         ExpectedArgument,
+        #[error("expected script name")]
+        ExpectedScriptName,
+        #[error("expected group identifier name")]
+        ExpectedGroupIdentifier,
+        #[error("expected agent identifier")]
+        ExpectedAgentIdentifier,
+        #[error("expected agent nickname")]
+        ExpectedAgentNickname,
+        #[error("expected command")]
+        ExpectedCommand,
         #[error("unexpected argument: \"{arg}\"")]
         UnexpectedArgument { arg: String },
         #[error("expected {args} args")]
@@ -628,13 +640,13 @@ pub mod console {
             tokens
         }
 
-        pub fn consume(&mut self) -> Result<&str, CommandError> {
+        pub fn consume(&mut self, err: CommandError) -> Result<&str, CommandError> {
             if !self.is_at_end() {
                 self.pos += 1;
                 return Ok(&self.source[self.pos - 1]);
             }
 
-            Err(CommandError::ExpectedArgument)
+            Err(err)
         }
 
         pub fn consume_to_end(&mut self) -> String {
@@ -685,7 +697,7 @@ pub mod console {
         }
 
         pub fn parse_group_ident(&mut self) -> Result<String, CommandError> {
-            let token = self.consume()?;
+            let token = self.consume(CommandError::ExpectedGroupIdentifier)?;
 
             if token.starts_with("#") {
                 return Ok(token[1..token.len()].to_string());
@@ -722,7 +734,7 @@ pub mod console {
         }
 
         pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
-            let token = self.consume()?;
+            let token = self.consume(CommandError::ExpectedAgentIdentifier)?;
             let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
             match next_char {
@@ -739,7 +751,7 @@ pub mod console {
         }
 
         pub fn parse_agent_nickname(&mut self) -> Result<String, CommandError> {
-            let token = self.consume()?;
+            let token = self.consume(CommandError::ExpectedAgentNickname)?;
             let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
 
             match next_char {
@@ -753,7 +765,7 @@ pub mod console {
             T: IntoEnumIterator + EnumProperty,
             T::Iterator: Iterator<Item = T>,
         {
-            let command_str = self.consume()?;
+            let command_str = self.consume(CommandError::ExpectedCommand)?;
 
             // TODO: this doesn't account for instances where two
             // commands start with the same pattern, in such a case,
@@ -867,6 +879,16 @@ pub mod console {
                 },
                 RunCommand::None => RunCommand::None,
             })
+        }
+
+        pub fn parse_script_name(&mut self) -> Result<String, CommandError> {
+            let token = self.consume(CommandError::ExpectedScriptName)?;
+            let next_char = token.chars().next().ok_or(CommandError::ParsingError)?;
+
+            match next_char {
+                'a'..='z' | 'A'..='Z' => Ok(token.to_string()),
+                _ => Err(CommandError::InvalidScriptName),
+            }
         }
     }
 

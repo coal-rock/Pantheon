@@ -7,37 +7,15 @@ pub async fn evaluate_command(
     command_context: CommandContext,
 ) -> Result<ConsoleResponse, ConsoleError> {
     match command_context.command {
-        _ => Ok(ConsoleResponse {
-            output: "".to_string(),
-            new_target: NewTarget::NoChange,
-        })
-        // Command::Connect { agent } => connect(state, agent, command_context.current_target).await,
-        // Command::Disconnect => disconnect(command_context.current_target).await,
-        // Command::CreateGroup { group_name, agents } => {
-        //         create_group(state, group_name, agents).await
-        //     }
-        // Command::DeleteGroup { group_name } => delete_group(state, group_name).await,
-        // Command::AddAgentsToGroup { group_name, agents } => {
-        //         add_agents_to_group(state, group_name, agents).await
-        //     }
-        // Command::RemoveAgentsFromGroup { group_name, agents } => {
-        //         remove_agents_from_group(state, group_name, agents).await
-        //     }
-        // Command::Exec { agents, command } => {
-        //         exec(state, agents, command, command_context.current_target).await
-        //     }
-        // Command::Eval{ agents, script } => {
-        //         eval(state, agents, script, command_context.current_target).await
-        //     }
-        // Command::ListAgents => list_agents(state).await,
-        // Command::Ping { agents } => todo().await,
-        // Command::Status { agents } => todo().await,
-        // Command::Nickname { agent, new_name } => {
-        //         nickname(state, command_context.current_target, agent, new_name).await
-        //     }
-        // Command::Clear => clear().await,
-        // Command::ListGroups => list_groups(state).await,
-        // Command::Help => help().await,
+        Command::Connect { agent } => connect(state, agent, command_context.current_target).await,
+        Command::Disconnect => disconnect(command_context.current_target).await,
+        Command::Nickname(nickname_command) => nickname(state, command_context.current_target, nickname_command).await,
+        Command::Group(group_command) => todo!(),
+        Command::Show(show_command) => todo!(),
+        Command::Run(run_command) => todo!(),
+        Command::Remove { target } => todo!(),
+        Command::Clear => todo!(),
+        Command::Help => todo!(),
     }
 }
 
@@ -245,19 +223,26 @@ async fn list_groups(state: SharedState) -> Result<ConsoleResponse, ConsoleError
 async fn nickname(
     state: SharedState,
     current_target: Option<TargetIdentifier>,
-    agent: Option<AgentIdentifier>,
-    nickname: String,
+    nickname_command: NicknameCommand,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let target = Some(TargetIdentifier::Agent { agent: expect_agent_ident(current_target, agent.map(|a| TargetIdentifier::Agent { agent: a }))? });
-    
-    modify_agent(state, async |agent| {
-        agent.nickname = Some(nickname);
-    }, None, target).await?;
+    match nickname_command {
+        NicknameCommand::Set { agent, nickname } => todo!(),
+        NicknameCommand::Get { agent } => todo!(),
+        NicknameCommand::Clear { agent } => todo!(),
+        NicknameCommand::None => panic!("")
+    }
 
-    Ok(ConsoleResponse {
-        output: format!("nickname set successfully"),
-        new_target: NewTarget::NoChange,
-    })
+
+    // let target = Some(TargetIdentifier::Agent { agent: expect_agent_ident(current_target, agent.map(|a| TargetIdentifier::Agent { agent: a }))? });
+    // 
+    // modify_agent(state, async |agent| {
+    //     agent.nickname = Some(nickname);
+    // }, None, target).await?;
+    //
+    // Ok(ConsoleResponse {
+    //     output: format!("nickname set successfully"),
+    //     new_target: NewTarget::NoChange,
+    // })
 }
 
 async fn exec(
