@@ -373,6 +373,7 @@ pub mod console {
     use strum::IntoEnumIterator;
     use strum_macros::EnumIter;
     use strum_macros::EnumProperty;
+    use strum_macros::IntoStaticStr;
     use thiserror::Error;
 
     // refers to agent via name or id, ex:
@@ -486,7 +487,17 @@ pub mod console {
         }
     }
 
-    #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Serialize,
+        Deserialize,
+        PartialEq,
+        EnumProperty,
+        EnumIter,
+        IntoStaticStr,
+    )]
     pub enum Command {
         #[strum(props(
             command = "connect",
@@ -1077,6 +1088,77 @@ pub mod console {
             command
         }
 
+        pub fn auto_complete(&mut self) -> Result<String, CommandError> {
+            let output = match self.parse_command::<Command>()? {
+                Command::Connect { .. } => Ok("connect".into()),
+                Command::Disconnect => Ok("disconnect".into()),
+                Command::Nickname(..) => self.auto_complete_nickname().map(|x| x.to_string()),
+                Command::Group(..) => self.auto_complete_group().map(|x| x.to_string()),
+                Command::Show(..) => self.auto_complete_show().map(|x| x.to_string()),
+                Command::Run(..) => self.auto_complete_run().map(|x| x.to_string()),
+                Command::Remove { .. } => Ok("remove".into()),
+                Command::Clear => Ok("clear".into()),
+                Command::Help => Ok("help".into()),
+            }?;
+
+            if !self.is_at_end() {
+                return Err(CommandError::ExpectedCommand);
+            }
+
+            Ok(output)
+        }
+
+        pub fn auto_complete_nickname(&mut self) -> Result<&str, CommandError> {
+            match self.parse_command::<NicknameCommand>() {
+                Ok(command) => match command {
+                    NicknameCommand::Set { .. } => Ok("set"),
+                    NicknameCommand::Get { .. } => Ok("get"),
+                    NicknameCommand::Clear { .. } => Ok("clear"),
+                    NicknameCommand::None => Ok(""),
+                },
+                Err(_) => Ok("nickname"),
+            }
+        }
+
+        pub fn auto_complete_group(&mut self) -> Result<&str, CommandError> {
+            match self.parse_command::<GroupCommand>() {
+                Ok(command) => match command {
+                    GroupCommand::Create { .. } => Ok("create"),
+                    GroupCommand::Delete { .. } => Ok("delete"),
+                    GroupCommand::Add { .. } => Ok("add"),
+                    GroupCommand::Remove { .. } => Ok("remove"),
+                    GroupCommand::Clear { .. } => Ok("clear"),
+                    GroupCommand::None => Ok("_"),
+                },
+                Err(_) => Ok("group"),
+            }
+        }
+
+        pub fn auto_complete_show(&mut self) -> Result<&str, CommandError> {
+            match self.parse_command::<ShowCommand>() {
+                Ok(command) => match command {
+                    ShowCommand::Agents => Ok("agents"),
+                    ShowCommand::Groups => Ok("groups"),
+                    ShowCommand::Server => Ok("server"),
+                    ShowCommand::Scripts => Ok("scripts"),
+                    ShowCommand::Target { .. } => Ok(""),
+                },
+                Err(_) => Ok("show"),
+            }
+        }
+
+        pub fn auto_complete_run(&mut self) -> Result<&str, CommandError> {
+            match self.parse_command::<RunCommand>() {
+                Ok(command) => match command {
+                    RunCommand::Script { .. } => Ok("script"),
+                    RunCommand::Rhai { .. } => Ok("rhai"),
+                    RunCommand::Shell { .. } => Ok("shell"),
+                    RunCommand::None => Ok(""),
+                },
+                Err(_) => Ok("run"),
+            }
+        }
+
         pub fn parse_nickname_command(&mut self) -> Result<NicknameCommand, CommandError> {
             Ok(match self.parse_command::<NicknameCommand>()? {
                 NicknameCommand::Set { .. } => NicknameCommand::Set {
@@ -1188,10 +1270,19 @@ pub mod console {
             self.history.push(source.clone());
 
             let tokens = Parser::tokenize(source);
-
             let mut parser = Parser::new(tokens);
 
             parser.parse()
+        }
+
+        pub fn auto_complete(&self, source: String) -> Option<String> {
+            let tokens = Parser::tokenize(source);
+            let mut parser = Parser::new(tokens);
+
+            match parser.auto_complete().clone() {
+                Ok(completion) => Some(completion),
+                Err(_) => None,
+            }
         }
     }
 
