@@ -1,101 +1,101 @@
 #V2
-list 
-exec 2833411257688766487 ls 
-list 
-list agents 
-agents 
-list 
-nickname 15067587078438673037
-nickname 15067587078438673037 a
-list 
-fg
-help 
 help
+asd 
+he 
+ls 
+ls
+list 
+he
+ls
+l
+g
+a
+c
+g a
+c
+cl
+connecta 
+conn 
+con 
+cn 
+con 
+now 
+he
+l
+h
+help
+r
+e
+re
+co
+con
+conn
+fo
+a
+sd
+dalkjas
+da
+sda
+sd
+he 
+fortnite 
+askdlj
+c
+conn
+con
+cl
 clear
-clear 
-fg 
-clear 
-ls 
-s
-ls 
-exit 
-fg
-exit 
-ls 
-asldas
-dasd
-as
-clear 
-ls 
-hel p
+clea
 help
-list 
-list_groups 
-hep 
-help
-exit 
-quit 
-fuck you 
-help
-list agents 
-list
-nickname 10746812031658964514 cole
-list 
-exit 
-help
-clear
+he
+h
+c
+cl
+a
+r
+re
+ad
+a
+g
+he
 ls 
-help 
-connect asd
-connect 123
-connect 123091823 
-create_group balls 
-create_group #balls 
-list_groups 
-add_agent_to_group balls asdasd
-add_agents_to_group balls asdasd
-exit 
-fg
-list 
-exec 6034718805809558355 ls
-exec 6034718805809558355 "sleep 10"
-exec 6034718805809558355 "sleep 1000"
-exec 6034718805809558355 "sleep 10"
-list
-llist 
-lsit 
-list 
-help
-eval 6034718805809558355 print(`fortnite`);
-eval 6034718805809558355 sleepaslkdjasldk(;
-list 
-eval 6034718805809558355 "let x = 100000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 6034718805809558355 "let x = 10000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 6034718805809558355 "let x = 10; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 6034718805809558355 "let x = 100000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-list 
-eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(`fuck shit`); if x <= 0 { break; }}"
-eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-exec 6034718805809558355 "sleep 1000"
-eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-exec 6034718805809558355 "sleep 1000"
-list 
-exec 6034718805809558355 "sleep 1000"
-exec "sleep 100"
-list 
-exec 111320913367571053044124007302573560832 "sleep 100000"
-exec 111320913367571053044124007302573560832 "sleep 10"
-eval 111320913367571053044124007302573560832 "print(`fortnite`)"
-eval 111320913367571053044124007302573560832 "print(`fortnite`);"
-eval 6034718805809558355 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 111320913367571053044124007302573560832 "let x = 10000000000; loop { x-= 1; print(x); if x <= 0 { break; }}"
-eval 111320913367571053044124007302573560832 "print(`fortnite`)"
-exec 111320913367571053044124007302573560832 "sleep 10"
-exec 111320913367571053044124007302573560832 "sleep 1"
-eval 111320913367571053044124007302573560832 "print(`fortnite`)"
-list 
-exec "print(`fortnite`)"
-list 
-eval 6034718805809558355 "print(`fortnite`)"
+asd
+asdla
+asd
+asfddafasdf
+h
+mh
+AWE3456YHGHJKL
+heklp
+r 
+run 
+group
+a
+he
+ehe
+r
+run
+asd
+g a
+g c a 
+g c #a
+g c #a 123 123 
+group create #a 123 123 
+gr cr #a 123 123 
+co me 
+sh ag 
+sh ag
+shag 
+sh ag 
+fortnite 
+show 
+show
+run script 
+run fortnite 
+fortni 
+run 
+run j
+run 
+run script 
+run script aslidj 
+run script `

@@ -21,13 +21,6 @@ pub mod protocol {
                 os_string,
             }
         }
-
-        pub fn overlord() -> OS {
-            OS {
-                os_type: OSType::Other,
-                os_string: None,
-            }
-        }
     }
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -376,15 +369,25 @@ pub mod api {
 
 pub mod console {
     use serde::{Deserialize, Serialize};
+    use strum::EnumProperty;
+    use strum::IntoEnumIterator;
+    use strum_macros::EnumIter;
+    use strum_macros::EnumProperty;
     use thiserror::Error;
 
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
     pub enum AgentIdentifier {
-        Nickname { nickname: String },
-        ID { id: u64 },
+        Nickname {
+            nickname: String,
+        },
+        ID {
+            id: u64,
+        },
+        #[default]
+        None,
     }
 
     impl Into<TargetIdentifier> for AgentIdentifier {
@@ -394,10 +397,16 @@ pub mod console {
     }
 
     // refers to group of agents or single agent
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
     pub enum TargetIdentifier {
-        Group { group: String },
-        Agent { agent: AgentIdentifier },
+        Group {
+            group: String,
+        },
+        Agent {
+            agent: AgentIdentifier,
+        },
+        #[default]
+        None,
     }
 
     impl ToString for TargetIdentifier {
@@ -407,54 +416,116 @@ pub mod console {
                 TargetIdentifier::Agent { agent } => match agent {
                     AgentIdentifier::Nickname { nickname } => format!("@{}", nickname),
                     AgentIdentifier::ID { id } => format!("@{}", id),
+                    _ => panic!(""),
                 },
+                _ => panic!(""),
             }
         }
     }
 
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+    #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
     pub enum Command {
-        Connect {
-            agent: TargetIdentifier,
-        },
+        #[strum(props(command = "connect"))]
+        Connect { agent: TargetIdentifier },
+
+        #[strum(props(command = "disconnect"))]
         Disconnect,
-        CreateGroup {
-            group_name: String,
-            agents: Vec<AgentIdentifier>,
-        },
-        DeleteGroup {
-            group_name: String,
-        },
-        AddAgentsToGroup {
-            group_name: String,
-            agents: Vec<AgentIdentifier>,
-        },
-        RemoveAgentsFromGroup {
-            group_name: String,
-            agents: Vec<AgentIdentifier>,
-        },
-        Exec {
-            agents: Option<TargetIdentifier>,
-            command: String,
-        },
-        Eval {
-            agents: Option<TargetIdentifier>,
-            script: String,
-        },
-        ListAgents,
-        ListGroups,
-        Ping {
-            agents: Option<TargetIdentifier>,
-        },
-        Status {
-            agents: Option<TargetIdentifier>,
-        },
-        Nickname {
-            agent: Option<AgentIdentifier>,
-            new_name: String,
-        },
+
+        #[strum(props(command = "nickname"))]
+        Nickname(NicknameCommand),
+
+        #[strum(props(command = "group"))]
+        Group(GroupCommand),
+
+        #[strum(props(command = "show"))]
+        Show(ShowCommand),
+
+        #[strum(props(command = "run"))]
+        Run(RunCommand),
+
+        #[strum(props(command = "remove"))]
+        Remove { target: Vec<TargetIdentifier> },
+
+        #[strum(props(command = "clear"))]
         Clear,
+
+        #[default]
+        #[strum(props(command = "help"))]
         Help,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter, Default)]
+    pub enum ShowCommand {
+        #[default]
+        #[strum(props(command = "agents"))]
+        Agents,
+        #[strum(props(command = "groups"))]
+        Groups,
+        #[strum(props(command = "server"))]
+        Server,
+        #[strum(props(command = "scripts"))]
+        Scripts,
+        #[strum(props(command = ""))]
+        Target(TargetIdentifier),
+    }
+
+    #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
+    pub enum NicknameCommand {
+        #[strum(props(command = "set"))]
+        Set {
+            agent: AgentIdentifier,
+            nickname: String,
+        },
+        #[strum(props(command = "get"))]
+        Get { agent: AgentIdentifier },
+
+        #[strum(props(command = "clear"))]
+        Clear { agent: AgentIdentifier },
+
+        #[default]
+        None,
+    }
+
+    #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
+    pub enum GroupCommand {
+        #[strum(props(command = "create"))]
+        Create {
+            group_name: String,
+            agents: Vec<AgentIdentifier>,
+        },
+        #[strum(props(command = "delete"))]
+        Delete { group_name: String },
+        #[strum(props(command = "add"))]
+        Add {
+            group_name: String,
+            agents: Vec<AgentIdentifier>,
+        },
+        #[strum(props(command = "remove"))]
+        Remove {
+            group_name: String,
+            agents: Vec<AgentIdentifier>,
+        },
+
+        #[strum(props(command = "clear"))]
+        Clear { group_name: String },
+
+        #[default]
+        None,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, Default, EnumIter)]
+    pub enum RunCommand {
+        #[strum(props(command = "script"))]
+        Script { script_name: String },
+
+        #[strum(props(command = "rhai"))]
+        Rhai { scripts_contents: String },
+
+        #[strum(props(command = "shell"))]
+        Shell { shell_command: String },
+
+        #[default]
+        None,
     }
 
     #[derive(Error, Clone, Debug, Serialize, Deserialize)]
@@ -595,6 +666,16 @@ pub mod console {
             };
         }
 
+        pub fn parse_target_ident_vec(&mut self) -> Result<Vec<TargetIdentifier>, CommandError> {
+            let mut targets = vec![];
+
+            while !self.is_at_end() {
+                targets.push(self.parse_target_ident()?);
+            }
+
+            Ok(targets)
+        }
+
         pub fn parse_group_ident(&mut self) -> Result<String, CommandError> {
             let token = self.consume()?;
 
@@ -618,6 +699,16 @@ pub mod console {
                 }),
                 _ => Err(CommandError::InvalidAgentIdentifier),
             }
+        }
+
+        pub fn parse_agent_ident_vec(&mut self) -> Result<Vec<AgentIdentifier>, CommandError> {
+            let mut agents = vec![];
+
+            while !self.is_at_end() {
+                agents.push(self.parse_agent_ident()?);
+            }
+
+            Ok(agents)
         }
 
         pub fn parse_agent_id(&mut self) -> Result<u64, CommandError> {
@@ -647,140 +738,119 @@ pub mod console {
             }
         }
 
-        pub fn parse(&mut self) -> Result<Command, CommandError> {
-            let command = self.consume()?;
+        pub fn parse_command<T: IntoEnumIterator>(&mut self) -> Result<T, CommandError>
+        where
+            T: IntoEnumIterator + EnumProperty,
+            T::Iterator: Iterator<Item = T>,
+        {
+            let command_str = self.consume()?;
 
-            match command {
-                "connect" => {
-                    let target_ident = self.parse_target_ident()?;
+            // TODO: this doesn't account for instances where two
+            // commands start with the same pattern, in such a case,
+            // order may be undefined
+            for defined_command in T::iter() {
+                let defined_command_str = match defined_command.get_str("command") {
+                    Some(command) => command,
+                    None => continue,
+                };
 
-                    if self.is_at_end() {
-                        Ok(Command::Connect {
-                            agent: target_ident,
-                        })
-                    } else {
-                        Err(CommandError::ExpectedNArgs { args: 1 })
-                    }
+                if defined_command_str.starts_with(command_str) {
+                    return Ok(defined_command);
                 }
-                "disconnect" => {
-                    if self.is_at_end() {
-                        Ok(Command::Disconnect)
-                    } else {
-                        Err(CommandError::ExpectedNArgs { args: 0 })
-                    }
-                }
-                "create_group" => {
-                    let group_name = self.parse_group_ident()?;
-
-                    let mut agents: Vec<AgentIdentifier> = vec![];
-
-                    while !self.is_at_end() {
-                        agents.push(self.parse_agent_ident()?);
-                    }
-
-                    Ok(Command::CreateGroup { group_name, agents })
-                }
-                "delete_group" => {
-                    let group_name = self.parse_group_ident()?;
-
-                    match self.is_at_end() {
-                        false => Err(CommandError::ExpectedNArgs { args: 1 }),
-                        true => Ok(Command::DeleteGroup { group_name }),
-                    }
-                }
-                "add_to_group" => {
-                    let group_name = self.parse_group_ident()?;
-                    let mut agents: Vec<AgentIdentifier> = vec![];
-
-                    while !self.is_at_end() {
-                        agents.push(self.parse_agent_ident()?);
-                    }
-
-                    Ok(Command::AddAgentsToGroup { group_name, agents })
-                }
-                "remove_from_group" => {
-                    let group_name = self.parse_group_ident()?;
-                    let mut agents: Vec<AgentIdentifier> = vec![];
-
-                    while !self.is_at_end() {
-                        agents.push(self.parse_agent_ident()?);
-                    }
-
-                    Ok(Command::RemoveAgentsFromGroup { group_name, agents })
-                }
-                "list_groups" => {
-                    if self.is_at_end() {
-                        Ok(Command::ListGroups)
-                    } else {
-                        Err(CommandError::ExpectedNArgs { args: 0 })
-                    }
-                }
-                "exec" => match self.source.len() {
-                    2 => Ok(Command::Exec {
-                        agents: None,
-                        command: self.consume()?.to_string(),
-                    }),
-                    3 => Ok(Command::Exec {
-                        agents: Some(self.parse_target_ident()?),
-                        command: self.consume()?.to_string(),
-                    }),
-                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
-                },
-                "eval" => match self.source.len() {
-                    2 => Ok(Command::Eval {
-                        agents: None,
-                        script: self.consume()?.to_string(),
-                    }),
-                    3 => Ok(Command::Eval {
-                        agents: Some(self.parse_target_ident()?),
-                        script: self.consume()?.to_string(),
-                    }),
-                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
-                },
-                "list" => match self.is_at_end() {
-                    true => Ok(Command::ListAgents),
-                    false => Err(CommandError::ExpectedNArgs { args: 0 }),
-                },
-                "clear" => match self.is_at_end() {
-                    true => Ok(Command::Clear),
-                    false => Err(CommandError::ExpectedNArgs { args: 0 }),
-                },
-                "ping" => match self.source.len() {
-                    1 => Ok(Command::Ping { agents: None }),
-                    2 => Ok(Command::Ping {
-                        agents: Some(self.parse_target_ident()?),
-                    }),
-                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 0, args2: 1 }),
-                },
-                "status" => match self.source.len() {
-                    1 => Ok(Command::Status { agents: None }),
-                    2 => Ok(Command::Status {
-                        agents: Some(self.parse_target_ident()?),
-                    }),
-                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 0, args2: 1 }),
-                },
-                "nickname" => match self.source.len() {
-                    2 => Ok(Command::Nickname {
-                        agent: None,
-                        new_name: self.consume()?.to_string(),
-                    }),
-                    3 => Ok(Command::Nickname {
-                        agent: Some(self.parse_agent_ident()?),
-                        new_name: self.consume()?.to_string(),
-                    }),
-                    _ => Err(CommandError::ExpectedAOrBArgs { args1: 1, args2: 2 }),
-                },
-                "help" => {
-                    if self.is_at_end() {
-                        Ok(Command::Help)
-                    } else {
-                        Err(CommandError::ExpectedNArgs { args: 0 })
-                    }
-                }
-                _ => Err(CommandError::UnknownCommand {
-                    command_name: command.to_string(),
-                }),
             }
+
+            Err(CommandError::UnknownCommand {
+                command_name: command_str.to_string(),
+            })
+        }
+
+        pub fn parse(&mut self) -> Result<Command, CommandError> {
+            let command = self.parse_command::<Command>()?;
+
+            let command = Ok(match command {
+                Command::Clear => Command::Clear,
+                Command::Help => Command::Help,
+                Command::Disconnect => Command::Disconnect,
+                Command::Connect { .. } => Command::Connect {
+                    agent: self.parse_target_ident()?,
+                },
+                Command::Remove { .. } => Command::Remove {
+                    target: self.parse_target_ident_vec()?,
+                },
+                Command::Nickname(_) => Command::Nickname(self.parse_nickname_command()?),
+                Command::Group(_) => Command::Group(self.parse_group_command()?),
+                Command::Show(_) => Command::Show(self.parse_show_command()?),
+                Command::Run(_) => Command::Run(self.parse_run_command()?),
+            });
+
+            println!("{:#?}", command);
+            command
+        }
+
+        pub fn parse_nickname_command(&mut self) -> Result<NicknameCommand, CommandError> {
+            Ok(match self.parse_command::<NicknameCommand>()? {
+                NicknameCommand::Set { .. } => NicknameCommand::Set {
+                    agent: self.parse_agent_ident()?,
+                    nickname: self.parse_agent_nickname()?,
+                },
+                NicknameCommand::Get { .. } => NicknameCommand::Get {
+                    agent: self.parse_agent_ident()?,
+                },
+                NicknameCommand::Clear { .. } => NicknameCommand::Clear {
+                    agent: self.parse_agent_ident()?,
+                },
+                NicknameCommand::None => NicknameCommand::None,
+            })
+        }
+
+        pub fn parse_group_command(&mut self) -> Result<GroupCommand, CommandError> {
+            Ok(match self.parse_command::<GroupCommand>()? {
+                GroupCommand::Create { .. } => GroupCommand::Create {
+                    group_name: self.parse_group_ident()?,
+                    agents: self.parse_agent_ident_vec()?,
+                },
+                GroupCommand::Delete { .. } => GroupCommand::Delete {
+                    group_name: self.parse_group_ident()?,
+                },
+                GroupCommand::Add { .. } => GroupCommand::Add {
+                    group_name: self.parse_group_ident()?,
+                    agents: self.parse_agent_ident_vec()?,
+                },
+                GroupCommand::Remove { .. } => GroupCommand::Remove {
+                    group_name: self.parse_group_ident()?,
+                    agents: self.parse_agent_ident_vec()?,
+                },
+                GroupCommand::Clear { .. } => GroupCommand::Clear {
+                    group_name: self.parse_group_ident()?,
+                },
+                GroupCommand::None => GroupCommand::None,
+            })
+        }
+
+        pub fn parse_show_command(&mut self) -> Result<ShowCommand, CommandError> {
+            Ok(match self.parse_command::<ShowCommand>()? {
+                ShowCommand::Agents => ShowCommand::Agents,
+                ShowCommand::Groups => ShowCommand::Groups,
+                ShowCommand::Server => ShowCommand::Server,
+                ShowCommand::Scripts => ShowCommand::Scripts,
+                ShowCommand::Target(_) => ShowCommand::Target(self.parse_target_ident()?),
+            })
+        }
+
+        pub fn parse_run_command(&mut self) -> Result<RunCommand, CommandError> {
+            Ok(match self.parse_command::<RunCommand>()? {
+                // FIXME: create proper method for parsing script name
+                RunCommand::Script { .. } => RunCommand::Script {
+                    script_name: self.parse_agent_nickname()?,
+                },
+                RunCommand::Rhai { .. } => RunCommand::Rhai {
+                    scripts_contents: self.parse_agent_nickname()?,
+                },
+                RunCommand::Shell { .. } => RunCommand::Shell {
+                    shell_command: self.parse_agent_nickname()?,
+                },
+                RunCommand::None => RunCommand::None,
+            })
         }
     }
 

@@ -100,6 +100,7 @@ impl State {
                 }
             }
             AgentIdentifier::ID { id } => return self.agents.get(&id),
+            AgentIdentifier::None => todo!(),
         }
 
         return None;
@@ -116,6 +117,7 @@ impl State {
                 }
             }
             AgentIdentifier::ID { id } => return self.agents.get_mut(&id),
+            AgentIdentifier::None => todo!(),
         }
 
         return None;

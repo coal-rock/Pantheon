@@ -7,33 +7,37 @@ pub async fn evaluate_command(
     command_context: CommandContext,
 ) -> Result<ConsoleResponse, ConsoleError> {
     match command_context.command {
-        Command::Connect { agent } => connect(state, agent, command_context.current_target).await,
-        Command::Disconnect => disconnect(command_context.current_target).await,
-        Command::CreateGroup { group_name, agents } => {
-                create_group(state, group_name, agents).await
-            }
-        Command::DeleteGroup { group_name } => delete_group(state, group_name).await,
-        Command::AddAgentsToGroup { group_name, agents } => {
-                add_agents_to_group(state, group_name, agents).await
-            }
-        Command::RemoveAgentsFromGroup { group_name, agents } => {
-                remove_agents_from_group(state, group_name, agents).await
-            }
-        Command::Exec { agents, command } => {
-                exec(state, agents, command, command_context.current_target).await
-            }
-        Command::Eval{ agents, script } => {
-                eval(state, agents, script, command_context.current_target).await
-            }
-        Command::ListAgents => list_agents(state).await,
-        Command::Ping { agents } => todo().await,
-        Command::Status { agents } => todo().await,
-        Command::Nickname { agent, new_name } => {
-                nickname(state, command_context.current_target, agent, new_name).await
-            }
-        Command::Clear => clear().await,
-        Command::ListGroups => list_groups(state).await,
-        Command::Help => help().await,
+        _ => Ok(ConsoleResponse {
+            output: "".to_string(),
+            new_target: NewTarget::NoChange,
+        })
+        // Command::Connect { agent } => connect(state, agent, command_context.current_target).await,
+        // Command::Disconnect => disconnect(command_context.current_target).await,
+        // Command::CreateGroup { group_name, agents } => {
+        //         create_group(state, group_name, agents).await
+        //     }
+        // Command::DeleteGroup { group_name } => delete_group(state, group_name).await,
+        // Command::AddAgentsToGroup { group_name, agents } => {
+        //         add_agents_to_group(state, group_name, agents).await
+        //     }
+        // Command::RemoveAgentsFromGroup { group_name, agents } => {
+        //         remove_agents_from_group(state, group_name, agents).await
+        //     }
+        // Command::Exec { agents, command } => {
+        //         exec(state, agents, command, command_context.current_target).await
+        //     }
+        // Command::Eval{ agents, script } => {
+        //         eval(state, agents, script, command_context.current_target).await
+        //     }
+        // Command::ListAgents => list_agents(state).await,
+        // Command::Ping { agents } => todo().await,
+        // Command::Status { agents } => todo().await,
+        // Command::Nickname { agent, new_name } => {
+        //         nickname(state, command_context.current_target, agent, new_name).await
+        //     }
+        // Command::Clear => clear().await,
+        // Command::ListGroups => list_groups(state).await,
+        // Command::Help => help().await,
     }
 }
 
@@ -49,11 +53,12 @@ async fn connect(
     
     match &target {
         TargetIdentifier::Group { group: _ } => {
-            let _ = get_group(state, None, Some(target.clone())).await?;
-        }
+                let _ = get_group(state, None, Some(target.clone())).await?;
+            }
         TargetIdentifier::Agent { agent: _ } => {
-            let _ = get_agent(state, None, Some(target.clone())).await?;
-        },
+                let _ = get_agent(state, None, Some(target.clone())).await?;
+            },
+        TargetIdentifier::None => todo!(),
     }
 
     Ok(ConsoleResponse {
@@ -266,6 +271,7 @@ async fn exec(
     let agent_ids = match target {
         TargetIdentifier::Group { group: _} => get_group(state.clone(), None, Some(target)).await?,
         TargetIdentifier::Agent { agent: _ } => vec![get_agent(state.clone(), None, Some(target)).await?.id],
+        TargetIdentifier::None => todo!(),
     };
 
     // FIXME: HACK
@@ -292,11 +298,12 @@ async fn eval(
     script: String,
     current_target: Option<TargetIdentifier>,
 ) -> Result<ConsoleResponse, ConsoleError> {
-    let target = get_target(current_target, agents)?;
+    let target = get_target(current_target.clone(), agents.clone())?;
 
-    let agent_ids = match target {
+    let agent_ids = match get_target(current_target, agents)? {
         TargetIdentifier::Group { group: _} => get_group(state.clone(), None, Some(target)).await?,
         TargetIdentifier::Agent { agent: _ } => vec![get_agent(state.clone(), None, Some(target)).await?.id],
+        TargetIdentifier::None => todo!(),
     };
 
     let instruction = AgentInstructionBody::Script {
@@ -391,6 +398,7 @@ fn expect_agent_ident(implicit: Option<TargetIdentifier>, explicit: Option<Targe
             match target {
                 TargetIdentifier::Group { group: _ } => return Err(ConsoleError::from("expected agent identifier, got group identifier")),
                 TargetIdentifier::Agent { agent } => return Ok(agent),
+                TargetIdentifier::None => todo!(),
             }
         }
         None => {}
@@ -401,6 +409,7 @@ fn expect_agent_ident(implicit: Option<TargetIdentifier>, explicit: Option<Targe
             match target {
                 TargetIdentifier::Group { group: _ } => return Err(ConsoleError::from("must be connected to agent, or agent must be specified")),
                 TargetIdentifier::Agent { agent } => return Ok(agent),
+                TargetIdentifier::None => todo!(),
             }
         }
         None => return Err(ConsoleError::from("must be connected to agent, or agent must be specified")),
@@ -413,6 +422,7 @@ fn expect_group_ident(implicit: Option<TargetIdentifier>, explicit: Option<Targe
             match target {
                 TargetIdentifier::Group { group } => return Ok(group),
                 TargetIdentifier::Agent { agent: _ } => return Err(ConsoleError::from("expected group identifier, got agent identifier")),
+                TargetIdentifier::None => todo!(),
             }
         }
         None => {}
@@ -423,6 +433,7 @@ fn expect_group_ident(implicit: Option<TargetIdentifier>, explicit: Option<Targe
             match target {
                 TargetIdentifier::Group { group } => return Ok(group),
                 TargetIdentifier::Agent { agent: _ } => return Err(ConsoleError::from("must be connected to gropu, or group must be specified")),
+                TargetIdentifier::None => todo!(),
             }
         }
         None => return Err(ConsoleError::from("must be connected to agent, or agent must be specified")),
@@ -439,6 +450,7 @@ async fn get_agent(state: SharedState, implicit: Option<TargetIdentifier>, expli
         None => match agent_ident {
             AgentIdentifier::Nickname { nickname } => return Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
             AgentIdentifier::ID { id } => return Err(ConsoleError::from(format!("unable to find agent with id: {}", id))),
+            AgentIdentifier::None => todo!(),
         }
     };
 
@@ -459,6 +471,7 @@ where
         None => match agent_ident {
             AgentIdentifier::Nickname { nickname } => Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
             AgentIdentifier::ID { id } => Err(ConsoleError::from(format!("unable to find agent with id: {}", id))),
+            AgentIdentifier::None => todo!(),
         }
     }
 }
