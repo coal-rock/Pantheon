@@ -434,9 +434,14 @@ pub mod console {
 
             let mut longest_len = 0;
             for command in T::iter() {
+                if command.get_str("command").unwrap() == "_" {
+                    continue;
+                }
+
                 let mut line = String::new();
 
-                line.push_str("   ");
+                let padding = "   ";
+                line.push_str(&padding);
                 line.push_str(command.get_str("command").unwrap());
 
                 let mut args = vec![];
@@ -448,7 +453,7 @@ pub mod console {
                 command.get_str("arg3").map(|x| args.push(x));
                 command.get_str("arg4").map(|x| args.push(x));
 
-                match args.len() > 0 {
+                match args.len() > 0 && line.len() > padding.len() {
                     true => line.push_str(" "),
                     false => {}
                 }
@@ -462,12 +467,19 @@ pub mod console {
             }
 
             let target_width = longest_len + 3;
-            for (idx, command) in Command::iter().enumerate() {
+            for (idx, command) in T::iter().enumerate() {
+                if command.get_str("command").unwrap() == "_" {
+                    continue;
+                }
+
                 output.push_str(&lines[idx]);
                 output.push_str(&" ".repeat(target_width - lines[idx].len()));
                 output.push_str("| ");
                 output.push_str(command.get_str("description").unwrap());
-                output.push_str("\n");
+
+                if idx != lines.len() - 1 {
+                    output.push_str("\n");
+                }
             }
 
             output
@@ -540,83 +552,141 @@ pub mod console {
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter, Default)]
     pub enum ShowCommand {
         #[default]
-        #[strum(props(command = "agents"))]
+        #[strum(props(command = "agents", description = "Shows information about all agents"))]
         Agents,
-        #[strum(props(command = "groups"))]
+        #[strum(props(command = "groups", description = "Shows information about all groups"))]
         Groups,
-        #[strum(props(command = "server"))]
+        #[strum(props(command = "server", description = "Shows information about tartarus"))]
         Server,
-        #[strum(props(command = "scripts"))]
+        #[strum(props(command = "scripts", description = "Shows available scripts"))]
         Scripts,
-        #[strum(props(command = ""))]
+        #[strum(props(
+            command = "",
+            arg1 = "[target]",
+            description = "Shows information about specified target"
+        ))]
         Target(Option<TargetIdentifier>),
     }
 
     #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
     pub enum NicknameCommand {
-        #[strum(props(command = "set"))]
+        #[strum(props(
+            command = "set",
+            arg1 = "[agent]",
+            arg2 = "<new nickname>",
+            description = "Sets an agents nickname"
+        ))]
         Set {
             agent: Option<AgentIdentifier>,
             nickname: String,
         },
-        #[strum(props(command = "get"))]
+        #[strum(props(
+            command = "get",
+            arg1 = "[agent]",
+            description = "Retrieves nickname for a specified agent"
+        ))]
         Get { agent: Option<AgentIdentifier> },
 
-        #[strum(props(command = "clear"))]
+        #[strum(props(
+            command = "clear",
+            arg1 = "[agent]",
+            description = "Removes nickname for a specified agent"
+        ))]
         Clear { agent: Option<AgentIdentifier> },
 
         #[default]
+        #[strum(props(command = "_"))]
         None,
     }
 
     #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
     pub enum GroupCommand {
-        #[strum(props(command = "create"))]
+        #[strum(props(
+            command = "create",
+            arg1 = "<group>",
+            arg2 = "<agent..>",
+            description = "Creates a new group and adds specified agents to it"
+        ))]
         Create {
             group_name: String,
             agents: Vec<AgentIdentifier>,
         },
-        #[strum(props(command = "delete"))]
+        #[strum(props(
+            command = "delete",
+            arg1 = "<group>",
+            description = "Deletes a specified group. Agents remain unchanged"
+        ))]
         Delete { group_name: String },
-        #[strum(props(command = "add"))]
+        #[strum(props(
+            command = "add",
+            arg1 = "<group>",
+            arg2 = "<agent..>",
+            description = "Adds specified agent(s) to an existing group"
+        ))]
         Add {
             group_name: String,
             agents: Vec<AgentIdentifier>,
         },
-        #[strum(props(command = "remove"))]
+        #[strum(props(
+            command = "remove",
+            arg1 = "<group>",
+            arg2 = "<agent..>",
+            description = "Removes specified agent(s) from an existing group"
+        ))]
         Remove {
             group_name: String,
             agents: Vec<AgentIdentifier>,
         },
 
-        #[strum(props(command = "clear"))]
+        #[strum(props(
+            command = "clear",
+            arg1 = "<group>",
+            description = "Removes all agents from a specified group"
+        ))]
         Clear { group_name: String },
 
         #[default]
+        #[strum(props(command = "_"))]
         None,
     }
 
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, Default, EnumIter)]
     pub enum RunCommand {
-        #[strum(props(command = "script"))]
+        #[strum(props(
+            command = "script",
+            arg1 = "[target]",
+            arg2 = "<script name>",
+            description = "Executes a Rhai script on a specified target"
+        ))]
         Script {
             target: Option<TargetIdentifier>,
             script_name: String,
         },
 
-        #[strum(props(command = "rhai"))]
+        #[strum(props(
+            command = "rhai",
+            arg1 = "[target]",
+            arg2 = "<rhai source>",
+            description = "Executes some Rhai code on a specified target"
+        ))]
         Rhai {
             target: Option<TargetIdentifier>,
             scripts_contents: String,
         },
 
-        #[strum(props(command = "shell"))]
+        #[strum(props(
+            command = "shell",
+            arg1 = "[target]",
+            arg2 = "<shell command>",
+            description = "Executes some shell command on a specified target"
+        ))]
         Shell {
             target: Option<TargetIdentifier>,
             shell_command: String,
         },
 
         #[default]
+        #[strum(props(command = "_", description = "_"))]
         None,
     }
 
@@ -634,6 +704,8 @@ pub mod console {
         GroupMustStartWithPound,
         #[error("agent must start with @")]
         AgentMustStartWithAt,
+        #[error("nickanme nickname start with @")]
+        NicknameMustStartWith,
         #[error("target must start with @ or #")]
         IdentifierMustStartWith,
         #[error("invalid agent identifier")]
@@ -652,8 +724,8 @@ pub mod console {
         ExpectedAgentNickname,
         #[error("expected command")]
         ExpectedCommand,
-        #[error("expected one of the following commands:\n   {}", ._0.join("\n   "))]
-        ExpectedCommandSpecific(Vec<String>),
+        #[error("{}", ._0)]
+        ExpectedCommandSpecific(String),
         #[error("unexpected argument: \"{arg}\"")]
         UnexpectedArgument { arg: String },
         #[error("expected {args} args")]
@@ -938,7 +1010,7 @@ pub mod console {
             let first_char = chars.peek().ok_or(CommandError::ParsingError)?;
 
             if predicate != '@' {
-                return Err(CommandError::AgentMustStartWithAt);
+                return Err(CommandError::NicknameMustStartWith);
             }
 
             match first_char {
@@ -954,15 +1026,7 @@ pub mod console {
         {
             let command_str = match self.consume(CommandError::ExpectedCommand) {
                 Ok(command_str) => command_str,
-                Err(_) => {
-                    return Err(CommandError::ExpectedCommandSpecific(
-                        T::iter()
-                            .map(|x| x.get_str("command"))
-                            .filter_map(|x| x)
-                            .map(|x| x.to_string())
-                            .collect(),
-                    ))
-                }
+                Err(_) => return Err(CommandError::ExpectedCommandSpecific(T::help())),
             };
 
             // TODO: this doesn't account for instances where two

@@ -54,3 +54,21 @@ h
 he
 h
 he
+h
+show 
+show
+show 
+show
+help
+show 
+show aslskdja s
+show aslskdja
+show @123123
+run 
+show @123
+show  @123
+show " " @123
+show "" @123
+show "" 123
+show "" #123
+nickname set @123 123
