@@ -2,10 +2,16 @@ use std::collections::HashSet;
 
 use crate::console_lib;
 use crate::SharedState;
+use rustyline::completion::Completer;
 use rustyline::hint::Hint;
 use rustyline::hint::Hinter;
+use rustyline::Cmd;
 use rustyline::Context;
+use rustyline::Event;
 use rustyline::Helper;
+use rustyline::KeyCode;
+use rustyline::KeyEvent;
+use rustyline::Modifiers;
 use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use rustyline::{Completer, Highlighter, Validator};
 
@@ -46,7 +52,7 @@ impl CommandHint {
 impl Hinter for DIYHinter {
     type Hint = CommandHint;
 
-    fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<CommandHint> {
+    fn hint(&self, line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<CommandHint> {
         let console = Console::new(None);
 
         match console.auto_complete(line.to_string()) {
@@ -60,10 +66,15 @@ pub async fn start_console(shared_state: SharedState) {
     let mut rl = Editor::<DIYHinter, FileHistory>::new().unwrap();
     let h = DIYHinter {};
     rl.set_helper(Some(h));
-    // Load command history if it exists
+
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
+
+    rl.bind_sequence(
+        Event::KeySeq(vec![KeyEvent(KeyCode::Tab, Modifiers::NONE)]),
+        Cmd::CompleteHint,
+    );
 
     let mut console = Console::new(None);
 
