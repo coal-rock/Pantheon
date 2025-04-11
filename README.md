@@ -17,7 +17,6 @@
 
 [![Build All](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![](https://dcbadge.limes.pink/api/server/https://discord.gg/knyExCkJQD?style=flat)](https://discord.gg/knyExCkJQD)
 
 
 </div>
