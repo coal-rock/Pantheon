@@ -487,6 +487,19 @@ pub mod console {
         }
     }
 
+    pub trait CommandComplete {
+        fn complete() -> Vec<String>;
+    }
+
+    impl<T: IntoEnumIterator + EnumProperty> CommandComplete for T {
+        fn complete() -> Vec<String> {
+            T::iter()
+                .map(|x| x.get_str("command").unwrap().to_string())
+                .filter(|x| x != "_" && x != "")
+                .collect()
+        }
+    }
+
     #[derive(
         Clone,
         Debug,
@@ -715,7 +728,7 @@ pub mod console {
         GroupMustStartWithPound,
         #[error("agent must start with @")]
         AgentMustStartWithAt,
-        #[error("nickanme nickname start with @")]
+        #[error("nickname must start with @")]
         NicknameMustStartWith,
         #[error("target must start with @ or #")]
         IdentifierMustStartWith,
@@ -757,11 +770,16 @@ pub mod console {
     pub struct Parser {
         source: Vec<String>,
         pos: usize,
+        completion: Option<String>,
     }
 
     impl Parser {
         pub fn new(source: Vec<String>) -> Parser {
-            Parser { source, pos: 0 }
+            Parser {
+                source,
+                pos: 0,
+                completion: None,
+            }
         }
 
         pub fn tokenize(source: String) -> Vec<String> {
@@ -836,7 +854,7 @@ pub mod console {
             self.source[self.pos..].join(" ")
         }
 
-        pub fn peek(&mut self, err: CommandError) -> Result<&str, CommandError> {
+        pub fn peek(&self, err: CommandError) -> Result<&str, CommandError> {
             if !self.is_at_end() {
                 return Ok(&self.source[self.pos]);
             }
@@ -1030,14 +1048,20 @@ pub mod console {
             }
         }
 
-        pub fn parse_command<T: IntoEnumIterator>(&mut self) -> Result<T, CommandError>
+        pub fn parse_command<T>(&mut self) -> Result<T, CommandError>
         where
             T: IntoEnumIterator + EnumProperty,
             T::Iterator: Iterator<Item = T>,
         {
-            let command_str = match self.consume(CommandError::ExpectedCommand) {
+            let command_str = self
+                .consume(CommandError::ExpectedCommand)
+                .map(|x| x.to_string());
+
+            let command_str = match command_str {
                 Ok(command_str) => command_str,
-                Err(_) => return Err(CommandError::ExpectedCommandSpecific(T::help())),
+                Err(_) => {
+                    return Err(CommandError::ExpectedCommandSpecific(T::help()));
+                }
             };
 
             // TODO: this doesn't account for instances where two
@@ -1049,9 +1073,12 @@ pub mod console {
                     None => continue,
                 };
 
-                if defined_command_str.starts_with(command_str) {
+                if defined_command_str.starts_with(&command_str) {
+                    self.completion = Some(defined_command_str.to_string());
                     return Ok(defined_command);
                 }
+
+                self.completion = None;
             }
 
             Err(CommandError::UnknownCommand {
@@ -1084,83 +1111,39 @@ pub mod console {
                 });
             }
 
-            println!("{:#?}", command);
             command
         }
 
-        pub fn auto_complete(&mut self) -> Result<String, CommandError> {
-            let output = match self.parse_command::<Command>()? {
-                Command::Connect { .. } => Ok("connect".into()),
-                Command::Disconnect => Ok("disconnect".into()),
-                Command::Nickname(..) => self.auto_complete_nickname().map(|x| x.to_string()),
-                Command::Group(..) => self.auto_complete_group().map(|x| x.to_string()),
-                Command::Show(..) => self.auto_complete_show().map(|x| x.to_string()),
-                Command::Run(..) => self.auto_complete_run().map(|x| x.to_string()),
-                Command::Remove { .. } => Ok("remove".into()),
-                Command::Clear => Ok("clear".into()),
-                Command::Help => Ok("help".into()),
-            }?;
+        pub fn auto_complete(&mut self) -> Option<String> {
+            let _ = self.parse();
 
-            if !self.is_at_end() {
-                return Err(CommandError::ExpectedCommand);
-            }
+            match &self.completion {
+                Some(completion) => {
+                    // FIXME: hack
+                    // fixes completion on the following case
+                    // h eHLP
+                    // (where the completion is capitalized)
+                    if !completion.starts_with(self.source.last().unwrap()) {
+                        return None;
+                    }
 
-            Ok(output)
-        }
-
-        pub fn auto_complete_nickname(&mut self) -> Result<&str, CommandError> {
-            match self.parse_command::<NicknameCommand>() {
-                Ok(command) => match command {
-                    NicknameCommand::Set { .. } => Ok("set"),
-                    NicknameCommand::Get { .. } => Ok("get"),
-                    NicknameCommand::Clear { .. } => Ok("clear"),
-                    NicknameCommand::None => Ok(""),
-                },
-                Err(_) => Ok("nickname"),
-            }
-        }
-
-        pub fn auto_complete_group(&mut self) -> Result<&str, CommandError> {
-            match self.parse_command::<GroupCommand>() {
-                Ok(command) => match command {
-                    GroupCommand::Create { .. } => Ok("create"),
-                    GroupCommand::Delete { .. } => Ok("delete"),
-                    GroupCommand::Add { .. } => Ok("add"),
-                    GroupCommand::Remove { .. } => Ok("remove"),
-                    GroupCommand::Clear { .. } => Ok("clear"),
-                    GroupCommand::None => Ok("_"),
-                },
-                Err(_) => Ok("group"),
-            }
-        }
-
-        pub fn auto_complete_show(&mut self) -> Result<&str, CommandError> {
-            match self.parse_command::<ShowCommand>() {
-                Ok(command) => match command {
-                    ShowCommand::Agents => Ok("agents"),
-                    ShowCommand::Groups => Ok("groups"),
-                    ShowCommand::Server => Ok("server"),
-                    ShowCommand::Scripts => Ok("scripts"),
-                    ShowCommand::Target { .. } => Ok(""),
-                },
-                Err(_) => Ok("show"),
-            }
-        }
-
-        pub fn auto_complete_run(&mut self) -> Result<&str, CommandError> {
-            match self.parse_command::<RunCommand>() {
-                Ok(command) => match command {
-                    RunCommand::Script { .. } => Ok("script"),
-                    RunCommand::Rhai { .. } => Ok("rhai"),
-                    RunCommand::Shell { .. } => Ok("shell"),
-                    RunCommand::None => Ok(""),
-                },
-                Err(_) => Ok("run"),
-            }
+                    return Some(
+                        completion
+                            .to_string()
+                            .replacen(self.source.last().unwrap(), "", 1)
+                            + " ",
+                    );
+                }
+                None => {
+                    return None;
+                }
+            };
         }
 
         pub fn parse_nickname_command(&mut self) -> Result<NicknameCommand, CommandError> {
-            Ok(match self.parse_command::<NicknameCommand>()? {
+            let command = self.parse_command::<NicknameCommand>()?;
+
+            Ok(match command {
                 NicknameCommand::Set { .. } => NicknameCommand::Set {
                     agent: self.parse_opt_agent_ident(false)?,
                     nickname: self.parse_agent_nickname()?,
@@ -1269,19 +1252,28 @@ pub mod console {
         pub fn handle_command(&mut self, source: String) -> Result<Command, CommandError> {
             self.history.push(source.clone());
 
-            let tokens = Parser::tokenize(source);
+            let tokens = Parser::tokenize(source.clone());
             let mut parser = Parser::new(tokens);
 
             parser.parse()
         }
 
         pub fn auto_complete(&self, source: String) -> Option<String> {
-            let tokens = Parser::tokenize(source);
+            let tokens = Parser::tokenize(source.clone());
             let mut parser = Parser::new(tokens);
 
-            match parser.auto_complete().clone() {
-                Ok(completion) => Some(completion),
-                Err(_) => None,
+            match parser.auto_complete() {
+                Some(completion) => {
+                    // don't autocomplete unless there is actually text
+                    if source.ends_with(" ") {
+                        return None;
+                    }
+
+                    return Some(completion);
+                }
+                None => {
+                    return None;
+                }
             }
         }
     }

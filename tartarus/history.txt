@@ -1,71 +1,4 @@
 #V2
-connect @123123
-sh
-a
-connect
-connect 
-connect
-connect a
-connect 
-connect
-connect asd
-a
-connect agents 
-connect agents
-connect 
-connect a
-connect
-connect 
-connect
-connect 
-connect
-group
-connect 
-connect a
-connect 123
-connect @123
-a
-connect 
-connect @123
-a
-connect 
-connect 123
-connect @123
-connect 
-connect @123 
-h
-he
-h
-connect 
-group 
-connect 
-group
-h
-he
-h
-he
-h
-he
-h
-he
-h
-show 
-show
-show 
-show
-help
-show 
-show aslskdja s
-show aslskdja
-show @123123
-run 
-show @123
-show  @123
-show " " @123
-show "" @123
-show "" 123
-show "" #123
-nickname set @123 123
 connect 
 ls 
 help 
@@ -99,3 +32,70 @@ show
 shoowow
 showow
 show
+help
+remove targetasdkajks dlkajs dalksjkd 
+asdas
+da
+sdas
+help
+connect
+connect asdlkj 
+connect @123 
+help
+group 
+group
+help
+group
+help
+help 
+g c 
+help
+helphelp 
+fg
+help
+h
+grou
+group 
+g
+help
+disconnect 
+group create
+help 
+help
+disconnect 
+nickname set 
+connect 
+help
+group crea aasdadasdte asdlasdte ate ate ate ate ate ate ate ate ate ate ate ate ate ate 
+scripts 
+scripts
+s
+help 
+scripts 
+group 
+group create 
+group add 
+scripts 
+connect 
+disconn cect cect cect cect cect cect ccect cect cect cect cect cccect cect ccccccccect c
+discon cect
+discon @123
+discon 
+disconnect 
+disc 
+ds
+d
+c
+c 1 
+c @1
+c @asd
+group add 
+group add
+group add 
+help
+help 
+group add
+help
+n set 
+n set #123 
+help 

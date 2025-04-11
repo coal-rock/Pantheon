@@ -35,17 +35,10 @@ impl Hint for CommandHint {
 }
 
 impl CommandHint {
-    fn new(line: &str, text: &str) -> Self {
+    fn new(text: &str, up_to: usize) -> Self {
         Self {
             display: text.into(),
-            complete_up_to: line.len(),
-        }
-    }
-
-    fn suffix(&self, strip_chars: usize) -> Self {
-        Self {
-            display: self.display[strip_chars..].to_owned(),
-            complete_up_to: self.complete_up_to.saturating_sub(strip_chars),
+            complete_up_to: up_to,
         }
     }
 }
@@ -54,13 +47,10 @@ impl Hinter for DIYHinter {
     type Hint = CommandHint;
 
     fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<CommandHint> {
-        if line.is_empty() || pos < line.len() {
-            return None;
-        }
         let console = Console::new(None);
 
         match console.auto_complete(line.to_string()) {
-            Some(complete) => Some(CommandHint::new(line, &complete.replacen(line, "", 1))),
+            Some(complete) => Some(CommandHint::new(&complete, complete.len())),
             None => None,
         }
     }
@@ -74,8 +64,6 @@ pub async fn start_console(shared_state: SharedState) {
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
-
-    // rl.set_completion_ty;
 
     let mut console = Console::new(None);
 
