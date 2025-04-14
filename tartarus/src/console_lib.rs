@@ -417,16 +417,17 @@ async fn get_agent(state: SharedState, implicit: Option<TargetIdentifier>, expli
 
     let agent_ident = expect_agent_ident(implicit, explicit)?;
     
-    let agent = match state.get_agent_by_ident(&agent_ident) {
-        Some(agent) => agent.clone(),
-        None => match agent_ident {
-            AgentIdentifier::Nickname { nickname } => return Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
-            AgentIdentifier::ID { id } => return Err(ConsoleError::from(format!("unable to find agent with id: {}", id))),
-            AgentIdentifier::None => todo!(),
-        }
-    };
-
-    Ok(agent)
+    // let agent = match state.get_agent_by_ident(&agent_ident) {
+    //     Some(agent) => agent.clone(),
+    //     None => match agent_ident {
+    //         AgentIdentifier::Nickname { nickname } => return Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
+    //         AgentIdentifier::ID { id } => return Err(ConsoleError::from(format!("unable to find agent with id: {}", id))),
+    //         AgentIdentifier::None => todo!(),
+    //     }
+    // };
+    
+    // Ok(agent)
+    todo!()
 }
 
 async fn modify_agent<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>

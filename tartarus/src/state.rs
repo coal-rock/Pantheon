@@ -90,20 +90,19 @@ impl State {
         };
     }
 
-    pub fn get_agent_by_ident(&self, ident: &AgentIdentifier) -> Option<&Agent> {
+    pub fn get_agent_id(&self, ident: &AgentIdentifier) -> Option<u64> {
         match ident {
             AgentIdentifier::Nickname { nickname } => {
-                for (_, agent) in &self.agents {
-                    if agent.nickname == Some(nickname.clone()) {
-                        return Some(&agent);
+                for (_, agent) in self.agents.iter().enumerate() {
+                    if agent.1.nickname == Some(nickname.clone()) {
+                        return Some(*agent.0);
                     }
                 }
+                None
             }
-            AgentIdentifier::ID { id } => return self.agents.get(&id),
-            AgentIdentifier::None => todo!(),
+            AgentIdentifier::ID { id } => Some(*id),
+            AgentIdentifier::None => None,
         }
-
-        return None;
     }
 
     ///TODO:this shouldn't be pub

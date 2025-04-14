@@ -1,8 +1,5 @@
-use std::collections::HashSet;
-
 use crate::console_lib;
 use crate::SharedState;
-use rustyline::completion::Completer;
 use rustyline::hint::Hint;
 use rustyline::hint::Hinter;
 use rustyline::Cmd;

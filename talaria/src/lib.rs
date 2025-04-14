@@ -308,10 +308,6 @@ pub mod api {
             }
         }
 
-        pub fn set_nickname(&mut self, nickname: Option<String>) {
-            self.nickname = nickname;
-        }
-
         pub fn queue_instruction(&mut self, instruction: &AgentInstructionBody) {
             self.instruction_queue.push_back(instruction.clone());
         }
@@ -758,6 +754,10 @@ pub mod console {
         ExpectedAOrBArgs { args1: u64, args2: u64 },
         #[error("unable to parse command")]
         ParsingError,
+        #[error("expected rhai script")]
+        ExpectedRhai,
+        #[error("expected shell script")]
+        ExpectedShell,
     }
 
     pub enum Token {
@@ -842,16 +842,20 @@ pub mod console {
         }
 
         pub fn consume(&mut self, err: CommandError) -> Result<&str, CommandError> {
-            if !self.is_at_end() {
-                self.pos += 1;
-                return Ok(&self.source[self.pos - 1]);
+            if self.is_at_end() {
+                return Err(err);
             }
 
-            Err(err)
+            self.pos += 1;
+            return Ok(&self.source[self.pos - 1]);
         }
 
-        pub fn consume_to_end(&mut self) -> String {
-            self.source[self.pos..].join(" ")
+        pub fn consume_to_end(&mut self, err: CommandError) -> Result<String, CommandError> {
+            if self.is_at_end() {
+                return Err(err);
+            }
+
+            Ok(self.source[self.pos..].join(" "))
         }
 
         pub fn peek(&self, err: CommandError) -> Result<&str, CommandError> {
@@ -1107,7 +1111,7 @@ pub mod console {
 
             if !self.is_at_end() {
                 return Err(CommandError::UnexpectedArgument {
-                    arg: self.consume_to_end(),
+                    arg: self.consume_to_end(CommandError::ParsingError)?,
                 });
             }
 
@@ -1200,11 +1204,11 @@ pub mod console {
                 },
                 RunCommand::Rhai { .. } => RunCommand::Rhai {
                     target: self.parse_opt_target_ident(false)?,
-                    scripts_contents: self.parse_agent_nickname()?,
+                    scripts_contents: self.consume_to_end(CommandError::ExpectedRhai)?,
                 },
                 RunCommand::Shell { .. } => RunCommand::Shell {
                     target: self.parse_opt_target_ident(false)?,
-                    shell_command: self.parse_agent_nickname()?,
+                    shell_command: self.consume_to_end(CommandError::ExpectedShell)?,
                 },
                 RunCommand::None => RunCommand::None,
             })
