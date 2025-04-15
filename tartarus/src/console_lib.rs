@@ -1,21 +1,19 @@
 use crate::SharedState;
-use strum::{IntoEnumIterator, EnumProperty};
-use talaria::{api::Agent, console::*, protocol::*};
-use std::sync::{Arc, Mutex};
+use talaria::{api::Agent, console::*};
 
 pub async fn evaluate_command(
     state: SharedState,
     command_context: CommandContext,
 ) -> Result<ConsoleResponse, ConsoleError> {
     match command_context.command {
-        Command::Connect { agent } => connect(state, agent, command_context.current_target).await,
+        Command::Connect { target } => connect(state, target, command_context.current_target).await,
         Command::Disconnect => disconnect(command_context.current_target).await,
-        Command::Nickname(nickname_command) => nickname(state, command_context.current_target, nickname_command).await,
-        Command::Group(group_command) => todo!(),
-        Command::Show(show_command) => todo!(),
+        Command::Nickname(command) => nickname(state, command_context.current_target, command).await,
+        Command::Group(command) => group(state, command_context.current_target, command).await,
+        Command::Show(command) => show(state, command).await,
         Command::Run(run_command) => todo!(),
         Command::Remove { target } => todo!(),
-        Command::Clear => todo!(),
+        Command::Clear => clear().await,
         Command::Help => help().await,
     }
 }
@@ -30,15 +28,7 @@ async fn connect(
         None => {},
     }
     
-    match &target {
-        TargetIdentifier::Group { group: _ } => {
-                let _ = get_group(state, None, Some(target.clone())).await?;
-            }
-        TargetIdentifier::Agent { agent: _ } => {
-                let _ = get_agent(state, None, Some(target.clone())).await?;
-            },
-        TargetIdentifier::None => todo!(),
-    }
+    let _ = get_target(state, current_target, Some(target.clone())).await?;
 
     Ok(ConsoleResponse {
         output: format!("successfully connected to: {}", target.to_string()),
@@ -56,110 +46,145 @@ async fn disconnect(current_target: Option<TargetIdentifier>) -> Result<ConsoleR
     }
 }
 
+async fn nickname(state: SharedState, current_target: Option<TargetIdentifier>, command: NicknameCommand) -> Result<ConsoleResponse, ConsoleError> {
+    match command {
+        NicknameCommand::Set { agent, nickname } => {
+            modify_agent(state, async |agent| {
+                agent.nickname = Some(nickname);
+            }, current_target, agent.map(|a| a.into())).await?;
+            
+            Ok(ConsoleResponse {
+                output: format!("successfully set agent nickname"),
+                new_target: NewTarget::NoChange,
+            })
+            
+        },
+        NicknameCommand::Get { agent } => {
+            let agent = get_agent(state, current_target, agent.map(|a| a.into())).await?;
+
+            match agent.nickname {
+                Some(nickname) => Ok(ConsoleResponse {
+                    output: format!("{}", nickname),
+                    new_target: NewTarget::NoChange,
+                }),
+                None => Err(ConsoleError::from("agent has no nickname")),
+            }
+        },
+        NicknameCommand::Clear { agent } => {
+            modify_agent(state, async |agent| {
+                agent.nickname = None;
+            }, current_target, agent.map(|a| a.into())).await?;
+            
+            Ok(ConsoleResponse {
+                output: format!("successfully cleared agent nickname"),
+                new_target: NewTarget::NoChange,
+            })
+        },
+        NicknameCommand::None => todo!(),
+    }
+}
+
+async fn group(state: SharedState, current_target: Option<TargetIdentifier>, command: GroupCommand) -> Result<ConsoleResponse, ConsoleError> {
+    match command {
+        GroupCommand::Create { group_name, agents } => {
+            if state.read().await.groups.contains_key(&group_name) {
+                return Err(ConsoleError::from("group already exists"));
+            }
+            
+            let mut agent_ids = vec![];
+
+            for ident in &agents {
+                agent_ids.push(get_agent_id(state.clone(), None, Some((ident.clone()).into())).await?);
+            }
+
+            agent_ids.dedup();
+
+            {
+                let mut state = state.write().await;
+                state.groups.insert(group_name, agent_ids);
+            }
+        
+            Ok(ConsoleResponse {
+                output: format!("successfully created group"),
+                new_target: NewTarget::NoTarget,
+            })
+        },
+        GroupCommand::Delete { group_name } => {
+            if !state.read().await.groups.contains_key(&group_name) {
+                return Err(ConsoleError::from("group does not exist"));
+            }
+
+            state.write().await.groups.remove(&group_name);
+
+            Ok(ConsoleResponse {
+                output: format!("successfully removed group"),
+                new_target: NewTarget::NoTarget,
+            })
+        },
+        GroupCommand::Add { group_name, agents } => {
+            let mut agent_ids = vec![];
+
+            for ident in &agents {
+                agent_ids.push(get_agent_id(state.clone(), None, Some((ident.clone()).into())).await?);
+            }
+
+            modify_group(state, async |g| {
+                g.extend(agent_ids);
+                g.dedup();
+            }, current_target, Some(TargetIdentifier::Group { group: group_name })).await?;
+
+            Ok(ConsoleResponse {
+                output: format!("successfully added agents to group"),
+                new_target: NewTarget::NoTarget,
+            })
+        },
+        GroupCommand::Remove { group_name, agents } => {
+            let mut agent_ids = vec![];
+
+            for ident in &agents {
+                agent_ids.push(get_agent_id(state.clone(), None, Some((ident.clone()).into())).await?);
+            }
+
+            modify_group(state, async |g| {
+                for id in agent_ids {
+                    g.retain(|&x| x != id);
+                }
+            }, current_target, Some(TargetIdentifier::Group { group: group_name })).await?;
+
+            Ok(ConsoleResponse {
+                output: format!("successfully removed agents from group"),
+                new_target: NewTarget::NoTarget,
+            })
+        },
+        GroupCommand::Clear { group_name } => {
+            modify_group(state, async |g| {
+                g.clear();
+            }, current_target, Some(TargetIdentifier::Group { group: group_name })).await?;
+
+            Ok(ConsoleResponse {
+                output: format!("successfully cleared group"),
+                new_target: NewTarget::NoTarget,
+            })
+
+        },
+        GroupCommand::None => todo!(),
+    }
+}
+
+async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleResponse, ConsoleError> {
+    match command {
+        ShowCommand::Agents => todo!(),
+        ShowCommand::Groups => todo!(),
+        ShowCommand::Server => todo!(),
+        ShowCommand::Scripts => todo!(),
+        ShowCommand::Target(target_identifier) => todo!(),
+    }
+}
+
 
 async fn todo() -> Result<ConsoleResponse, ConsoleError> {
     Ok(ConsoleResponse {
         output: format!("not implemented yet"),
-        new_target: NewTarget::NoChange,
-    })
-}
-
-async fn create_group(
-    state: SharedState,
-    group_name: String,
-    agents: Vec<AgentIdentifier>,
-) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u64> = vec![];
-    
-    {
-        let state = state.read().await;
-
-        if state.groups.contains_key(&group_name) {
-            return Err(ConsoleError::from("group already exists"));
-        }
-    }
-
-    for ident in &agents {
-        agent_ids.push(get_agent(state.clone(), None, Some((*ident).clone().into())).await?.id);
-    }
-
-    agent_ids.dedup();
-
-    {
-        let mut state = state.write().await;
-        state.groups.insert(group_name, agent_ids);
-    }
-    
-    Ok(ConsoleResponse {
-        output: format!("successfully created group"),
-        new_target: NewTarget::NoTarget,
-    })
-}
-
-async fn delete_group(state: SharedState, group_name: String) -> Result<ConsoleResponse, ConsoleError> {
-    let mut state = state.write().await;
-
-    match state.groups.remove(&group_name) {
-        Some(_) => Ok(ConsoleResponse {
-            output: format!("successfully deleted group: {}", group_name),
-            new_target: NewTarget::NoChange,
-        }),
-        None => Err(ConsoleError::from(format!("could not delete group {}", group_name))),
-    }
-}
-
-async fn add_agents_to_group(
-    state: SharedState,
-    group_name: String,
-    agents: Vec<AgentIdentifier>,
-) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u64> = vec![];
-
-    for ident in agents {
-        agent_ids.push(get_agent(state.clone(), None, Some(ident.into())).await?.id);
-    }
-
-    agent_ids.dedup();
-
-    modify_group(state, async |group| {
-        group.append(&mut agent_ids);
-        group.dedup();
-    },
-    None, Some(TargetIdentifier::Group { group: group_name })).await?;
-    
-
-    Ok(ConsoleResponse {
-        output: format!("successfully added agents to group"),
-        new_target: NewTarget::NoChange,
-    })
-}
-
-async fn remove_agents_from_group(
-    state: SharedState,
-    group_name: String,
-    agents: Vec<AgentIdentifier>,
-) -> Result<ConsoleResponse, ConsoleError> {
-    let mut agent_ids: Vec<u64> = vec![];
-
-    for ident in agents {
-        let agent = get_agent(state.clone(), None, Some(ident.into())).await?;
-        agent_ids.push(agent.id);
-    }
-
-    agent_ids.dedup();
-    
-    modify_group(state, async |group| {
-        for (index, agent) in group.clone().into_iter().enumerate() {
-            for agent_id in &agent_ids {
-                if agent.clone() == *agent_id {
-                    group.remove(index);
-                }
-            }
-        }
-    }, None, Some(TargetIdentifier::Group { group: group_name })).await?;
-
-    Ok(ConsoleResponse {
-        output: format!("succesfully removed agents from group"),
         new_target: NewTarget::NoChange,
     })
 }
@@ -170,155 +195,6 @@ async fn clear() -> Result<ConsoleResponse, ConsoleError> {
         new_target: NewTarget::NoChange,
     })
 }
-
-async fn list_agents(state: SharedState) -> Result<ConsoleResponse, ConsoleError> {
-    let state = state.read().await;
-    let mut output = String::new();
-
-    for (id, agent) in &state.agents {
-        output.push_str(
-            format!(
-                "{} - [{}]\n",
-                id,
-                agent.clone().nickname.unwrap_or(String::from("!!!"))
-            )
-            .clone()
-            .as_str(),
-        );
-    }
-
-    Ok(ConsoleResponse {
-        output,
-        new_target: NewTarget::NoChange,
-    })
-}
-
-async fn list_groups(state: SharedState) -> Result<ConsoleResponse, ConsoleError> {
-    let groups = state.read().await.groups.clone();
-    let mut output = String::new();
-
-    for (group_name, ids) in &groups {
-        output.push_str(&format!("#{}:\n", group_name));
-
-        for id in ids {
-            let agent = get_agent(state.clone(), None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: *id} })).await?;
-
-            output.push_str(
-                format!(
-                    "   {} - [{}]\n",
-                    id,
-                    agent.nickname.clone().unwrap_or(String::from("!!!"))
-                )
-                .clone()
-                .as_str(),
-            );
-        }
-    }
-
-    Ok(ConsoleResponse {
-        output,
-        new_target: NewTarget::NoChange,
-    })
-}
-
-async fn nickname(
-    state: SharedState,
-    current_target: Option<TargetIdentifier>,
-    nickname_command: NicknameCommand,
-) -> Result<ConsoleResponse, ConsoleError> {
-    match nickname_command {
-        NicknameCommand::Set { agent, nickname } => todo!(),
-        NicknameCommand::Get { agent } => todo!(),
-        NicknameCommand::Clear { agent } => todo!(),
-        NicknameCommand::None => panic!("")
-    }
-
-
-    // let target = Some(TargetIdentifier::Agent { agent: expect_agent_ident(current_target, agent.map(|a| TargetIdentifier::Agent { agent: a }))? });
-    // 
-    // modify_agent(state, async |agent| {
-    //     agent.nickname = Some(nickname);
-    // }, None, target).await?;
-    //
-    // Ok(ConsoleResponse {
-    //     output: format!("nickname set successfully"),
-    //     new_target: NewTarget::NoChange,
-    // })
-}
-
-async fn exec(
-    state: SharedState,
-    agents: Option<TargetIdentifier>,
-    command: String,
-    current_target: Option<TargetIdentifier>,
-) -> Result<ConsoleResponse, ConsoleError> {
-    let target = get_target(current_target, agents)?;
-
-    let agent_ids = match target {
-        TargetIdentifier::Group { group: _} => get_group(state.clone(), None, Some(target)).await?,
-        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state.clone(), None, Some(target)).await?.id],
-        TargetIdentifier::None => todo!(),
-    };
-
-    // FIXME: HACK
-    let instruction = AgentInstructionBody::Command {
-        command: "bash".to_string(),
-        args: vec!["-c".to_string(), command]
-    };
-
-    for agent_id in agent_ids {
-        modify_agent(state.clone(), async |agent| {
-            agent.queue_instruction(&instruction);
-        }, None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: agent_id }})).await?;
-    }
-
-    Ok(ConsoleResponse {
-        output: format!("command queued successfully"),
-        new_target: NewTarget::NoChange,
-    })
-}
-
-async fn eval(
-    state: SharedState,
-    agents: Option<TargetIdentifier>,
-    script: String,
-    current_target: Option<TargetIdentifier>,
-) -> Result<ConsoleResponse, ConsoleError> {
-    let target = get_target(current_target.clone(), agents.clone())?;
-
-    let agent_ids = match get_target(current_target, agents)? {
-        TargetIdentifier::Group { group: _} => get_group(state.clone(), None, Some(target)).await?,
-        TargetIdentifier::Agent { agent: _ } => vec![get_agent(state.clone(), None, Some(target)).await?.id],
-        TargetIdentifier::None => todo!(),
-    };
-
-    let instruction = AgentInstructionBody::Script {
-        script
-    };
-
-    for agent_id in agent_ids {
-        modify_agent(state.clone(), async |agent| {
-            agent.queue_instruction(&instruction);
-        }, None, Some(TargetIdentifier::Agent { agent: AgentIdentifier::ID { id: agent_id }})).await?;
-    }
-
-    Ok(ConsoleResponse {
-        output: format!("script queued successfully"),
-        new_target: NewTarget::NoChange,
-    })
-}
-
-async fn status(
-    state: SharedState,
-    agents: Option<TargetIdentifier>,
-    current_target: Option<TargetIdentifier>,
-) -> ConsoleResponse {
-    let mut state = state.write().await;
-    
-
-    todo!()
-}
-
 
 async fn help() -> Result<ConsoleResponse, ConsoleError> {
     let mut output: String = 
@@ -352,7 +228,7 @@ Commands:
 /// 1. Explicit
 /// 2. Implicit
 /// 3. None
-fn get_target(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<TargetIdentifier, ConsoleError> {
+fn expect_target(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<TargetIdentifier, ConsoleError> {
     match explicit {
         Some(target) => return Ok(target),
         None => {}
@@ -364,114 +240,112 @@ fn get_target(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentif
     }
 }
 
-fn expect_agent_ident(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<AgentIdentifier, ConsoleError> {
-    match explicit {
-        Some(target) => {
-            match target {
-                TargetIdentifier::Group { group: _ } => return Err(ConsoleError::from("expected agent identifier, got group identifier")),
-                TargetIdentifier::Agent { agent } => return Ok(agent),
-                TargetIdentifier::None => todo!(),
-            }
-        }
-        None => {}
-    }
-
-    match implicit {
-        Some(target) => {
-            match target {
-                TargetIdentifier::Group { group: _ } => return Err(ConsoleError::from("must be connected to agent, or agent must be specified")),
-                TargetIdentifier::Agent { agent } => return Ok(agent),
-                TargetIdentifier::None => todo!(),
-            }
-        }
-        None => return Err(ConsoleError::from("must be connected to agent, or agent must be specified")),
+fn expect_group(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<String, ConsoleError> {
+    let target = expect_target(implicit, explicit)?;
+    
+    match target {
+        TargetIdentifier::Agent { .. } => Err(ConsoleError::from("expected group, not agent")),
+        TargetIdentifier::Group { group } => Ok(group),
     }
 }
 
-fn expect_group_ident(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<String, ConsoleError> {
-    match explicit {
-        Some(target) => {
-            match target {
-                TargetIdentifier::Group { group } => return Ok(group),
-                TargetIdentifier::Agent { agent: _ } => return Err(ConsoleError::from("expected group identifier, got agent identifier")),
-                TargetIdentifier::None => todo!(),
-            }
-        }
-        None => {}
+fn expect_agent(implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<AgentIdentifier, ConsoleError> {
+    let target = expect_target(implicit, explicit)?;
+
+    match target {
+        TargetIdentifier::Group { .. } => Err(ConsoleError::from("expected agent, not group")),
+        TargetIdentifier::Agent { agent } => Ok(agent),
+    }
+}
+
+async fn get_group_name(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<String, ConsoleError> {
+    let group_name = expect_group(implicit, explicit)?;
+    
+    match state.read().await.groups.get(&group_name) {
+        Some(_) => Ok(group_name),
+        None => Err(ConsoleError::from(format!("group {group_name} not found"))),
     }
 
-    match implicit {
-        Some(target) => {
-            match target {
-                TargetIdentifier::Group { group } => return Ok(group),
-                TargetIdentifier::Agent { agent: _ } => return Err(ConsoleError::from("must be connected to gropu, or group must be specified")),
-                TargetIdentifier::None => todo!(),
+}
+
+async fn get_agent_id(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<u64, ConsoleError> {
+    let agent_ident = expect_agent(implicit, explicit)?;
+    
+    match agent_ident {
+        AgentIdentifier::Nickname { nickname } => {
+            match state.read().await.lookup_agent(&nickname) {
+                Some(id) => Ok(id),
+                None => Err(ConsoleError::from(format!("agent with nickname: {nickname} not found"))),
             }
-        }
-        None => return Err(ConsoleError::from("must be connected to agent, or agent must be specified")),
+        },
+        AgentIdentifier::ID { id } => {
+            match state.read().await.get_agent(&id) {
+                Some(_) => Ok(id),
+                None => Err(ConsoleError::from(format!("agent with id: {id} not found"))),
+            }
+        },
     }
 }
 
 async fn get_agent(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Agent, ConsoleError> {
-    let state = state.read().await;
-
-    let agent_ident = expect_agent_ident(implicit, explicit)?;
+    let id = get_agent_id(state.clone(), implicit, explicit).await?;
     
-    // let agent = match state.get_agent_by_ident(&agent_ident) {
-    //     Some(agent) => agent.clone(),
-    //     None => match agent_ident {
-    //         AgentIdentifier::Nickname { nickname } => return Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
-    //         AgentIdentifier::ID { id } => return Err(ConsoleError::from(format!("unable to find agent with id: {}", id))),
-    //         AgentIdentifier::None => todo!(),
-    //     }
-    // };
-    
-    // Ok(agent)
-    todo!()
+    match state.clone().read().await.get_agent(&id) {
+        Some(agent) => Ok(agent.clone()),
+        None => Err(ConsoleError::from("agent not found")),
+    }
 }
 
 async fn modify_agent<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
 where 
     F: AsyncFnOnce(&mut Agent)
 {
+    let agent_id = get_agent_id(state.clone(), implicit, explicit).await?;
+
     let mut state = state.write().await;
-    let agent_ident = expect_agent_ident(implicit, explicit)?;
-    let agent = state.get_agent_by_ident_mut(&agent_ident);
+    let agent = state.get_agent_mut(&agent_id);
 
     
     match agent {
-        Some(agent) => return Ok(closure(agent).await),
-        None => match agent_ident {
-            AgentIdentifier::Nickname { nickname } => Err(ConsoleError::from(format!("unable to find agent with nickname: {}", nickname))),
-            AgentIdentifier::ID { id } => Err(ConsoleError::from(format!("unable to find agent with id: {}", id))),
-            AgentIdentifier::None => todo!(),
-        }
+        Some(agent) => Ok(closure(agent).await),
+        None => Err(ConsoleError::from("agent not found"))
     }
 }
 
 async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<Vec<u64>, ConsoleError> {
-    let state = state.read().await;
-
-    let group_ident = expect_group_ident(implicit, explicit)?;
+    let group_name = get_group_name(state.clone(), implicit, explicit).await?;
     
-    match state.groups.get(&group_ident) {
-        Some(group) => return Ok(group.clone()),
-        None => Err(ConsoleError::from(format!("unable to find group: {}", group_ident))),
+    match state.clone().read().await.groups.get(&group_name) {
+        Some(agent) => Ok(agent.clone()),
+        None => Err(ConsoleError::from("agent not found")),
     }
 }
-
 
 async fn modify_group<F>(state: SharedState, closure: F, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<(), ConsoleError>
 where 
     F: AsyncFnOnce(&mut Vec<u64>)
 {
+    let group_name = get_group_name(state.clone(), implicit, explicit).await?;
+
     let mut state = state.write().await;
-    let group_ident = expect_group_ident(implicit, explicit)?;
-    let group = state.groups.get_mut(&group_ident);
+    let group = state.groups.get_mut(&group_name);
 
     
     match group {
         Some(group) => Ok(closure(group).await),
-        None => Err(ConsoleError::from(format!("unable to find group: {}", group_ident))),
+        None => Err(ConsoleError::from("group not found"))
     }
+}
+
+/// Returns simplified TargetIdentifier if agent/group is present in state, return ConsoleError
+/// otherwise
+async fn get_target(state: SharedState, implicit: Option<TargetIdentifier>, explicit: Option<TargetIdentifier>) -> Result<TargetIdentifier, ConsoleError> {
+    let target = expect_target(implicit.clone(), explicit.clone())?;
+
+    match target {
+        TargetIdentifier::Group { .. } => { let _ = get_group_name(state, implicit.clone(), explicit.clone()).await?; },
+        TargetIdentifier::Agent { .. } => { let _ = get_agent_id(state, implicit.clone(), explicit.clone()).await?; },
+    }
+
+    Ok(target)
 }

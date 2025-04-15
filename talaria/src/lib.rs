@@ -364,6 +364,8 @@ pub mod api {
 }
 
 pub mod console {
+    use std::default;
+
     use serde::{Deserialize, Serialize};
     use strum::EnumProperty;
     use strum::IntoEnumIterator;
@@ -375,16 +377,17 @@ pub mod console {
     // refers to agent via name or id, ex:
     // connect agent1
     // connect 12390122898
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum AgentIdentifier {
-        Nickname {
-            nickname: String,
-        },
-        ID {
-            id: u64,
-        },
-        #[default]
-        None,
+        Nickname { nickname: String },
+        ID { id: u64 },
+    }
+
+    // FIXME: hack to comply with EnumIter trait
+    impl Default for AgentIdentifier {
+        fn default() -> Self {
+            AgentIdentifier::ID { id: 0 }
+        }
     }
 
     impl Into<TargetIdentifier> for AgentIdentifier {
@@ -394,16 +397,19 @@ pub mod console {
     }
 
     // refers to group of agents or single agent
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     pub enum TargetIdentifier {
-        Group {
-            group: String,
-        },
-        Agent {
-            agent: AgentIdentifier,
-        },
-        #[default]
-        None,
+        Group { group: String },
+        Agent { agent: AgentIdentifier },
+    }
+
+    // FIXME: hack to comply with EnumIter trait
+    impl Default for TargetIdentifier {
+        fn default() -> Self {
+            TargetIdentifier::Agent {
+                agent: AgentIdentifier::ID { id: 0 },
+            }
+        }
     }
 
     impl ToString for TargetIdentifier {
@@ -413,9 +419,7 @@ pub mod console {
                 TargetIdentifier::Agent { agent } => match agent {
                     AgentIdentifier::Nickname { nickname } => format!("@{}", nickname),
                     AgentIdentifier::ID { id } => format!("@{}", id),
-                    _ => panic!(""),
                 },
-                _ => panic!(""),
             }
         }
     }
@@ -513,7 +517,7 @@ pub mod console {
             arg1 = "<target>",
             description = "Connects to an agent or group"
         ))]
-        Connect { agent: TargetIdentifier },
+        Connect { target: TargetIdentifier },
 
         #[strum(props(
             command = "disconnect",
@@ -1098,7 +1102,7 @@ pub mod console {
                 Command::Help => Command::Help,
                 Command::Disconnect => Command::Disconnect,
                 Command::Connect { .. } => Command::Connect {
-                    agent: self.parse_target_ident()?,
+                    target: self.parse_target_ident()?,
                 },
                 Command::Remove { .. } => Command::Remove {
                     target: self.parse_target_ident_vec()?,

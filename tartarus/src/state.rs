@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 
+use sysinfo::Disks;
+use sysinfo::System;
 use talaria::api::*;
-use talaria::console::*;
 use talaria::protocol::*;
 use tokio::sync::RwLock;
 
@@ -21,6 +23,21 @@ pub struct State {
 }
 
 impl State {
+    pub fn gen_packet_id(&mut self) -> u32 {
+        self.curr_packet_id += 1;
+        self.curr_packet_id - 1
+    }
+
+    pub fn lookup_agent(&self, nickname: &str) -> Option<u64> {
+        self.agents.iter().find_map(|(id, agent)| {
+            if agent.nickname.as_deref() == Some(nickname) {
+                Some(*id)
+            } else {
+                None
+            }
+        })
+    }
+
     pub fn get_agent(&self, agent_id: &u64) -> Option<&Agent> {
         self.agents.get(&agent_id)
     }
@@ -28,11 +45,6 @@ impl State {
     // this shouldn't be public because we can't trust the caller to not mess up state
     pub fn get_agent_mut(&mut self, agent_id: &u64) -> Option<&mut Agent> {
         self.agents.get_mut(&agent_id)
-    }
-
-    pub fn gen_packet_id(&mut self) -> u32 {
-        self.curr_packet_id += 1;
-        self.curr_packet_id - 1
     }
 
     /// Attempts to register an agent
@@ -90,36 +102,94 @@ impl State {
         };
     }
 
-    pub fn get_agent_id(&self, ident: &AgentIdentifier) -> Option<u64> {
-        match ident {
-            AgentIdentifier::Nickname { nickname } => {
-                for (_, agent) in self.agents.iter().enumerate() {
-                    if agent.1.nickname == Some(nickname.clone()) {
-                        return Some(*agent.0);
-                    }
-                }
-                None
+    pub fn get_tartarus_info(&self) -> TartarusInfo {
+        let mut sys = System::new_all();
+        sys.refresh_all();
+
+        let cpu_name = if let Some(cpu) = sys.cpus().first() {
+            Some(cpu.brand())
+        } else {
+            None
+        };
+
+        let mut storage_total = None;
+        let mut storage_used = None;
+
+        let disks = Disks::new_with_refreshed_list();
+
+        for disk in &disks {
+            if disk.mount_point() == Path::new("/") {
+                storage_total = Some(disk.total_space());
+                storage_used = Some(disk.total_space() - disk.available_space())
             }
-            AgentIdentifier::ID { id } => Some(*id),
-            AgentIdentifier::None => None,
+        }
+
+        TartarusInfo {
+            cpu_usage: sys.global_cpu_usage(),
+            memory_total: sys.total_memory(),
+            memory_used: sys.used_memory(),
+            storage_total: storage_total.unwrap(),
+            storage_used: storage_used.unwrap(),
+            cpu_name: cpu_name.unwrap().to_string(),
+            core_count: sys.cpus().len() as u64,
+            os: System::long_os_version().unwrap(),
+            kernel: System::kernel_version().unwrap(),
+            hostname: System::host_name().unwrap(),
+            uptime: System::uptime(),
         }
     }
 
-    ///TODO:this shouldn't be pub
-    pub fn get_agent_by_ident_mut(&mut self, ident: &AgentIdentifier) -> Option<&mut Agent> {
-        match ident {
-            AgentIdentifier::Nickname { nickname } => {
-                for (id, agent) in self.agents.clone() {
-                    if agent.nickname == Some(nickname.clone()) {
-                        return self.agents.get_mut(&id);
-                    }
-                }
-            }
-            AgentIdentifier::ID { id } => return self.agents.get_mut(&id),
-            AgentIdentifier::None => todo!(),
+    pub fn get_tartarus_stats(&self) -> TartarusStats {
+        let agents = self.agents.clone();
+        let statistics = self.statistics.clone();
+
+        TartarusStats {
+            registered_agents: agents.len() as u64,
+            active_agents: agents
+                .iter()
+                .map(|(_id, agent)| agent.is_active() as u64)
+                .sum(),
+            packets_sent: statistics.packets_sent,
+            packets_recv: statistics.packets_recv,
+            average_response_latency: statistics.get_average_latency(),
+            total_traffic: statistics.get_total_traffic(),
+            windows_agents: 0, // TODO: fix
+            linux_agents: agents.len() as u64,
+        }
+    }
+
+    pub fn get_agent_list(&self) -> Vec<AgentInfo> {
+        let agents: HashMap<u64, Agent> = self.agents.clone();
+        let mut agent_info: Vec<AgentInfo> = vec![];
+
+        for (_, agent) in agents {
+            agent_info.push(AgentInfo {
+                status: agent.is_active(),
+                name: agent.nickname,
+                id: agent.id,
+                external_ip: agent.external_ip.to_string(),
+                internal_ip: agent.internal_ip.to_string(),
+                os: agent.os,
+                ping: agent.ping.map(|p| p as f32 / 1000.0),
+            });
         }
 
-        return None;
+        agent_info
+    }
+
+    pub fn get_agent_history(&self, agent_id: u64, count: usize) -> Vec<NetworkHistoryEntry> {
+        let agents = self.agents.clone();
+
+        match agents.get(&agent_id) {
+            Some(agent) => agent
+                .network_history
+                .get_all(count)
+                .into_iter()
+                .cloned()
+                .collect(),
+
+            None => vec![],
+        }
     }
 
     pub fn from(config: Config) -> State {
