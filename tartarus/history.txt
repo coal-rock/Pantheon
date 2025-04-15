@@ -1,7 +1,4 @@
 #V2
-connect
-connect asdlkj 
-connect @123 
 help
 group 
 group
@@ -99,3 +96,6 @@ n s @asd123 @fortnite
 c g 
 c g @123 
 c g @1223 @123 
+help
+g
+help

@@ -8,7 +8,6 @@ pub struct Config {
     pub binary_path: PathBuf,
     pub token: Option<String>,
     pub history_buf_len: Option<usize>,
-    pub cors: String,
 }
 
 impl Default for Config {
@@ -18,7 +17,6 @@ impl Default for Config {
             address: "127.0.0.1".parse().unwrap(),
             binary_path: PathBuf::from("binaries/"),
             token: Some("bb123#123".to_string()),
-            cors: String::from("*"),
             history_buf_len: Some(1000),
         }
     }

@@ -1,10 +1,8 @@
 use rocket::{
     fairing::{Fairing, Info, Kind},
     http::Header,
-    Request, Response, State,
+    Request, Response,
 };
-
-use crate::SharedState;
 
 pub struct CORS;
 
@@ -18,20 +16,15 @@ impl Fairing for CORS {
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, response: &mut Response<'r>) {
-        let state = req.guard::<&State<SharedState>>().await.unwrap();
-        let config = &state.read().await.config;
-
-        response.set_header(Header::new(
-            "Access-Control-Allow-Origin",
-            config.cors.clone(),
-        ));
-        response.set_header(Header::new(
-            "Access-Control-Allow-Methods",
-            "GET, POST, PUT, DELETE, OPTIONS",
-        ));
-        response.set_header(Header::new(
-            "Access-Control-Allow-Headers",
-            "Content-Type, Authorization",
-        ));
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Methods", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
     }
+}
+
+#[options("/<_..>")]
+pub fn cors_preflight_hack() {}
+
+pub fn routes() -> Vec<rocket::Route> {
+    rocket::routes![cors_preflight_hack]
 }
