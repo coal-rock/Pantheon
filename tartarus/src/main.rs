@@ -11,7 +11,6 @@ mod console_interface;
 mod console_lib;
 mod console_net;
 mod cors;
-mod script;
 mod state;
 mod statistics;
 

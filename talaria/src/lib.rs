@@ -3,6 +3,22 @@ pub mod protocol {
     use bincode::{Decode, Encode};
     use serde::{Deserialize, Serialize};
 
+    #[derive(Clone, Debug, Encode, Decode, Serialize, Deserialize)]
+    pub struct Script {
+        pub source: String,
+        pub description: String,
+        pub title: String,
+    }
+
+    impl ToString for Script {
+        fn to_string(&self) -> String {
+            format!(
+                "Title: {}\nDescription: {}\n\n{}",
+                self.title, self.description, self.source
+            )
+        }
+    }
+
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
     pub struct OS {
         pub os_type: OSType,
@@ -94,7 +110,8 @@ pub mod protocol {
 
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentInstructionBody {
-        Script { script: String },
+        Script(Script),
+        Rhai(String),
         Command { command: String, args: Vec<String> },
         Ok,
     }
@@ -106,8 +123,9 @@ pub mod protocol {
                     command: _,
                     args: _,
                 } => "Command",
-                AgentInstructionBody::Script { script: _ } => "Script",
+                AgentInstructionBody::Script(_) => "Script",
                 AgentInstructionBody::Ok => "Ok",
+                AgentInstructionBody::Rhai(_) => "Rhai",
             }
         }
 
@@ -117,7 +135,8 @@ pub mod protocol {
                     format!("Command: {}\nArgs: {:#?}", command, args)
                 }
                 AgentInstructionBody::Ok => String::from("None"),
-                AgentInstructionBody::Script { script } => script.into(),
+                AgentInstructionBody::Script(script) => script.title.clone(),
+                AgentInstructionBody::Rhai(source) => source.clone(),
             }
         }
     }
@@ -182,7 +201,7 @@ pub mod api {
     use crate::{helper::current_time, protocol::*};
     use bytesize::ByteSize;
     use serde::{Deserialize, Serialize};
-    use serde_json::to_string;
+
     use std::{
         collections::{BTreeSet, HashMap, VecDeque},
         net::SocketAddr,

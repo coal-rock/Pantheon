@@ -10,7 +10,6 @@ use talaria::protocol::*;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
-use crate::script::Script;
 use crate::statistics::Statistics;
 
 #[derive(Default, Clone)]
@@ -19,7 +18,7 @@ pub struct State {
     pub statistics: Statistics,
     pub agents: HashMap<u64, Agent>,
     pub groups: HashMap<String, Vec<u64>>,
-    pub scripts: HashMap<String, Script>,
+    scripts: HashMap<String, Script>,
     // TODO: This being sequential isn't the best idea, but it works for now
     curr_packet_id: u32,
 }
@@ -74,6 +73,16 @@ impl State {
         match self.agents.get_mut(&agent_id) {
             Some(agent) => agent.pop_instruction(),
             None => None,
+        }
+    }
+
+    pub fn push_instruction(&mut self, agent_id: &u64, instruction: &AgentInstructionBody) -> bool {
+        match self.agents.get_mut(&agent_id) {
+            Some(agent) => {
+                agent.queue_instruction(instruction);
+                true
+            }
+            None => false,
         }
     }
 
@@ -189,6 +198,14 @@ impl State {
 
             None => vec![],
         }
+    }
+
+    pub fn get_script(&self, script_name: String) -> Option<&Script> {
+        self.scripts.get(&script_name)
+    }
+
+    pub fn get_all_scripts(&self) -> Vec<&Script> {
+        self.scripts.values().collect()
     }
 
     pub fn from(config: Config) -> State {

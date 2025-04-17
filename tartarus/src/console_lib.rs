@@ -1,5 +1,7 @@
-use crate::{admin::tartarus_info, SharedState};
-use talaria::{api::{Agent, AgentInfo}, console::*};
+use crate::SharedState;
+use talaria::api::{Agent, AgentInfo};
+use talaria::console::*;
+use talaria::protocol::AgentInstructionBody;
 
 pub async fn evaluate_command(
     state: SharedState,
@@ -11,7 +13,7 @@ pub async fn evaluate_command(
         Command::Nickname(command) => nickname(state, command_context.current_target, command).await,
         Command::Group(command) => group(state, command_context.current_target, command).await,
         Command::Show(command) => show(state, command).await,
-        Command::Run(run_command) => todo!(),
+        Command::Run(command) => run(state, command_context.current_target, command).await,
         Command::Remove { target } => todo!(),
         Command::Clear => clear().await,
         Command::Help => help().await,
@@ -177,7 +179,7 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
                 let agents = state.read().await.get_agent_list();
                 let agents = agents.iter().map(|a| a.to_string()).collect::<Vec<String>>();
             
-                Ok(match agents.len() > 0 {
+                Ok(match !agents.is_empty() {
                     true => {
                         let mut output = String::new();
                         output.push_str(&AgentInfo::header());
@@ -192,7 +194,7 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
         ShowCommand::Groups => {
             let groups = state.read().await.groups.clone();
 
-            Ok(match groups.len() > 0 {
+            Ok(match !groups.is_empty() {
                 true => {
                     let mut output = String::new();
 
@@ -237,7 +239,21 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
                     new_target: NewTarget::NoChange,
                 })
             },
-        ShowCommand::Scripts => todo!(),
+        ShowCommand::Scripts => {
+           
+            let handle = state.read().await;
+            let scripts = handle.get_all_scripts().clone();
+
+            match !scripts.is_empty() {
+                true => {
+                    Ok(ConsoleResponse {
+                        output: scripts.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n"),
+                        new_target: NewTarget::NoChange,
+                    })
+                } 
+                false => Err(ConsoleError::from("no scripts found"))
+            }
+        },
         ShowCommand::Stats => {
             let tartarus_stats = state.read().await.get_tartarus_stats().to_string();
 
@@ -250,6 +266,76 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
     }
 }
 
+
+async fn run(state: SharedState, current_target: Option<TargetIdentifier>, command: RunCommand) -> Result<ConsoleResponse, ConsoleError> {
+    match command {
+        RunCommand::Script { target, script_name } => {
+            let target = expect_target(current_target, target)?;
+
+            let script = {
+                let handle = state.read().await;
+
+                match handle.get_script(script_name) {
+                    Some(script) => script.clone(),
+                    None => return Err(ConsoleError::from("script not found")),
+                }
+            };
+
+            let ids = match target.clone() {
+                TargetIdentifier::Group { .. } => get_group(state.clone(), None, Some(target)).await?,
+                TargetIdentifier::Agent { .. } => vec![get_agent_id(state.clone(), None, Some(target)).await?],
+            };
+
+            for id in ids {
+                push_instruction(state.clone(), id, &AgentInstructionBody::Script(script.clone())).await?;
+            }
+            
+            Ok(ConsoleResponse {
+                output: String::from("successfully queued script"),
+                new_target: NewTarget::NoChange,
+            })
+        },
+        RunCommand::Rhai { target, scripts_contents } => {
+            let target = expect_target(current_target, target)?;
+
+            let ids = match target.clone() {
+                TargetIdentifier::Group { .. } => get_group(state.clone(), None, Some(target)).await?,
+                TargetIdentifier::Agent { .. } => vec![get_agent_id(state.clone(), None, Some(target)).await?],
+            };
+
+            for id in ids {
+                push_instruction(state.clone(), id, &AgentInstructionBody::Rhai(scripts_contents.clone())).await?;
+            }
+            
+            Ok(ConsoleResponse {
+                output: String::from("successfully queued script"),
+                new_target: NewTarget::NoChange,
+            })
+        },
+        RunCommand::Shell { target, shell_command } => {
+            let target = expect_target(current_target, target)?;
+
+            let ids = match target.clone() {
+                TargetIdentifier::Group { .. } => get_group(state.clone(), None, Some(target)).await?,
+                TargetIdentifier::Agent { .. } => vec![get_agent_id(state.clone(), None, Some(target)).await?],
+            };
+
+            for id in ids {
+                // FiXME: hack
+                push_instruction(state.clone(), id, &AgentInstructionBody::Command {
+                    command: String::from("bash"),
+                    args: vec![String::from("-c"), shell_command.clone()],
+                }).await?
+            }
+            
+            Ok(ConsoleResponse {
+                output: String::from("successfully queued shell code"),
+                new_target: NewTarget::NoChange,
+            })
+        },
+        RunCommand::None => todo!(),
+    }
+}
 
 async fn todo() -> Result<ConsoleResponse, ConsoleError> {
     Ok(ConsoleResponse {
@@ -387,6 +473,13 @@ async fn get_group(state: SharedState, implicit: Option<TargetIdentifier>, expli
     match state.clone().read().await.groups.get(&group_name) {
         Some(agent) => Ok(agent.clone()),
         None => Err(ConsoleError::from("agent not found")),
+    }
+}
+
+async fn push_instruction(state: SharedState, agent_id: u64, instruction: &AgentInstructionBody) -> Result<(), ConsoleError> {
+    match state.write().await.push_instruction(&agent_id, instruction) {
+        true => Ok(()),
+        false => Err(ConsoleError::from("agent not found")),
     }
 }
 
