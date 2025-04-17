@@ -18,3 +18,12 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
+
+[profile.minify]
+inherits = "release"
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
