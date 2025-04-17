@@ -1,5 +1,5 @@
-use crate::SharedState;
-use talaria::{api::Agent, console::*};
+use crate::{admin::tartarus_info, SharedState};
+use talaria::{api::{Agent, AgentInfo}, console::*};
 
 pub async fn evaluate_command(
     state: SharedState,
@@ -134,7 +134,7 @@ async fn group(state: SharedState, current_target: Option<TargetIdentifier>, com
             }, current_target, Some(TargetIdentifier::Group { group: group_name })).await?;
 
             Ok(ConsoleResponse {
-                output: format!("successfully added agents to group"),
+                output: format!("successfully added agent(s) to group"),
                 new_target: NewTarget::NoTarget,
             })
         },
@@ -152,7 +152,7 @@ async fn group(state: SharedState, current_target: Option<TargetIdentifier>, com
             }, current_target, Some(TargetIdentifier::Group { group: group_name })).await?;
 
             Ok(ConsoleResponse {
-                output: format!("successfully removed agents from group"),
+                output: format!("successfully removed agent(s) from group"),
                 new_target: NewTarget::NoTarget,
             })
         },
@@ -173,10 +173,79 @@ async fn group(state: SharedState, current_target: Option<TargetIdentifier>, com
 
 async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleResponse, ConsoleError> {
     match command {
-        ShowCommand::Agents => todo!(),
-        ShowCommand::Groups => todo!(),
-        ShowCommand::Server => todo!(),
+        ShowCommand::Agents => {
+                let agents = state.read().await.get_agent_list();
+                let agents = agents.iter().map(|a| a.to_string()).collect::<Vec<String>>();
+            
+                Ok(match agents.len() > 0 {
+                    true => {
+                        let mut output = String::new();
+                        output.push_str(&AgentInfo::header());
+                        output.push_str("\n");
+                        output.push_str(&agents.join("\n"));
+
+                        ConsoleResponse { output, new_target: NewTarget::NoChange }
+                    }
+                    false => ConsoleResponse { output: format!("no agents found"), new_target: NewTarget::NoChange },
+                })
+            },
+        ShowCommand::Groups => {
+            let groups = state.read().await.groups.clone();
+
+            Ok(match groups.len() > 0 {
+                true => {
+                    let mut output = String::new();
+
+                    for (name, agents) in groups {
+                        output.push_str(&name);
+                        output.push_str(":\n");
+
+                        for agent in agents {
+                            let handle = state.read().await;
+                            let agent = handle.get_agent(&agent).clone();
+
+                            match agent {
+                                Some(agent) => {
+                                    output.push_str("[");
+                                    output.push_str(&agent.nickname.clone().unwrap_or(String::from("?")));
+                                    output.push_str("] "); 
+                                    output.push_str(&agent.id.to_string());
+                                    output.push_str("\n");
+                                }
+                                None => {},
+                            } 
+                        }
+                    }
+                  
+                    // remove trailing newline
+                    output.truncate(output.len() - 1);
+
+                    ConsoleResponse {
+                        output,
+                        new_target: NewTarget::NoChange,
+                    }
+                },
+                false => ConsoleResponse {output: String::from("no groups found"), new_target: NewTarget::NoChange },
+            })
+
+        },
+        ShowCommand::Server => {
+                let tartarus_info = state.read().await.get_tartarus_info().to_string();
+
+                Ok(ConsoleResponse {
+                    output: tartarus_info,
+                    new_target: NewTarget::NoChange,
+                })
+            },
         ShowCommand::Scripts => todo!(),
+        ShowCommand::Stats => {
+            let tartarus_stats = state.read().await.get_tartarus_stats().to_string();
+
+            Ok(ConsoleResponse {
+                output: tartarus_stats,
+                new_target: NewTarget::NoChange,
+            })
+        },
         ShowCommand::Target(target_identifier) => todo!(),
     }
 }

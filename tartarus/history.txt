@@ -1,84 +1,5 @@
 #V2
 help
-group 
-group
-help
-group
-help
-help 
-g c 
-help
-helphelp 
-fg
-help
-h
-grou
-group 
-g
-help
-disconnect 
-group create
-help 
-help
-disconnect 
-nickname set 
-connect 
-help
-group crea aasdadasdte asdlasdte ate ate ate ate ate ate ate ate ate ate ate ate ate ate 
-scripts 
-scripts
-s
-help 
-scripts 
-group 
-group create 
-group add 
-scripts 
-connect 
-disconn cect cect cect cect cect cect ccect cect cect cect cect cccect cect ccccccccect c
-discon cect
-discon @123
-discon 
-disconnect 
-disc 
-ds
-d
-c
-c 1 
-c @1
-c @asd
-group add 
-group add
-group add 
-help
-help 
-group add
-help
-n set 
-n set #123 
-help 
-help
-connect fortnite
-booooo
-help 
-nickname
-nickname set 
-nickname set @fortnite
-nickname set @fortnite balls
-show 
-n
-n s
-sjjd dchb fhgeuxnk gyfgeyy f
-connect @nshdshjdsh dhdhdhe udh 
-yayayyayay
-help
-grou
-gro
-sho
-nick
- con
-disc
-help
 nickname set balls 
 nickname set balls @a
 help
@@ -99,3 +20,82 @@ c g @1223 @123
 help
 g
 help
+hel
+show ag
+sh agents 
+s a 
+clera 
+cls 
+c 
+c
+cl
+s a 
+s a
+cl
+s a
+s a 
+s a
+s a 
+s a
+s a 
+nickname set
+n set 6034718805809558355 fortnite
+n set 6034718805809558355 @fortnite
+n set @6034718805809558355 fortnite
+n set @6034718805809558355 @fortnite
+s a 
+fg
+s s 
+ss 
+s s 
+ls 
+help
+s s 
+clear
+ls 
+clear 
+s s 
+s s
+ls
+l 
+l s 
+ls 
+help
+s s 
+clear 
+fg
+ ss 
+s s 
+clear 
+s st
+help
+show 
+clear
+help
+show
+help
+show stats 
+s g 
+g c #fortnite
+s g 
+l
+s
+s a 
+g a 6034718805809558355#fortnite
+g a 6034718805809558355 #fortnite
+a s 
+g s 
+clear 
+hep
+help
+a s 
+s a 
+g c #fortnite
+g a @6034718805809558355 #fortnite 
+g a #6034718805809558355 #fortnite 
+g a #6034718805809558355 @fortnite 
+g a #fortnite @6034718805809558355
+g c #fortnite
+g a #fortnite @6034718805809558355
+s g 
+h

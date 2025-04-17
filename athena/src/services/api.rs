@@ -15,7 +15,7 @@ pub struct Api {
 impl Api {
     pub fn new(api_base: &str, token: &str) -> Api {
         Api {
-            api_base: Url::parse(api_base).unwrap_or(Url::parse("http://localhost:8080").unwrap()),
+            api_base: Url::parse(api_base).unwrap_or(Url::parse("http://localhost:8000").unwrap()),
             client: Client::new(),
             token: token.to_string(),
         }
@@ -110,10 +110,6 @@ impl Api {
             Ok(url) => url,
             Err(_) => return false,
         };
-
-        let path = url
-            .join(&format!("/api/admin{}", "/tartarus_info"))
-            .unwrap_or(Url::parse("http://0.0.0.0").unwrap());
 
         match self
             .client

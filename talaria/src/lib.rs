@@ -30,6 +30,16 @@ pub mod protocol {
         Other,
     }
 
+    impl ToString for OSType {
+        fn to_string(&self) -> String {
+            match self {
+                OSType::Windows => String::from("Windows"),
+                OSType::Linux => String::from("Linux"),
+                OSType::Other => String::from("Other"),
+            }
+        }
+    }
+
     #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug)]
     pub enum AgentResponseBody {
         CommandResponse {
@@ -170,7 +180,9 @@ pub mod protocol {
 
 pub mod api {
     use crate::{helper::current_time, protocol::*};
+    use bytesize::ByteSize;
     use serde::{Deserialize, Serialize};
+    use serde_json::to_string;
     use std::{
         collections::{BTreeSet, HashMap, VecDeque},
         net::SocketAddr,
@@ -335,7 +347,58 @@ pub mod api {
         pub ping: Option<f32>,
     }
 
+    impl AgentInfo {
+        pub fn header() -> String {
+            fn rpad(input: &str, width: i32) -> String {
+                let pad_count = std::cmp::max(width - input.len() as i32, 0) as usize;
+                format!("{}{}", input, " ".repeat(pad_count))
+            }
+
+            format!(
+                "{}{}{}{}{}{}{}",
+                rpad("Name", 16),
+                rpad("ID", 21),
+                rpad("OS", 9),
+                rpad("Internal IP", 20),
+                rpad("External IP", 20),
+                rpad("Ping", 8),
+                rpad("Status", 6),
+            )
+        }
+    }
+
+    impl ToString for AgentInfo {
+        fn to_string(&self) -> String {
+            fn rpad(input: &str, width: i32) -> String {
+                let pad_count = std::cmp::max(width - input.len() as i32, 0) as usize;
+                format!("{}{}", input, " ".repeat(pad_count))
+            }
+
+            let name = self.name.clone().unwrap_or("?".into());
+            let id = self.id.to_string();
+            let os = self.os.os_type.to_string();
+            let ping = format!("{}ms", self.ping.unwrap_or(0.0));
+            let status = match self.status {
+                true => "Online",
+                false => "Offline",
+            };
+
+            format!(
+                "{}{}{}{}{}{}{}",
+                rpad(&name, 16),
+                rpad(&id, 21),
+                rpad(&os, 9),
+                rpad(&self.internal_ip, 20),
+                rpad(&self.external_ip, 20),
+                rpad(&ping, 8),
+                rpad(&status, 6),
+            )
+        }
+    }
+
     #[derive(Debug, Serialize, Deserialize, Clone)]
+    /// All values regarding memory/storage are
+    /// stored as number of bytes
     pub struct TartarusInfo {
         pub cpu_usage: f32,
         pub memory_total: u64,
@@ -350,6 +413,39 @@ pub mod api {
         pub uptime: u64,
     }
 
+    impl ToString for TartarusInfo {
+        fn to_string(&self) -> String {
+            format!(
+                r#"CPU Usage:     {:.2}%
+CPU(s):        {}
+
+Memory Usage:  {}
+Storage Usage: {}
+
+OS:            {} 
+Kernel:        {}
+Hostname:      {}"#,
+                self.cpu_usage,
+                self.cpu_name,
+                format!(
+                    "{} / {} [{:.2}%]",
+                    ByteSize::b(self.memory_used).display().si(),
+                    ByteSize::b(self.memory_total).display().si(),
+                    (self.memory_used as f32 / self.memory_total as f32) * 100.0
+                ),
+                format!(
+                    "{} / {} [{:.2}%]",
+                    ByteSize::b(self.storage_used).display().si(),
+                    ByteSize::b(self.storage_total).display().si(),
+                    (self.storage_used as f32 / self.storage_total as f32) * 100.0
+                ),
+                self.os,
+                self.kernel,
+                self.hostname,
+            )
+        }
+    }
+
     #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct TartarusStats {
         pub registered_agents: u64,
@@ -361,11 +457,35 @@ pub mod api {
         pub windows_agents: u64,
         pub linux_agents: u64,
     }
+
+    impl ToString for TartarusStats {
+        fn to_string(&self) -> String {
+            format!(
+                r#"Registered Agents:         {}
+Active Agents:             {}
+
+Packets Sent:              {}
+Packets Received:          {}
+
+Average Response Latency:  {:.2}ms 
+Total Traffic:             {}
+
+Windows Agents:            {}
+Linux Agents:              {}"#,
+                self.registered_agents,
+                self.active_agents,
+                self.packets_sent,
+                self.packets_recv,
+                self.average_response_latency,
+                ByteSize::b(self.total_traffic).display().si(),
+                self.windows_agents,
+                self.linux_agents
+            )
+        }
+    }
 }
 
 pub mod console {
-    use std::default;
-
     use serde::{Deserialize, Serialize};
     use strum::EnumProperty;
     use strum::IntoEnumIterator;
@@ -544,7 +664,7 @@ pub mod console {
 
         #[strum(props(
             command = "show",
-            arg1 = "<agents | groups | server | scripts | [target]>",
+            arg1 = "<agents | groups | server | scripts | stats | [target]>",
             description = "Displays information",
         ))]
         Show(ShowCommand),
@@ -580,8 +700,13 @@ pub mod console {
         Agents,
         #[strum(props(command = "groups", description = "Shows information about all groups"))]
         Groups,
-        #[strum(props(command = "server", description = "Shows information about tartarus"))]
+        #[strum(props(
+            command = "server",
+            description = "Shows information about hosting server"
+        ))]
         Server,
+        #[strum(props(command = "stats", description = "Shows statistics"))]
+        Stats,
         #[strum(props(command = "scripts", description = "Shows available scripts"))]
         Scripts,
         #[strum(props(
@@ -1196,6 +1321,7 @@ pub mod console {
                 ShowCommand::Groups => ShowCommand::Groups,
                 ShowCommand::Server => ShowCommand::Server,
                 ShowCommand::Scripts => ShowCommand::Scripts,
+                ShowCommand::Stats => ShowCommand::Stats,
                 ShowCommand::Target(_) => ShowCommand::Target(self.parse_opt_target_ident(true)?),
             })
         }

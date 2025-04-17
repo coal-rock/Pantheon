@@ -10,6 +10,7 @@ use talaria::protocol::*;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
+use crate::script::Script;
 use crate::statistics::Statistics;
 
 #[derive(Default, Clone)]
@@ -18,6 +19,7 @@ pub struct State {
     pub statistics: Statistics,
     pub agents: HashMap<u64, Agent>,
     pub groups: HashMap<String, Vec<u64>>,
+    pub scripts: HashMap<String, Script>,
     // TODO: This being sequential isn't the best idea, but it works for now
     curr_packet_id: u32,
 }
@@ -159,22 +161,19 @@ impl State {
     }
 
     pub fn get_agent_list(&self) -> Vec<AgentInfo> {
-        let agents: HashMap<u64, Agent> = self.agents.clone();
-        let mut agent_info: Vec<AgentInfo> = vec![];
-
-        for (_, agent) in agents {
-            agent_info.push(AgentInfo {
-                status: agent.is_active(),
-                name: agent.nickname,
-                id: agent.id,
-                external_ip: agent.external_ip.to_string(),
-                internal_ip: agent.internal_ip.to_string(),
-                os: agent.os,
-                ping: agent.ping.map(|p| p as f32 / 1000.0),
-            });
-        }
-
-        agent_info
+        self.agents
+            .clone()
+            .iter()
+            .map(|(_, a)| AgentInfo {
+                status: a.is_active(),
+                name: a.nickname.clone(),
+                id: a.id,
+                external_ip: a.external_ip.to_string(),
+                internal_ip: a.internal_ip.to_string(),
+                os: a.os.clone(),
+                ping: a.ping.map(|p| p as f32 / 1000.0),
+            })
+            .collect::<Vec<AgentInfo>>()
     }
 
     pub fn get_agent_history(&self, agent_id: u64, count: usize) -> Vec<NetworkHistoryEntry> {
@@ -197,6 +196,7 @@ impl State {
             config,
             agents: HashMap::new(),
             groups: HashMap::new(),
+            scripts: HashMap::new(),
             statistics: Statistics::default(),
             curr_packet_id: 0,
         }
