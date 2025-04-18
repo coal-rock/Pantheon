@@ -5,7 +5,6 @@ extern crate log;
 mod admin;
 mod agent;
 mod auth;
-mod binaries;
 mod config;
 mod console_interface;
 mod console_lib;
@@ -30,7 +29,6 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
         .mount("/api/admin", admin::routes())
         .mount("/api/admin/console", console_net::routes())
         .mount("/api/agent", agent::routes())
-        .mount("/api/binaries", binaries::routes())
         .manage(shared_state)
         .attach(CORS)
         .configure(rocket::Config {

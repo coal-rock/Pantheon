@@ -9,7 +9,6 @@ use std::{net::IpAddr, path::PathBuf};
 pub struct Config {
     pub port: u16,
     pub address: IpAddr,
-    pub binary_path: PathBuf,
     pub token: Option<String>,
     pub history_buf_len: Option<usize>,
 }
@@ -19,7 +18,6 @@ impl Default for Config {
         Config {
             port: 8000,
             address: "0.0.0.0".parse().unwrap(),
-            binary_path: PathBuf::from("binaries/"),
             token: Some("bb123#123".to_string()),
             history_buf_len: Some(1000),
         }
