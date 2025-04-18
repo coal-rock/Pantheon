@@ -53,6 +53,11 @@ jobs:
           cd athena
           npx @tailwindcss/cli -i input.css -o assets/tailwind.css
 
+      - name: Fix Athena Dioxus.toml (hack)
+        run: |
+          cd athena
+          rm Dioxus.toml
+          printf "[application]\n\n[web.app]\ntitle = \"Athena\"\nbase_path = \"Pantheon\"\n\n\n[web.watcher]\nwatch_path = [\"src\", \"assets\"]" > Dioxus.toml
 
       - name: Build Athena (Web)
         run: |
@@ -97,16 +102,9 @@ jobs:
         with:
           name: tartarus-binary
           path: tartarus-bin/release/tartarus
-      
-      - name: Configure Athena Folder for Deployment
-        run: |
-          mkdir ./target/dx/athena/release/web/Pantheon
-          mkdir ./target/dx/athena/release/web/Pantheon/Pantheon
-          cp -r ./target/dx/athena/release/web/public/* ./target/dx/athena/release/web/Pantheon/Pantheon/
-          rm -rf ./target/dx/athena/release/web/public/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/dx/athena/release/web/Pantheon
+          publish_dir: ./target/dx/athena/release/web/public
