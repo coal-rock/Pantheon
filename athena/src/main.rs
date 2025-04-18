@@ -19,7 +19,7 @@ enum Route {
 #[component]
 fn App() -> Element {
     let host = use_synced_storage::<LocalStorage, String>("host".to_string(), || {
-        String::from("http://localhost:8080")
+        String::from("http://localhost:8000")
     });
     let token = use_synced_storage::<LocalStorage, String>("token".to_string(), || String::new());
 
