@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+openssl-sys = { version = "0.9", features = ["vendored"] }
 rhai = { version = "1.21.0", features = ["sync"] }
 reqwest = { version = "0.12.15" }
 tokio = { version = "1", features = ["full"] }
@@ -14,4 +15,3 @@ mac_address = "1.1.7"
 rand = "0.9.0"
 anyhow = "1.0"
 local-ip-address = "0.6.3"
-
