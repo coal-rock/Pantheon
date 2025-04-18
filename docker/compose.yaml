@@ -1,0 +1,32 @@
+services:
+  tartarus:
+    environment:
+      ENV PORT: 8000
+      ADDRESS: "0.0.0.0"
+      TOKEN: "bb123#123"
+      HISTORY_BUFF_LEN: 1000
+
+    build: 
+      context: ../
+      dockerfile: docker/tartarus/Dockerfile
+
+    ports: 
+      - "8000:8000"
+
+    networks:
+      - back
+
+  athena:
+    build: 
+      context: ../
+      dockerfile: docker/athena/Dockerfile
+
+    ports: 
+      - "80:80"
+
+    networks:
+      - front 
+
+networks:
+  front:
+  back:
