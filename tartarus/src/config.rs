@@ -14,7 +14,7 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             port: 8000,
-            address: "127.0.0.1".parse().unwrap(),
+            address: "0.0.0.0".parse().unwrap(),
             binary_path: PathBuf::from("binaries/"),
             token: Some("bb123#123".to_string()),
             history_buf_len: Some(1000),
