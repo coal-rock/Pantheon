@@ -45,33 +45,7 @@ async fn rocket(shared_state: SharedState) -> Rocket<Build> {
 async fn main() -> Result<(), rocket::Error> {
     env_logger::init();
 
-    let config_path: PathBuf = PathBuf::from("tartarus.toml");
-
-    let config: Config = match fs::read_to_string(&config_path) {
-        Err(_) => {
-            println!(
-                "Config file not found at: {}",
-                config_path.into_os_string().into_string().unwrap()
-            );
-            println!("Using default values");
-            Config::default()
-        }
-        Ok(config_str) => {
-            println!(
-                "Config file found at: {}",
-                config_path.into_os_string().into_string().unwrap()
-            );
-
-            match toml::from_str::<Config>(&config_str) {
-                Ok(config) => config,
-                Err(_) => {
-                    println!("Unable to parse config file");
-                    println!("Using default values:\n");
-                    Config::default()
-                }
-            }
-        }
-    };
+    let config = Config::new("tartarus.toml");
 
     println!("\nConfiguration:");
     println!("--------------------------");

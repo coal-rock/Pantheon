@@ -1,3 +1,7 @@
+use figment::{
+    providers::{Env, Format, Serialized, Toml},
+    Figment,
+};
 use serde::{Deserialize, Serialize};
 use std::{net::IpAddr, path::PathBuf};
 
@@ -19,5 +23,15 @@ impl Default for Config {
             token: Some("bb123#123".to_string()),
             history_buf_len: Some(1000),
         }
+    }
+}
+
+impl Config {
+    pub fn new(file_path: &str) -> Config {
+        Figment::from(Serialized::defaults(Config::default()))
+            .merge(Toml::file(file_path))
+            .merge(Env::prefixed(""))
+            .extract()
+            .unwrap()
     }
 }
