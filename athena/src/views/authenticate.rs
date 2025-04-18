@@ -71,7 +71,7 @@ pub fn Authenticate() -> Element {
                                 class: "flex flex-col items-center justify-center w-full h-full",
                                 TextInput {
                                     label: "Host",
-                                    placeholder: "http://localhost:8080",
+                                    placeholder: "http://localhost:8000",
                                     status: online(),
                                     value: host,
                                 }
