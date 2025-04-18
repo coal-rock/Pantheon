@@ -22,7 +22,7 @@
 </div>
 
 > [!WARNING]  
-> Panthon is very much still pre-release software!
+> Pantheon is very much still pre-release software!
 > 
 > If you're thinking about employing this in a competition environment, please feel free to reach out for help with deployment or with any issues that may arise, we're happy to help :)
 
@@ -37,17 +37,27 @@ Pantheon/
 ├── athena/     # web-based frontend built using Dioxus
 ├── hermes/     # cross-platform agent
 ├── talaria/    # library implementing shared functionality between other components
-└── tartarus/   # server built using Rocket
+└── tartarus/   # backend server built using Rocket
 ```
 
 ## Getting Started
 Up-to-date builds can be found on either the [Releases](https://github.com/Machina-Software/Pantheon/releases) page or by pulling artifacts from [GitHub Actions](https://github.com/Machina-Software/Pantheon/actions).
 
+### Agent
 For proper deployments, it is currently necessary to manually build at least the agent, _Hermes_, from source, as its default configuration is baked into the binary to be as portable as possible. This can be accomplished with the following commands:
 ```bash
-git clone https://github.com/Machina-Software/Pantheon
+git clone https://github.com/coal-rock/Pantheon
 cd Pantheon/hermes
-URL="127.0.0.1:8080" POLL_INTERVAL_MS="10000" cargo build --release
+URL="http://localhost:8000/api/agent" POLL_INTERVAL_MS=10000 cargo build --release
+```
+Additionally, an agent build prioritizing minimal binary size can be achieved through the `build.sh` file present in the `hermes` directory.
+
+### Server
+For deploying the entire server stack, the only supported route of installation is through Docker Compose:
+```bash
+git clone https://github.com/coal-rock/Pantheon
+cd Pantheon/docker
+docker compose up -d
 ```
 
 ## Supported Platforms
