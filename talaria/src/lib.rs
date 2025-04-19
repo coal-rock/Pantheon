@@ -1137,18 +1137,19 @@ pub mod console {
                     }
                 }
                 false => {
-                    let mut chars = self.peek(CommandError::ExpectedAgentIdentifier)?.chars();
-                    let predicate = chars.next().ok_or(CommandError::ExpectedAgentIdentifier)?;
-                    let first_char = chars.next().ok_or(CommandError::ParsingError)?;
-
-                    if predicate != '@' {
-                        return Ok(None);
-                    }
-
-                    match first_char {
-                        'a'..='z' | 'A'..='Z' => Ok(Some(self.parse_agent_ident()?)),
-                        _ => Ok(None),
-                    }
+                    // let mut chars = self.peek(CommandError::ExpectedAgentIdentifier)?.chars();
+                    // let predicate = chars.next().ok_or(CommandError::ExpectedAgentIdentifier)?;
+                    // let first_char = chars.next().ok_or(CommandError::ParsingError)?;
+                    //
+                    // if predicate != '@' {
+                    //     return Ok(None);
+                    // }
+                    //
+                    // match first_char {
+                    //     'a'..='z' | 'A'..='Z' => Ok(Some(self.parse_agent_ident()?)),
+                    //     _ => Ok(None),
+                    // }
+                    panic!("deprecateed")
                 }
             }
         }
@@ -1302,10 +1303,23 @@ pub mod console {
             let command = self.parse_command::<NicknameCommand>()?;
 
             Ok(match command {
-                NicknameCommand::Set { .. } => NicknameCommand::Set {
-                    agent: self.parse_opt_agent_ident(false)?,
-                    nickname: self.parse_agent_nickname()?,
-                },
+                NicknameCommand::Set { .. } => {
+                    let agent_or_nickname = self.parse_agent_ident()?;
+
+                    return match self.is_at_end() {
+                        true => match agent_or_nickname {
+                            AgentIdentifier::Nickname { nickname } => Ok(NicknameCommand::Set {
+                                agent: None,
+                                nickname,
+                            }),
+                            AgentIdentifier::ID { .. } => Err(CommandError::ExpectedAgentNickname),
+                        },
+                        false => Ok(NicknameCommand::Set {
+                            agent: Some(agent_or_nickname),
+                            nickname: self.parse_agent_nickname()?,
+                        }),
+                    };
+                }
                 NicknameCommand::Get { .. } => NicknameCommand::Get {
                     agent: self.parse_opt_agent_ident(true)?,
                 },
