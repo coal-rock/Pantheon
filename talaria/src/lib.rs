@@ -1139,10 +1139,15 @@ pub mod console {
                 false => {
                     let mut chars = self.peek(CommandError::ExpectedAgentIdentifier)?.chars();
                     let predicate = chars.next().ok_or(CommandError::ExpectedAgentIdentifier)?;
+                    let first_char = chars.next().ok_or(CommandError::ParsingError)?;
 
-                    match predicate == '@' {
-                        true => Ok(Some(self.parse_agent_ident()?)),
-                        false => Ok(None),
+                    if predicate != '@' {
+                        return Ok(None);
+                    }
+
+                    match first_char {
+                        'a'..='z' | 'A'..='Z' => Ok(Some(self.parse_agent_ident()?)),
+                        _ => Ok(None),
                     }
                 }
             }
