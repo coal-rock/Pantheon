@@ -19,7 +19,6 @@ use state::{SharedState, State};
 
 use cors::CORS;
 use rocket::{Build, Rocket};
-use std::{fs, path::PathBuf};
 
 async fn rocket(shared_state: SharedState) -> Rocket<Build> {
     let config = shared_state.read().await.config.clone();

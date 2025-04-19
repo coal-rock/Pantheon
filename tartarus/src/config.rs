@@ -3,14 +3,15 @@ use figment::{
     Figment,
 };
 use serde::{Deserialize, Serialize};
-use std::{net::IpAddr, path::PathBuf};
+use std::net::IpAddr;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
     pub port: u16,
     pub address: IpAddr,
     pub token: Option<String>,
-    pub history_buf_len: Option<usize>,
+    /// A value of "0" has an unlimited history length
+    pub history_buf_len: usize,
 }
 
 impl Default for Config {
@@ -19,7 +20,7 @@ impl Default for Config {
             port: 8000,
             address: "0.0.0.0".parse().unwrap(),
             token: Some("bb123#123".to_string()),
-            history_buf_len: Some(1000),
+            history_buf_len: 1000,
         }
     }
 }

@@ -246,8 +246,8 @@ pub mod api {
             self.by_id.insert(packet_id, entry);
             self.by_timestamp.insert((timestamp, packet_id));
 
-            // trim if we are over capacity
-            if self.by_id.len() > self.capacity {
+            // trim if we are over capacity, and capacity > 0 (never trim if capacity is 0)
+            if self.by_id.len() > self.capacity && self.capacity > 0 {
                 if let Some(&(oldest_ts, oldest_id)) = self.by_timestamp.iter().next() {
                     self.by_id.remove(&oldest_id);
                     self.by_timestamp.remove(&(oldest_ts, oldest_id));
@@ -320,10 +320,11 @@ pub mod api {
     }
 
     impl Agent {
-        pub fn from_response(response: AgentResponse, external_ip: SocketAddr) -> Agent {
-            // TODO: poll max size from config
-            let network_history = NetworkHistoryStore::new(1000);
-
+        pub fn from_response(
+            response: AgentResponse,
+            external_ip: SocketAddr,
+            history_len: usize,
+        ) -> Agent {
             Agent {
                 nickname: None,
                 id: response.header.agent_id,
@@ -333,7 +334,7 @@ pub mod api {
                 last_packet_send: response.header.timestamp,
                 last_packet_recv: current_time(),
                 polling_interval_ms: response.header.polling_interval_ms,
-                network_history,
+                network_history: NetworkHistoryStore::new(history_len),
                 instruction_queue: vec![].into(),
                 ping: None,
             }

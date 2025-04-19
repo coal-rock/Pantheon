@@ -60,7 +60,7 @@ impl State {
             None => {}
         };
 
-        let agent = Agent::from_response(response.clone(), *ext_ip);
+        let agent = Agent::from_response(response.clone(), *ext_ip, self.config.history_buf_len);
         self.agents.insert(agent_id, agent);
 
         true
