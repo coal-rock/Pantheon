@@ -111,29 +111,32 @@ async fn eval(state: Arc<RwLock<State>>) {
                 .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Script(script) => {
-            task::spawn_blocking(move || {
-                let mut engine = ScriptingEngine::new();
-                engine.execute(&script.source);
+            let state_unmoved = state.clone();
+
+            task::spawn_blocking(async move || {
+                let mut engine = ScriptingEngine::new(state.clone()).await;
+                engine.execute(&script.source).await;
             })
             .await;
 
             let response_body = AgentResponseBody::ScriptResponse;
 
-            state
+            state_unmoved
                 .write()
                 .await
                 .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Rhai(source) => {
-            task::spawn_blocking(move || {
-                let mut engine = ScriptingEngine::new();
-                engine.execute(&source);
-            })
-            .await;
+            let state_unmoved = state.clone();
+
+            task::spawn(async move {
+                let mut engine = ScriptingEngine::new(state.clone()).await;
+                engine.execute(&source).await;
+            });
 
             let response_body = AgentResponseBody::ScriptResponse;
 
-            state
+            state_unmoved
                 .write()
                 .await
                 .push_response(response_body, instruction.0);

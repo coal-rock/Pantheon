@@ -1,30 +1,43 @@
+use std::sync::Arc;
+use tokio::sync::RwLock;
+
 use anyhow::Result;
 use rhai::{plugin::*, Scope};
 
+use crate::state::State;
+
 pub struct ScriptingEngine {
     engine: Engine,
+    scope: Scope<'static>,
 }
 
 impl ScriptingEngine {
-    pub fn new() -> ScriptingEngine {
+    pub async fn new(state: Arc<RwLock<State>>) -> ScriptingEngine {
         let mut engine = Engine::new();
-        let module = exported_module!(hermes);
-        engine.register_static_module("hermes", module.into());
 
-        ScriptingEngine { engine }
+        let agent = exported_module!(agent);
+        engine.register_static_module("agent", agent.into());
+
+        let mut scope = Scope::new();
+
+        {
+            let state = state.read().await;
+            scope.push_constant("AGENT_ID", state.get_agent_id());
+        }
+
+        ScriptingEngine { engine, scope }
     }
 
-    pub fn execute(&mut self, script: &str) -> Result<(), Box<EvalAltResult>> {
+    pub async fn execute(&mut self, script: &str) -> Result<(), Box<EvalAltResult>> {
         let ast = self.engine.compile(script)?;
-        let mut scope = Scope::new();
-        scope.push("hello_world", 1337);
-        self.engine.run_ast_with_scope(&mut scope, &ast)?;
+
+        self.engine.run_ast_with_scope(&mut self.scope, &ast)?;
         Ok(())
     }
 }
 
 #[export_module]
-mod hermes {
+mod agent {
     pub const MY_NUMBER: i64 = 42;
 
     pub fn greet(name: &str) -> String {

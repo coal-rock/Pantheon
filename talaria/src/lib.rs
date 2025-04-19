@@ -939,6 +939,7 @@ pub mod console {
 
             let mut tokens: Vec<String> = vec![];
             let mut in_quotes = false;
+            let mut in_ticks = false;
             let mut escape_next = false;
             let mut current_token: Vec<char> = vec![];
 
@@ -963,11 +964,26 @@ pub mod console {
                     } else {
                         current_token.push(char);
                     }
+                } else if in_ticks {
+                    if char == '`' {
+                        in_ticks = false;
+                        tokens.push(current_token.iter().collect());
+                        current_token.clear();
+                    } else {
+                        current_token.push(char);
+                    }
                 } else {
                     // if token is '"', then we start a new token buffer and add the old one to the
                     // list of tokens
-                    if char == '"' {
+                    if char == '"' && !in_ticks {
                         in_quotes = true;
+
+                        if current_token.len() > 0 {
+                            tokens.push(current_token.iter().collect());
+                            current_token.clear();
+                        }
+                    } else if char == '`' && !in_quotes {
+                        in_ticks = true;
 
                         if current_token.len() > 0 {
                             tokens.push(current_token.iter().collect());
@@ -1000,17 +1016,6 @@ pub mod console {
 
             self.pos += 1;
             return Ok(&self.source[self.pos - 1]);
-        }
-
-        pub fn consume_to_end(&mut self, err: CommandError) -> Result<String, CommandError> {
-            if self.is_at_end() {
-                return Err(err);
-            }
-
-            let consumed = Ok(self.source[self.pos..].join(" "));
-            self.pos = self.source.len();
-
-            consumed
         }
 
         pub fn peek(&self, err: CommandError) -> Result<&str, CommandError> {
@@ -1273,7 +1278,7 @@ pub mod console {
 
             if !self.is_at_end() {
                 return Err(CommandError::UnexpectedArgument {
-                    arg: self.consume_to_end(CommandError::ParsingError)?,
+                    arg: self.consume(CommandError::ParsingError)?.to_string(),
                 });
             }
 
@@ -1380,11 +1385,11 @@ pub mod console {
                 },
                 RunCommand::Rhai { .. } => RunCommand::Rhai {
                     target: self.parse_opt_target_ident(false)?,
-                    scripts_contents: self.consume_to_end(CommandError::ExpectedRhai)?,
+                    scripts_contents: self.consume(CommandError::ExpectedRhai)?.to_string(),
                 },
                 RunCommand::Shell { .. } => RunCommand::Shell {
                     target: self.parse_opt_target_ident(false)?,
-                    shell_command: self.consume_to_end(CommandError::ExpectedShell)?,
+                    shell_command: self.consume(CommandError::ExpectedShell)?.to_string(),
                 },
                 RunCommand::None => RunCommand::None,
             })

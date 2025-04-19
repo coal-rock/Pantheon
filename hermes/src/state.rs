@@ -22,6 +22,10 @@ impl State {
         })
     }
 
+    pub fn get_agent_id(&self) -> u64 {
+        self.agent.agent_id
+    }
+
     pub fn set_ping(&mut self, ping: u32) {
         self.agent.ping = Some(ping);
     }
