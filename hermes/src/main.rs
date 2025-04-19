@@ -138,6 +138,9 @@ async fn eval(state: Arc<RwLock<State>>) {
                 .await
                 .push_response(response_body, instruction.0);
         }
+        AgentInstructionBody::Kill => {
+            std::process::exit(0);
+        }
         AgentInstructionBody::Ok => {}
     }
 }

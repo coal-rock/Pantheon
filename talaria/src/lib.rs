@@ -113,6 +113,7 @@ pub mod protocol {
         Script(Script),
         Rhai(String),
         Command { command: String, args: Vec<String> },
+        Kill,
         Ok,
     }
 
@@ -126,6 +127,7 @@ pub mod protocol {
                 AgentInstructionBody::Script(_) => "Script",
                 AgentInstructionBody::Ok => "Ok",
                 AgentInstructionBody::Rhai(_) => "Rhai",
+                AgentInstructionBody::Kill => "Kill",
             }
         }
 
@@ -137,6 +139,7 @@ pub mod protocol {
                 AgentInstructionBody::Ok => String::from("None"),
                 AgentInstructionBody::Script(script) => script.title.clone(),
                 AgentInstructionBody::Rhai(source) => source.clone(),
+                AgentInstructionBody::Kill => String::from("None"),
             }
         }
     }
@@ -1004,7 +1007,10 @@ pub mod console {
                 return Err(err);
             }
 
-            Ok(self.source[self.pos..].join(" "))
+            let consumed = Ok(self.source[self.pos..].join(" "));
+            self.pos = self.source.len();
+
+            consumed
         }
 
         pub fn peek(&self, err: CommandError) -> Result<&str, CommandError> {
@@ -1039,6 +1045,7 @@ pub mod console {
             };
         }
 
+        /// WARNING: this likely will not work with two idents back to back
         pub fn parse_opt_target_ident(
             &mut self,
             last_arg: bool,

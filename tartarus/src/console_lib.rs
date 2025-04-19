@@ -14,7 +14,7 @@ pub async fn evaluate_command(
         Command::Group(command) => group(state, command_context.current_target, command).await,
         Command::Show(command) => show(state, command).await,
         Command::Run(command) => run(state, command_context.current_target, command).await,
-        Command::Remove { target } => todo!(),
+        Command::Remove { target } => remove(state, command_context.current_target, target).await,
         Command::Clear => clear().await,
         Command::Help => help().await,
     }
@@ -262,7 +262,7 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
                 new_target: NewTarget::NoChange,
             })
         },
-        ShowCommand::Target(target_identifier) => todo!(),
+        ShowCommand::Target(target_identifier) => todo().await,
     }
 }
 
@@ -335,6 +335,34 @@ async fn run(state: SharedState, current_target: Option<TargetIdentifier>, comma
         },
         RunCommand::None => todo!(),
     }
+}
+
+async fn remove(state: SharedState, current_target: Option<TargetIdentifier>, targets: Vec<TargetIdentifier>) -> Result<ConsoleResponse, ConsoleError> {
+    let targets = match targets.is_empty() {
+        true => vec![expect_target(current_target, None)?],
+        false => targets,
+    };
+
+    for target in targets {
+        match &target {
+            TargetIdentifier::Group { .. } => {
+                let group = get_group(state.clone(), None, Some(target)).await?;
+                
+                for agent in group {
+                    push_instruction(state.clone(), agent, &AgentInstructionBody::Kill).await?;
+                }
+            },
+            TargetIdentifier::Agent { .. } => {
+                let id = get_agent_id(state.clone(), None, Some(target)).await?;
+                push_instruction(state.clone(), id, &AgentInstructionBody::Kill).await?;
+            },
+        }
+    }
+
+    Ok(ConsoleResponse {
+        output: String::from("successfully removed agents"),
+        new_target: NewTarget::NoChange,
+    })
 }
 
 async fn todo() -> Result<ConsoleResponse, ConsoleError> {
