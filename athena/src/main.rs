@@ -12,7 +12,7 @@ use views::{authenticate::Authenticate, home::Home};
 enum Route {
     #[route("/")]
     Home {},
-    #[route("/authenticate")]
+    #[route("/")]
     Authenticate {},
 }
 

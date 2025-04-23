@@ -12,7 +12,6 @@ pub fn SwaplessPage(children: Element) -> Element {
             class: "flex flex-col h-screen",
 
             Navbar {
-                show_sidebar: show_sidebar,
                 anemic: false,
             }
             div {

@@ -129,7 +129,7 @@ pub fn AgentsOverview(id: i32) -> Element {
 fn Statistic(icon: Element, text: String, value: String) -> Element {
     rsx! {
         div {
-            class: "bg-zinc-900 rounded grow shrink basis-0 text-lg text-gray-300 flex justify-between items-center",
+            class: "bg-zinc-900 rounded grow shrink basis-0 text-clamp-lg text-gray-300 flex justify-between items-center",
             div {
                 class: "flex flex-row grow shrink basis-0 items-center justify-left",
                 div {

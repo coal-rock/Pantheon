@@ -41,7 +41,6 @@ pub fn Authenticate() -> Element {
             class: "flex flex-col h-screen w-screen",
             onvisible: fetch_status,
             Navbar {
-                show_sidebar: Signal::new(false), // FIXME: Hack
                 anemic: true,
             }
 

@@ -1,17 +1,15 @@
 use dioxus::prelude::*;
 
 use dioxus_free_icons::icons::fa_brands_icons::FaGithub;
-use dioxus_free_icons::icons::fa_solid_icons::FaBars;
 use dioxus_free_icons::Icon;
 
 use crate::views::page::PanelManager;
 use crate::Route;
 
 #[component]
-pub fn Navbar(show_sidebar: Signal<bool>, anemic: bool) -> Element {
+pub fn Navbar(anemic: bool) -> Element {
     // we have to use use_signal for this as i'm not sure to apply css
     // to Icons direct
-    let mut sidebar_toggle_hover = use_signal(|| false);
     let mut github_hover = use_signal(|| false);
 
     rsx! {
@@ -19,54 +17,21 @@ pub fn Navbar(show_sidebar: Signal<bool>, anemic: bool) -> Element {
             class: "bg-zinc-950 h-16 flex items-center justify-between border-0 border-b-2 border-gray-600",
             div {
                 class: "flex flex-row items-center w-64",
-                if !anemic {
-                    button {
-                        class: "cursor-pointer p-4",
-
-                        onmouseenter: move |_event| {
-                            sidebar_toggle_hover.set(true);
-                        },
-                        onmouseleave: move |_event| {
-                            sidebar_toggle_hover.set(false);
-                        },
-                        onclick: move |_event| {
-                            let new_value = !show_sidebar.read().clone();
-                            *show_sidebar.write() = new_value;
-                        },
-                        Icon {
-                            width: 28,
-                            height: 28,
-                            fill: if *sidebar_toggle_hover.read() {"white"} else {"lightgray"},
-                            icon: FaBars,
-                        }
-                    }
-                }
-
                 div {
-                    class: match anemic {
-                        false => "flex flex-row border-2 border-gray-600 items-center justify-center ml-1",
-                        true => "flex flex-row border-2 border-gray-600 items-center justify-center border-l-0",
-                    },
+                    class: "flex flex-row border-l-0 border-2 border-gray-600 items-center justify-center",
                     div {
-                        class: "w-full h-full",
+                        class: "w-12 h-full",
                         img {
-                            class: "ml-2 mb-1",
                             src: asset!("assets/cdo-logo.png"),
                             width: 50,
                             height: 50,
                         }
                     }
                     div {
-                        class: match anemic {
-                            false => "flex flex-col p-2 m-1",
-                            true => "flex flex-col p-2",
-                        },
+                        class: "flex flex-col p-2",
                         Link {
                             class: "text-gray-300 hover:text-white font-sans text-4xl",
-                            to: match anemic {
-                                true => Route::Authenticate{},
-                                false => Route::Home{},
-                            },
+                            to: Route::Home{},
                             "Athena"
                         }
                         h1 {
@@ -75,11 +40,9 @@ pub fn Navbar(show_sidebar: Signal<bool>, anemic: bool) -> Element {
                         }
                     }
                 }
-            }
-            if !anemic {
 
                 div {
-                    class: "w-64 grow h-full flex flex-row gap-0 justify-left items-left",
+                    class: "grow h-full flex flex-row gap-0 justify-left items-left",
                     div {
                         class: "p-2 border-r-2 border-gray-600 flex flex-col w-24 h-full items-center",
                         div {
@@ -105,37 +68,69 @@ pub fn Navbar(show_sidebar: Signal<bool>, anemic: bool) -> Element {
 
                     div {
                         class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
-                        DropdownMenu {
-                            DropdownElement {
+                        LayoutMenu {
+                            LayoutElement {
                                 layout: vec![1],
                             }
 
-                            DropdownElement {
+                            LayoutElement {
                                 layout: vec![2]
                             }
 
                             hr{}
 
-                            DropdownElement {
+                            LayoutElement {
                                 layout: vec![1, 1]
                             }
 
-                            DropdownElement {
+                            LayoutElement {
                                 layout: vec![2, 2]
                             }
 
                             hr{}
 
-                            DropdownElement {
+                            LayoutElement {
                                 layout: vec![1, 1, 1]
                             }
 
-                            DropdownElement {
+                            LayoutElement {
                                 layout: vec![2, 2, 2]
                             }
                         }
                     }
 
+                    div {
+                        class: "p-2 border-r-2 border-gray-600 flex flex-col w-16 h-full items-center hover:bg-zinc-900 cursor-pointer relative inline-block dropdown",
+                        LayoutMenu {
+                            LayoutElement {
+                                layout: vec![1],
+                            }
+
+                            LayoutElement {
+                                layout: vec![2]
+                            }
+
+                            hr{}
+
+                            LayoutElement {
+                                layout: vec![1, 1]
+                            }
+
+                            LayoutElement {
+                                layout: vec![2, 2]
+                            }
+
+                            hr{}
+
+                            LayoutElement {
+                                layout: vec![1, 1, 1]
+                            }
+
+                            LayoutElement {
+                                layout: vec![2, 2, 2]
+                            }
+                        }
+                    }
                 }
             }
 
@@ -165,7 +160,7 @@ pub fn Navbar(show_sidebar: Signal<bool>, anemic: bool) -> Element {
 struct Hidden(Signal<bool>);
 
 #[component]
-fn DropdownMenu(children: Element) -> Element {
+fn LayoutMenu(children: Element) -> Element {
     let mut hidden = use_context_provider(|| Hidden(Signal::new(true)));
     let hidden_class = if hidden.0() { "hidden" } else { "block" };
 
@@ -203,7 +198,7 @@ fn DropdownMenu(children: Element) -> Element {
 }
 
 #[component]
-fn DropdownElement(layout: Vec<i32>) -> Element {
+fn LayoutElement(layout: Vec<i32>) -> Element {
     let mut hidden = use_context::<Hidden>().0;
     let mut panel_manager = use_context::<PanelManager>();
 

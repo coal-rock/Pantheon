@@ -7,7 +7,22 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* .dropdown:hover .dropdown-menu { */
-/* 	display: block; */
-/* 	z-index: 10; */
-/* } */
+/* Not entirely sure if this is the best layer to place these in*/
+/* Also, kinda a hack? */
+@layer utilities {
+  .text-clamp-xs {
+    font-size: clamp(8px, 0.625vw, 12px);
+  }
+  .text-clamp-sm {
+    font-size: clamp(9px, 0.729vw, 14px);
+  }
+  .text-clamp-base {
+    font-size: clamp(10px, 0.833vw, 16px);
+  }
+  .text-clamp-lg {
+    font-size: clamp(11px, 0.938vw, 18px);
+  }
+  .text-clamp-xl {
+    font-size: clamp(10px, 1.042vw, 20px);
+  }
+}

@@ -1,4 +1,3 @@
-use dioxus::logger::tracing::info;
 use dioxus::prelude::*;
 
 use crate::components::agents_overview::AgentsOverview;
@@ -7,7 +6,6 @@ use crate::components::console::Console;
 use crate::components::navbar::Navbar;
 use crate::components::notepad::Notepad;
 use crate::components::placeholder_panel::Placeholder;
-use crate::components::sidebar::Sidebar;
 use crate::components::tartarus_overview::TartarusOverview;
 
 pub enum PanelType {
@@ -114,8 +112,6 @@ impl PanelManager {
 
 #[component]
 pub fn Page() -> Element {
-    let show_sidebar = use_signal(|| true);
-
     let panel_manager = use_context_provider(|| {
         PanelManager::new(
             vec![2, 2],
@@ -199,15 +195,10 @@ pub fn Page() -> Element {
             class: "flex flex-col h-screen",
 
             Navbar {
-                show_sidebar: show_sidebar,
                 anemic: false,
             }
             div {
                 class: "flex flex-row grow",
-
-                Sidebar {
-                    should_show: show_sidebar
-                }
 
                 LayoutHandler {}
             }

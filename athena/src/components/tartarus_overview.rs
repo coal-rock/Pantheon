@@ -55,7 +55,7 @@ pub fn TartarusOverview(id: i32) -> Element {
             div {
                 class: "flex flex-col gap-4",
                 span {
-                    class: "justify-start text-gray-300 text-lg flex w-full h-4 underline underline-offset-2",
+                    class: "justify-start text-gray-300 text-clamp-base flex w-full h-4 underline underline-offset-2",
                     "Resources:"
                 }
                 UsageSlider {
@@ -85,7 +85,7 @@ pub fn TartarusOverview(id: i32) -> Element {
                     class: "p-0 m-0",
                 }
                 span {
-                    class: "justify-start text-gray-300 text-lg flex w-full h-4 underline underline-offset-2 -mt-2",
+                    class: "justify-start text-gray-300 text-clamp-base flex w-full h-4 underline underline-offset-2 -mt-2",
                     "Host Information:"
                 }
                 div {
@@ -128,19 +128,19 @@ fn UsageSlider(text: String, value: Option<f32>, center_text: String) -> Element
     // flowbite
     rsx! {
         div {
-            class: "flex w-full h-full flex-col pt-1 pb-1",
+            class: "flex w-full h-full flex-col pt-0 pb-0",
             div {
                 class: "flex b-1 contents w-full h-full ",
                 span {
-                    class: "text-base font-medium text-gray-300 flex flex-1 justify-start",
+                    class: "text-clamp-base font-medium text-gray-300 flex flex-1 justify-start",
                     "{text}"
                 }
                 span {
-                    class: "text-sm font-medium text-gray-300 flex flex-1 justify-center",
+                    class: "text-clamp-sm font-medium text-gray-300 flex flex-1 justify-center",
                     "{center_text}"
                 }
                 span {
-                    class: "text-sm font-medium text-gray-300 flex flex-1 justify-end",
+                    class: "text-clamp-sm font-medium text-gray-300 flex flex-1 justify-end",
                     "{value_str}"
                 }
             }
@@ -159,7 +159,7 @@ fn UsageSlider(text: String, value: Option<f32>, center_text: String) -> Element
 fn Info(name: String, value: Option<String>) -> Element {
     rsx! {
         div {
-            class: "flex flex-row justify-between",
+            class: "text-clamp-sm flex flex-row justify-between",
             span {
                 class: "text-gray-300",
                 "{name}"
