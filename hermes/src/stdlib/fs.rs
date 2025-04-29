@@ -9,6 +9,8 @@ pub mod fs {
     use rhai::Dynamic;
     use std::io::Write;
 
+    use crate::stdlib::CastArray;
+
     #[rhai_fn(return_raw)]
     pub fn read(file_path: &str) -> Result<String, Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -36,16 +38,8 @@ pub mod fs {
 
     #[rhai_fn(return_raw)]
     pub fn write_lines(file_path: &str, lines: Array) -> Result<(), Box<EvalAltResult>> {
-        let mut filtered_lines = vec![];
-
-        for line in lines {
-            match line.try_cast_result::<String>() {
-                Ok(line) => filtered_lines.push(line),
-                Err(err) => return Err(format!("Expected string, got: {}", err.type_name()).into()),
-            };
-        }
-
-        let lines = filtered_lines.join("\n") + "\n";
+        let lines = lines.try_cast::<String>()?;
+        let lines = lines.join("\n") + "\n";
         write(file_path, &lines)
     }
 
@@ -68,17 +62,9 @@ pub mod fs {
 
     #[rhai_fn(return_raw)]
     pub fn append_lines(file_path: &str, lines: Array) -> Result<(), Box<EvalAltResult>> {
-        let mut filtered_lines = vec![];
-
-        for line in lines {
-            match line.try_cast_result::<String>() {
-                Ok(line) => filtered_lines.push(line),
-                Err(err) => return Err(format!("Expected string, got: {}", err.type_name()).into()),
-            };
-        }
-
-        let content = filtered_lines.join("\n") + "\n";
-        append(file_path, &content)
+        let lines = lines.try_cast::<String>()?;
+        let lines = lines.join("\n") + "\n";
+        append(file_path, &lines)
     }
 
     #[rhai_fn(return_raw)]
