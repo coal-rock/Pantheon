@@ -5,6 +5,7 @@ use anyhow::Result;
 use rhai::{plugin::*, Scope};
 
 use crate::state::State;
+use crate::stdlib::*;
 
 pub struct ScriptingEngine {
     engine: Engine,
@@ -15,11 +16,24 @@ impl ScriptingEngine {
     pub async fn new(state: Arc<RwLock<State>>) -> ScriptingEngine {
         let mut engine = Engine::new();
 
-        let agent = exported_module!(agent);
-        engine.register_static_module("agent", agent.into());
+        let mut modules = vec![];
+
+        {
+            modules.push(("crypto", exported_module!(crypto::crypto)));
+            modules.push(("env", exported_module!(env::env)));
+            modules.push(("fs", exported_module!(fs::fs)));
+            modules.push(("http", exported_module!(http::http)));
+            modules.push(("net", exported_module!(net::net)));
+            modules.push(("proc", exported_module!(proc::proc)));
+            modules.push(("sys", exported_module!(sys::sys)));
+            modules.push(("time", exported_module!(time::time)));
+        }
+
+        for (module_name, module) in modules {
+            engine.register_static_module(module_name, module.into());
+        }
 
         let mut scope = Scope::new();
-
         {
             let state = state.read().await;
             scope.push_constant("AGENT_ID", state.get_agent_id());
@@ -33,14 +47,5 @@ impl ScriptingEngine {
 
         self.engine.run_ast_with_scope(&mut self.scope, &ast)?;
         Ok(())
-    }
-}
-
-#[export_module]
-mod agent {
-    pub const MY_NUMBER: i64 = 42;
-
-    pub fn greet(name: &str) -> String {
-        format!("hello, {}!", name)
     }
 }

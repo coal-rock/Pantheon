@@ -2,6 +2,7 @@ pub mod agent;
 pub mod network;
 pub mod scripting;
 pub mod state;
+pub mod stdlib;
 
 use scripting::ScriptingEngine;
 use state::State;
