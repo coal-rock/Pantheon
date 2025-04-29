@@ -1,4 +1,4 @@
-name: Test Hermes
+name: Tests
 
 on:
   push:
@@ -9,12 +9,9 @@ on:
       - "*"
 
 jobs:
-  build:
+  hermes:
     runs-on: ubuntu-latest
     
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,4 +25,4 @@ jobs:
       - name: Test Hermes
         run: |
           cd hermes
-          CARGO_TARGET_DIR=../hermes-bin URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo test
+          URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo test

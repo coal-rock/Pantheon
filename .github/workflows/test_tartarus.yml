@@ -1,4 +1,4 @@
-name: Test Tartarus
+name: Tests 
 
 on:
   push:
@@ -9,12 +9,9 @@ on:
       - "*"
 
 jobs:
-  build:
+  tartarus:
     runs-on: ubuntu-latest
     
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,7 +22,7 @@ jobs:
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.12.2
 
-      - name: Build Tartarus
+      - name: Test Tartarus
         run: |
           cd tartarus
-          CARGO_TARGET_DIR=../tartarus-bin cargo test
+          cargo test --verbose

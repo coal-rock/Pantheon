@@ -1,4 +1,4 @@
-name: Test Athena
+name: Tests
 
 on:
   push:
@@ -9,12 +9,8 @@ on:
       - "*"
 
 jobs:
-  build:
+  athena:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: write
-
 
     steps:
       - name: Checkout repository
@@ -62,4 +58,4 @@ jobs:
       - name: Test Athena
         run: |
           cd athena
-          cargo test
+          cargo test --verbose

@@ -1,4 +1,4 @@
-name: Test Talaria 
+name: Tests
 
 on:
   push:
@@ -9,11 +9,8 @@ on:
       - "*"
 
 jobs:
-  build:
+  talaria:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -28,4 +25,4 @@ jobs:
       - name: Test Talaria
         run: |
           cd talaria
-          cargo test
+          cargo test --verbose
