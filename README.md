@@ -15,7 +15,7 @@
 [Supported Platforms](#supported-platforms) •
 [Demo](#demo)
 
-[![Build All](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml)
+[![Build All](https://github.com/coal-rock/Pantheon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/Machina-Software/Pantheon/actions/workflows/build_all.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
