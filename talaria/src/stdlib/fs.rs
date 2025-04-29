@@ -1,22 +1,11 @@
-//! Fast and easy queue abstraction.
-//!
-//! Provides an abstraction over a queue.  When the abstraction is used
-//! there are these advantages:
-//! - Fast
-//! - [`Easy`]
-//!
-//! [`Easy`]: http://thatwaseasy.example.com
 use rhai::plugin::*;
 
 use std::fs as std_fs;
 use std::path::Path as std_Path;
 
-// 1. Create a plugin module or any kind of Rhai API that supports documentation on functions and types.
-
-/// My own module.
+/// Exposes cross-platform bindings for interacting with the filesystem
 #[export_module]
 pub mod fs {
-
     use rhai::Array;
     use rhai::Dynamic;
     use std::io::Write;
@@ -24,6 +13,8 @@ pub mod fs {
     use crate::stdlib::CastArray;
 
     /// Reads the contents of a file to a string
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` does not exist, or isn't readable
     #[rhai_fn(return_raw)]
     pub fn read(file_path: &str) -> Result<String, Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -35,6 +26,8 @@ pub mod fs {
     }
 
     /// Read the contents of a file into an array of strings, split on newline characters
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` does not exist, or isn't readable
     #[rhai_fn(return_raw)]
     pub fn read_lines(file_path: &str) -> Result<Vec<Dynamic>, Box<EvalAltResult>> {
         read(file_path).map(|x| x.split('\n').map(|x| x.to_string().into()).collect())
@@ -43,6 +36,8 @@ pub mod fs {
     /// Writes a string to a specified file
     ///
     /// Will create file and directory recursively if it doesn't exist
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` isn't writable
     #[rhai_fn(return_raw)]
     pub fn write(file_path: &str, contents: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -56,6 +51,8 @@ pub mod fs {
     /// Writes an array of strings to a specified file, adding a newline after each string
     ///
     /// Will create file and directory recursively if it doesn't exist
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` isn't writable
     #[rhai_fn(return_raw)]
     pub fn write_lines(file_path: &str, lines: Array) -> Result<(), Box<EvalAltResult>> {
         let lines = lines.try_cast::<String>()?;
@@ -66,6 +63,8 @@ pub mod fs {
     /// Appends a string to a file
     ///
     /// Will create file and directory recursively if it doesn't exist
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` isn't writable
     #[rhai_fn(return_raw)]
     pub fn append(file_path: &str, content: &str) -> Result<(), Box<EvalAltResult>> {
         let mut file = match std_fs::OpenOptions::new()
@@ -86,6 +85,8 @@ pub mod fs {
     /// Appends an array of strings to a file, adding a newline after each string
     ///
     /// Will create file and directory recursively if it doesn't exist
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` isn't writable
     #[rhai_fn(return_raw)]
     pub fn append_lines(file_path: &str, lines: Array) -> Result<(), Box<EvalAltResult>> {
         let lines = lines.try_cast::<String>()?;
@@ -94,6 +95,8 @@ pub mod fs {
     }
 
     /// Removes a file or directory recursively
+    /// > [!CAUTION]
+    /// > Can throw exception if `path` can not be removed or does not exist
     #[rhai_fn(return_raw)]
     pub fn remove(file_path: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -118,6 +121,8 @@ pub mod fs {
     /// Creates a file
     ///
     /// If the parent directory does not exist, it is created recursively
+    /// > [!CAUTION]
+    /// > Can throw exception if `file_path` can not be created
     #[rhai_fn(return_raw)]
     pub fn create(file_path: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -139,6 +144,8 @@ pub mod fs {
     }
 
     /// Creates a directory recursively
+    /// > [!CAUTION]
+    /// > Can throw exception if `dir_path` can not be created
     #[rhai_fn(return_raw)]
     pub fn mkdir(dir_path: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(dir_path);

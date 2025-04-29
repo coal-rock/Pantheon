@@ -5,6 +5,9 @@ multilingual = false
 src = "docs/"
 title = "Hermes Scripting"
 
+[preprocessor.alerts]
+
 [output.html]
 additional-css = ["./theme/default.css"]
 additional-js = ["./theme/tabs.js"]
+
