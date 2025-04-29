@@ -36,7 +36,10 @@ pub fn Console(id: i32) -> Element {
             .await;
         }
 
-        console_history.push((false, console.status_line() + &input.read().clone()));
+        console_history.push((
+            false,
+            format!("{}{}", console.status_line(), &input.read().clone()),
+        ));
 
         let current_target = console.get_target();
         let input = &mut input.write();

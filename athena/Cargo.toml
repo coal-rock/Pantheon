@@ -16,7 +16,11 @@ reqwest = { version = "0.12.15", features = ["json"] }
 bytesize = "2.0.1"
 async-std = "1.13.1"
 dioxus-sdk = { version = "0.6.0", features = ["storage"] }
-base62 = "2.2.1"
+
+[dependencies.getrandom]
+version = "0.2"
+features = ["js"]
+default-features = false
 
 [features]
 default = []
