@@ -9,6 +9,60 @@ on:
       - "*"
 
 jobs:
+  hermes:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: install rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.12.2
+
+      - name: test hermes
+        run: |
+          cd hermes
+          url="https://127.0.0.1:8000/" poll_interval_ms=10000 cargo test
+
+  talaria:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.12.2
+    
+      - name: Test Talaria
+        run: |
+          cd talaria
+          cargo test --verbose
+
+  tartarus:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.12.2
+
+      - name: Test Tartarus
+        run: |
+          cd tartarus
+          cargo test --verbose
+
   athena:
     runs-on: ubuntu-latest
 
