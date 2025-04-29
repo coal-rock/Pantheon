@@ -1,0 +1,10 @@
+[book]
+authors = ["coal-rock"]
+language = "en"
+multilingual = false
+src = "docs/"
+title = "Hermes Scripting"
+
+[output.html]
+additional-css = ["./theme/default.css"]
+additional-js = ["./theme/tabs.js"]

@@ -11,6 +11,7 @@ pub mod fs {
 
     use crate::stdlib::CastArray;
 
+    /// Reads the contents of a file to a string
     #[rhai_fn(return_raw)]
     pub fn read(file_path: &str) -> Result<String, Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -21,11 +22,15 @@ pub mod fs {
         }
     }
 
+    /// Read the contents of a file into an array of strings, split on newline characters
     #[rhai_fn(return_raw)]
     pub fn read_lines(file_path: &str) -> Result<Vec<Dynamic>, Box<EvalAltResult>> {
         read(file_path).map(|x| x.split('\n').map(|x| x.to_string().into()).collect())
     }
 
+    /// Writes a string to a specified file
+    ///
+    /// Will create file and directory recursively if it doesn't exist
     #[rhai_fn(return_raw)]
     pub fn write(file_path: &str, contents: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -36,6 +41,9 @@ pub mod fs {
         }
     }
 
+    /// Writes an array of strings to a specified file, adding a newline after each string
+    ///
+    /// Will create file and directory recursively if it doesn't exist
     #[rhai_fn(return_raw)]
     pub fn write_lines(file_path: &str, lines: Array) -> Result<(), Box<EvalAltResult>> {
         let lines = lines.try_cast::<String>()?;
@@ -43,6 +51,9 @@ pub mod fs {
         write(file_path, &lines)
     }
 
+    /// Appends a string to a file
+    ///
+    /// Will create file and directory recursively if it doesn't exist
     #[rhai_fn(return_raw)]
     pub fn append(file_path: &str, content: &str) -> Result<(), Box<EvalAltResult>> {
         let mut file = match std_fs::OpenOptions::new()
@@ -60,6 +71,9 @@ pub mod fs {
         }
     }
 
+    /// Appends an array of strings to a file, adding a newline after each string
+    ///
+    /// Will create file and directory recursively if it doesn't exist
     #[rhai_fn(return_raw)]
     pub fn append_lines(file_path: &str, lines: Array) -> Result<(), Box<EvalAltResult>> {
         let lines = lines.try_cast::<String>()?;
@@ -67,6 +81,7 @@ pub mod fs {
         append(file_path, &lines)
     }
 
+    /// Removes a file or directory recursively
     #[rhai_fn(return_raw)]
     pub fn remove(file_path: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -88,6 +103,9 @@ pub mod fs {
         Err("Provided path is neither a file nor a directory".into())
     }
 
+    /// Creates a file
+    ///
+    /// If the parent directory does not exist, it is created recursively
     #[rhai_fn(return_raw)]
     pub fn create(file_path: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(file_path);
@@ -108,6 +126,7 @@ pub mod fs {
         }
     }
 
+    /// Creates a directory recursively
     #[rhai_fn(return_raw)]
     pub fn mkdir(dir_path: &str) -> Result<(), Box<EvalAltResult>> {
         let path = std_Path::new(dir_path);
@@ -118,14 +137,21 @@ pub mod fs {
         }
     }
 
+    /// Return true if directory or file exists at specified path
     pub fn exists(path: &str) -> bool {
         std_Path::new(path).exists()
     }
 
+    /// Returns true if provided path points to a file
+    ///
+    /// Returns false under all other conditions
     pub fn is_file(path: &str) -> bool {
         std_Path::new(path).is_file()
     }
 
+    /// Returns true if provided path points to a directory
+    ///
+    /// Returns false under all other conditions
     pub fn is_dir(path: &str) -> bool {
         std_Path::new(path).is_dir()
     }

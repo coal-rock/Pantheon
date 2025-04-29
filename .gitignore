@@ -3,4 +3,6 @@
 /athena/pkg
 /athena/dist
 /athena/assets/tailwind.css
+/docgen/docs
+/docgen/book
 **/history.txt

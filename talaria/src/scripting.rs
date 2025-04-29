@@ -1,10 +1,6 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
-
 use anyhow::Result;
 use rhai::{plugin::*, Scope};
 
-use crate::state::State;
 use crate::stdlib::*;
 
 pub struct ScriptingEngine {
@@ -13,7 +9,7 @@ pub struct ScriptingEngine {
 }
 
 impl ScriptingEngine {
-    pub async fn new(state: Arc<RwLock<State>>) -> ScriptingEngine {
+    pub fn new() -> ScriptingEngine {
         let mut engine = Engine::new();
 
         let mut modules = vec![];
@@ -33,12 +29,7 @@ impl ScriptingEngine {
             engine.register_static_module(module_name, module.into());
         }
 
-        let mut scope = Scope::new();
-        {
-            let state = state.read().await;
-            scope.push_constant("AGENT_ID", state.get_agent_id());
-        }
-
+        let scope = Scope::new();
         ScriptingEngine { engine, scope }
     }
 
@@ -47,5 +38,9 @@ impl ScriptingEngine {
 
         self.engine.run_ast_with_scope(&mut self.scope, &ast)?;
         Ok(())
+    }
+
+    pub fn get_engine(&self) -> &Engine {
+        &self.engine
     }
 }

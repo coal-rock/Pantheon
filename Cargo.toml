@@ -4,6 +4,7 @@ members = [
     "tartarus",
     "hermes",
     "talaria",
+    "docgen",
 ]
 resolver = "2"
 
