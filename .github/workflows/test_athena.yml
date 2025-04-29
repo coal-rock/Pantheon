@@ -63,4 +63,3 @@ jobs:
         run: |
           cd athena
           cargo test
-test_athena.yml
