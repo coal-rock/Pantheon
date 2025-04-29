@@ -3,10 +3,10 @@ name: Build All
 on:
   push:
     branches:
-      - main
+      - "*"
   pull_request:
     branches:
-      - main
+      - "*"
 
 jobs:
   build:
@@ -59,52 +59,8 @@ jobs:
           rm Dioxus.toml
           printf "[application]\n\n[web.app]\ntitle = \"Athena\"\nbase_path = \"Pantheon\"\n\n\n[web.watcher]\nwatch_path = [\"src\", \"assets\"]" > Dioxus.toml
 
-      - name: Build Athena (Web)
+      - name: Test Athena
         run: |
           cd athena
-          dx build --platform web --release
-
-      - name: Build Athena (Desktop)
-        run: |
-          cd athena
-          dx build --platform desktop --release
-
-      - name: Build Hermes
-        run: |
-          cd hermes
-          CARGO_TARGET_DIR=../hermes-bin URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo build --release
-
-      - name: Build Tartarus
-        run: |
-          cd tartarus
-          CARGO_TARGET_DIR=../tartarus-bin cargo build --release
-
-      - name: Upload Athena Web Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: athena-web-build
-          path: target/dx/athena/release/web/public
-
-      - name: Upload Athena Desktop Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: athena-desktop-build
-          path: target/dx/athena/release/linux/app
-
-      - name: Upload Hermes Binary Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hermes-binary
-          path: hermes-bin/release/hermes
-
-      - name: Upload Tartarus Binary Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tartarus-binary
-          path: tartarus-bin/release/tartarus
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/dx/athena/release/web/public
+          cargo test
+test_athena.yml
