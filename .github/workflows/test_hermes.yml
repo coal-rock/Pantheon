@@ -1,0 +1,31 @@
+name: Test Hermes
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.12.2
+
+      - name: Test Hermes
+        run: |
+          cd hermes
+          CARGO_TARGET_DIR=../hermes-bin URL="https://127.0.0.1:8000/" POLL_INTERVAL_MS=10000 cargo test
