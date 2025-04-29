@@ -1201,7 +1201,11 @@ dependencies = [
 name = "docgen"
 version = "0.1.0"
 dependencies = [
+ "handlebars",
  "rhai-autodocs",
+ "serde",
+ "serde_json",
+ "serve",
  "talaria",
 ]
 
@@ -3469,6 +3473,12 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "serve"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bfe5a98af5ca040487539724a7b7fee23549a4501d2553e5d60dc839c75eaa3"
 
 [[package]]
 name = "server_fn"

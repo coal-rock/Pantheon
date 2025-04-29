@@ -1,0 +1,48 @@
+# {{title}}
+##### {{description}}
+
+<style>
+.tabcontent p {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.tab button {
+    padding-top: 12px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+}
+</style>
+
+{{#each items as |item|}}
+<div style='box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); padding: 15px; border-radius: 5px; border: 1px solid var(--theme-hover)'>
+    <h2 class="func-name"> <code>{{item.type}}</code> {{item.name}} </h2>
+
+```rust,ignore
+{{> ContentPartial content=item.signatures}}
+
+```
+
+{{!-- List of tab buttons --}}
+<div>
+<div class="tab">
+{{#each item.sections as |section|}}
+<button group="{{item.name}}" id="link-{{item.name}}-{{section.name}}" {{#if @first}} class="tablinks active" {{else}} class="tablinks" {{/if}}
+    onclick="openTab(event, '{{item.name}}', '{{section.name}}')">
+{{> ContentPartial content=section.name}}
+
+</button>
+{{/each}}
+</div>
+
+{{!-- List of tab bodies --}}
+{{#each sections as |section|}}
+<div group="{{item.name}}" id="{{item.name}}-{{section.name}}" class="tabcontent" {{#if @first}} style="display: block;" {{else}} style="display: none;" {{/if}}>
+
+{{> ContentPartial content=section.body}}
+</div>
+{{/each}}
+
+</div>
+</div>
+</br>
+{{/each}}

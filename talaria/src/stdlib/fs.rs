@@ -1,10 +1,22 @@
+//! Fast and easy queue abstraction.
+//!
+//! Provides an abstraction over a queue.  When the abstraction is used
+//! there are these advantages:
+//! - Fast
+//! - [`Easy`]
+//!
+//! [`Easy`]: http://thatwaseasy.example.com
 use rhai::plugin::*;
 
 use std::fs as std_fs;
 use std::path::Path as std_Path;
 
+// 1. Create a plugin module or any kind of Rhai API that supports documentation on functions and types.
+
+/// My own module.
 #[export_module]
 pub mod fs {
+
     use rhai::Array;
     use rhai::Dynamic;
     use std::io::Write;
@@ -137,21 +149,21 @@ pub mod fs {
         }
     }
 
-    /// Return true if directory or file exists at specified path
+    /// Return `true` if directory or file exists at specified path
     pub fn exists(path: &str) -> bool {
         std_Path::new(path).exists()
     }
 
-    /// Returns true if provided path points to a file
+    /// Returns `true` if provided path points to a file
     ///
-    /// Returns false under all other conditions
+    /// Returns `false` under all other conditions
     pub fn is_file(path: &str) -> bool {
         std_Path::new(path).is_file()
     }
 
-    /// Returns true if provided path points to a directory
+    /// Returns `true` if provided path points to a directory
     ///
-    /// Returns false under all other conditions
+    /// Returns `false` under all other conditions
     pub fn is_dir(path: &str) -> bool {
         std_Path::new(path).is_dir()
     }
