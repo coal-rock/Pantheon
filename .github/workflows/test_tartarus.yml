@@ -15,7 +15,6 @@ jobs:
     permissions:
       contents: write
 
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,9 +28,4 @@ jobs:
       - name: Build Tartarus
         run: |
           cd tartarus
-          CARGO_TARGET_DIR=../tartarus-bin cargo build --release
-
-      - name: Test Tartarus
-        run: |
-          cd tartarus
-          cargo test
+          CARGO_TARGET_DIR=../tartarus-bin cargo test
