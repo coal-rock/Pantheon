@@ -3819,6 +3819,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "bytesize",
+ "libc",
  "rhai",
  "serde",
  "serde_json",
