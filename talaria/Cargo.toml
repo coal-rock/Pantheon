@@ -16,3 +16,4 @@ strum = "0.27"
 strum_macros = "0.27"
 bytesize = "2.0.1"
 rhai = { version = "1.21", featues = ["sync"] }
+whoami = "1.6.0"
