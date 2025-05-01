@@ -6,11 +6,13 @@ use rhai::Module;
 #[export_module]
 pub mod sys {
 
-    use std::env::consts;
-    use whoami::*; // 24.1 KiB
-
-    // WARNING: Large package. Remove later?
-    // use libc::*; // 773 KiB
+    use std::{
+        env::consts,
+        io::Error,
+        process::{self, Command, Output, Stdio},
+        result::Result,
+    };
+    use whoami; // 24.1 KiB
 
     #[derive(Clone, PartialEq, Debug)]
     pub enum OsEnum {
@@ -59,17 +61,31 @@ pub mod sys {
         }
     }
 
-    pub fn is_admin() -> bool {
-        // borken
-        match consts::FAMILY {
-            "unix" => unsafe { libc::geteuid() == 0 || libc::getuid() == 0 },
-            _ => false,
+    /// Checks if user has admin privilidges or admin like privilidges
+    ///
+    /// > [!CAUTION]
+    /// > Only works on linux at the moment
+    //  TODO: I think I made god cry
+    #[rhai_fn(return_raw)]
+    pub fn is_admin() -> Result<bool, Box<EvalAltResult>> {
+        match os_name() {
+            OsEnum::Linux => match run_command_capture_ouput("id", vec!["-u", username().as_str()])
+            {
+                Ok(output) => Ok(String::from_utf8_lossy(&output.stdout) == "0"),
+                Err(error) => Err(error.to_string().into()),
+            },
+            // TODO: implement other OS.
+            // windows is going to suck.
+            _ => Err("Not implmented for this OS".into()),
         }
     }
 
     #[rhai_fn(return_raw)]
     pub fn reboot() -> Result<(), Box<EvalAltResult>> {
-        Ok(())
+        match os_name() {
+            // OsEnum::Linux => run_command("shutdown", vec![""])?,
+            _ => Ok(()),
+        }
     }
 
     #[rhai_fn(return_raw)]
@@ -117,6 +133,23 @@ pub mod sys {
     pub fn is_macos() -> bool {
         consts::OS == "macos"
     }
+
+    fn run_command_capture_ouput(cmd: &str, args: Vec<&str>) -> Result<process::Output, Error> {
+        Command::new(cmd)
+            .args(args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+    }
+
+    // #[rhai_fn(return_raw)]
+    // fn run_command(cmd: &str, args: Vec<&str>) -> Result<(), Box<EvalAltResult>> {
+    //     let mut cmd = Command::new(cmd).args(args).spawn()?;
+    //
+    //     cmd.wait()?;
+    //
+    //     Ok(())
+    // }
 }
 
 #[cfg(test)]
