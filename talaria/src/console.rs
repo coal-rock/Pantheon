@@ -303,6 +303,15 @@ pub enum GroupCommand {
     None,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, EnumIter)]
+pub enum Param {
+    String(String),
+    Int(i64),
+    Float(f64),
+    Bool(bool),
+    Array(Vec<Param>),
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, EnumProperty, Default, EnumIter)]
 pub enum RunCommand {
     #[strum(props(
@@ -314,6 +323,7 @@ pub enum RunCommand {
     Script {
         target: Option<TargetIdentifier>,
         script_name: String,
+        params: Vec<Param>,
     },
 
     #[strum(props(
@@ -391,13 +401,12 @@ pub enum CommandError {
     ExpectedRhai,
     #[error("expected shell script")]
     ExpectedShell,
-}
-
-pub enum Token {
-    CommandName { command_name: String },
-    AgentID { id: u64 },
-    AgentNickname { nickname: String },
-    GroupIdentifier { identifier: String },
+    #[error("expected script param")]
+    ExpectedScriptParam,
+    #[error("expected closing bracket")]
+    ExpectedClosingBracket,
+    #[error("invalid number")]
+    InvalidNumber,
 }
 
 pub struct Parser {
@@ -476,6 +485,12 @@ impl Parser {
                     if current_token.len() > 0 {
                         tokens.push(current_token.iter().collect());
                         current_token.clear();
+                    }
+                } else if char == '[' || char == ']' {
+                    if current_token.len() == 0 {
+                        tokens.push(char.to_string());
+                    } else {
+                        current_token.push(char);
                     }
                 } else {
                     current_token.push(char);
@@ -617,7 +632,7 @@ impl Parser {
     ) -> Result<Option<AgentIdentifier>, CommandError> {
         match last_arg {
             true =>
-            // his is a little bit of a hack,
+            // this is a little bit of a hack,
             // but it's very ergonomic to use-- and i'm not sure how to
             // implement this in a nicer way
             //
@@ -863,6 +878,7 @@ impl Parser {
             RunCommand::Script { .. } => RunCommand::Script {
                 target: self.parse_opt_target_ident(false)?,
                 script_name: self.parse_script_name()?,
+                params: self.parse_script_params()?,
             },
             RunCommand::Rhai { .. } => RunCommand::Rhai {
                 target: self.parse_opt_target_ident(false)?,
@@ -884,6 +900,66 @@ impl Parser {
             'a'..='z' | 'A'..='Z' => Ok(token.to_string()),
             _ => Err(CommandError::InvalidScriptName),
         }
+    }
+
+    pub fn parse_script_params(&mut self) -> Result<Vec<Param>, CommandError> {
+        // FIXME:
+        Ok(vec![])
+        // if self.is_at_end() {
+        //     return Ok(vec![]);
+        // }
+        //
+        // let mut params = vec![];
+        //
+        // loop {
+        //     let token = self.peek(CommandError::ExpectedScriptParam);
+        //     let token = token?;
+        //
+        //     let next_char = token
+        //         .chars()
+        //         .next()
+        //         .ok_or(CommandError::ExpectedClosingBracket)?;
+        //
+        //     match next_char {
+        //         'a'..='z' | 'A'..='Z' => {
+        //             if token == "true" {
+        //                 params.push(Param::Bool(true));
+        //             }
+        //
+        //             if token == "false" {
+        //                 params.push(Param::Bool(false));
+        //             }
+        //
+        //             params.push(self.parse_script_string()?);
+        //         }
+        //         '0'..'9' | '.' | '-' => params.push(self.parse_script_number()?),
+        //         '[' => {}
+        //         ']' => {}
+        //         _ => {}
+        //     }
+        // }
+    }
+
+    pub fn parse_script_number(&mut self) -> Result<Param, CommandError> {
+        let token = self.consume(CommandError::ExpectedScriptParam)?;
+
+        match token.parse::<f64>() {
+            Ok(float) => return Ok(Param::Float(float)),
+            Err(_) => {}
+        }
+
+        match token.parse::<i64>() {
+            Ok(int) => return Ok(Param::Int(int)),
+            Err(_) => {}
+        }
+
+        return Err(CommandError::InvalidNumber);
+    }
+
+    pub fn parse_script_string(&mut self) -> Result<Param, CommandError> {
+        let token = self.consume(CommandError::ExpectedScriptParam);
+
+        Ok(Param::String(token?.to_string()))
     }
 }
 
