@@ -10,11 +10,13 @@ mod console_interface;
 mod console_lib;
 mod console_net;
 mod cors;
+mod scripting;
 mod state;
 mod statistics;
 
 use crate::console_interface::start_console;
 use config::Config;
+use scripting::Script;
 use state::{SharedState, State};
 
 use cors::CORS;
@@ -43,6 +45,22 @@ async fn main() -> Result<(), rocket::Error> {
     env_logger::init();
 
     let config = Config::new("tartarus.toml");
+
+    println!(
+        "{:#?}",
+        Script::from_str(
+            r#"
+            name = "Test Script"
+            description = "This script is a test"
+
+            [[params]]
+            name = "param1"
+            description = "param1 description"
+            type = "String"
+            placeholder = "hello"
+            "#
+        )
+    );
 
     println!("\nConfiguration:");
     println!("--------------------------");
