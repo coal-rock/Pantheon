@@ -50,14 +50,19 @@ async fn main() -> Result<(), rocket::Error> {
         "{:#?}",
         Script::from_str(
             r#"
-            name = "Test Script"
-            description = "This script is a test"
+---
+name = "Test Script"
+description = "This script is a test"
 
-            [[params]]
-            name = "param1"
-            description = "param1 description"
-            type = "String"
-            placeholder = "hello"
+[[params]]
+name = "Parameter 1"
+arg_name = "param1"
+description = "param1 description"
+type = "string"
+placeholder = "hello"
+---
+
+print("hello, world")
             "#
         )
     );
