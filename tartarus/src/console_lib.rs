@@ -246,7 +246,7 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
             match !scripts.is_empty() {
                 true => {
                     Ok(ConsoleResponse {
-                        output: scripts.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n"),
+                        output: scripts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join("\n"),
                         new_target: NewTarget::NoChange,
                     })
                 } 
