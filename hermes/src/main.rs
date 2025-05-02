@@ -113,7 +113,7 @@ async fn eval(state: Arc<RwLock<State>>) {
         AgentInstructionBody::Script(script) => {
             task::spawn_blocking(async move || {
                 let mut engine = ScriptingEngine::new();
-                engine.execute(&script.source).await;
+                engine.execute(&script.body).await;
             })
             .await;
 

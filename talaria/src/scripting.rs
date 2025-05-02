@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use bincode::{Decode, Encode};
+use bytesize::Display;
 use rhai::{plugin::*, Scope};
 use serde::{Deserialize, Serialize};
 
@@ -57,6 +58,32 @@ pub struct Script {
 }
 
 impl Script {
+    pub fn signature(&self) -> String {
+        let parameters = self
+            .params
+            .clone()
+            .into_iter()
+            .map(|p| format!("[{}: {}]", p.name, p.r#type.to_string()))
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        let example = format!(
+            "{} {}",
+            self.name,
+            self.params
+                .clone()
+                .into_iter()
+                .map(|p| format!("{}", p.placeholder))
+                .collect::<Vec<String>>()
+                .join(" ")
+        );
+
+        format!(
+            "Name: {}\nDescription: {}\nParameters: {}\nExample: {}",
+            self.name, self.description, parameters, example
+        )
+    }
+
     pub fn from_str(input: &str) -> Result<Script> {
         let input = input.trim();
 
@@ -120,8 +147,19 @@ pub struct Param {
 #[serde(rename_all = "lowercase")]
 pub enum ParamType {
     String,
-    Number,
+    Int,
     Float,
     Bool,
     Array,
+}
+impl ToString for ParamType {
+    fn to_string(&self) -> String {
+        match self {
+            ParamType::String => String::from("string"),
+            ParamType::Int => String::from("int"),
+            ParamType::Float => String::from("float"),
+            ParamType::Bool => String::from("bool"),
+            ParamType::Array => String::from("array"),
+        }
+    }
 }
