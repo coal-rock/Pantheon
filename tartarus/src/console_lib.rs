@@ -240,7 +240,6 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
                 })
             },
         ShowCommand::Scripts => {
-           
             let handle = state.read().await;
             let scripts = handle.get_all_scripts().clone();
 
