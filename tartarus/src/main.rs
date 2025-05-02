@@ -19,6 +19,7 @@ use state::{SharedState, State};
 
 use cors::CORS;
 use rocket::{Build, Rocket};
+use talaria::scripting::Script;
 
 async fn rocket(shared_state: SharedState) -> Rocket<Build> {
     let config = shared_state.read().await.config.clone();
@@ -50,6 +51,69 @@ async fn main() -> Result<(), rocket::Error> {
     println!("--------------------------\n");
 
     let shared_state = State::from(config).to_shared_state();
+
+    let script = Script::from_str(
+        r#"---
+    name = "ScanPorts" 
+    description = "Scans network on given port ranges" 
+    
+    [[params]]
+    name = "IP"
+    arg_name = "ip_addr"
+    description = "the IP address to scan"
+    type = "string"
+    placeholder = '"192.168.1.2"'
+
+    [[params]]
+    name = "Ports"
+    arg_name = "ports"
+    description = "list of ports to scan"
+    type = "array"
+    placeholder = '[25565, 69]'
+
+    [[params]]
+    name = "Aggressive"
+    arg_name = "aggressive"
+    description = "dictates speed of scan"
+    type = "bool"
+    placeholder = "true"
+---
+    "#,
+    );
+
+    let script2 = Script::from_str(
+        r#"---
+    name = "ScanPorts2" 
+    description = "Scans network on given port ranges" 
+    
+    [[params]]
+    name = "IP"
+    arg_name = "ip_addr"
+    description = "the IP address to scan"
+    type = "string"
+    placeholder = '"192.168.1.2"'
+
+    [[params]]
+    name = "Ports"
+    arg_name = "ports"
+    description = "list of ports to scan"
+    type = "array"
+    placeholder = '[25565, 69]'
+
+    [[params]]
+    name = "Aggressive"
+    arg_name = "aggressive"
+    description = "dictates speed of scan"
+    type = "bool"
+    placeholder = "true"
+---
+    "#,
+    );
+
+    println!("{:#?}", script);
+
+    shared_state.write().await.add_script(script.unwrap());
+    shared_state.write().await.add_script(script2.unwrap());
 
     let rocket = tokio::spawn(rocket(shared_state.clone()).await.launch());
     let console = tokio::spawn(start_console(shared_state.clone()));

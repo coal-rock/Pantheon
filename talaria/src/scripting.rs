@@ -1,5 +1,8 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use bincode::{Decode, Encode};
+use bytesize::Display;
 use rhai::{plugin::*, Scope};
+use serde::{Deserialize, Serialize};
 
 use crate::stdlib::*;
 
@@ -42,5 +45,121 @@ impl ScriptingEngine {
 
     pub fn get_engine(&self) -> &Engine {
         &self.engine
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Encode, Decode, Debug)]
+pub struct Script {
+    pub name: String,
+    pub description: String,
+    pub params: Vec<Param>,
+    #[serde(skip)]
+    pub body: String,
+}
+
+impl Script {
+    pub fn signature(&self) -> String {
+        let parameters = self
+            .params
+            .clone()
+            .into_iter()
+            .map(|p| format!("[{}: {}]", p.name, p.r#type.to_string()))
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        let example = format!(
+            "{} {}",
+            self.name,
+            self.params
+                .clone()
+                .into_iter()
+                .map(|p| format!("{}", p.placeholder))
+                .collect::<Vec<String>>()
+                .join(" ")
+        );
+
+        format!(
+            "Name: {}\nDescription: {}\nParameters: {}\nExample: {}",
+            self.name, self.description, parameters, example
+        )
+    }
+
+    pub fn from_str(input: &str) -> Result<Script> {
+        let input = input.trim();
+
+        let lines = input.split('\n').collect::<Vec<&str>>();
+
+        let line = match lines.get(0) {
+            Some(line) => line,
+            None => return Err(anyhow!("Script cannot be empty")),
+        };
+
+        if *line != "---" {
+            return Err(anyhow!("Script must start with metadata"));
+        }
+
+        let mut index = 1;
+
+        let header_end = loop {
+            let line = match lines.get(index) {
+                Some(line) => line,
+                None => return Err(anyhow!("Script metadata is never closed")),
+            };
+
+            if *line == "---" {
+                break index;
+            }
+
+            index += 1;
+        };
+
+        if header_end == 1 {
+            return Err(anyhow!("Script metadata cannot be empty"));
+        }
+
+        if lines.len() < header_end + 1 {
+            return Err(anyhow!("Script must contain body"));
+        }
+
+        let header = lines[1..header_end].join("\n");
+
+        let mut script = match toml::from_str::<Script>(&header) {
+            Ok(script) => script,
+            Err(err) => return Err(anyhow!(err.to_string())),
+        };
+
+        script.body = lines[header_end + 1..].join("\n");
+
+        Ok(script)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Encode, Decode)]
+pub struct Param {
+    pub name: String,
+    pub arg_name: String,
+    pub description: String,
+    pub r#type: ParamType,
+    pub placeholder: String,
+}
+
+#[derive(Clone, Deserialize, Serialize, Encode, Decode, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ParamType {
+    String,
+    Int,
+    Float,
+    Bool,
+    Array,
+}
+impl ToString for ParamType {
+    fn to_string(&self) -> String {
+        match self {
+            ParamType::String => String::from("string"),
+            ParamType::Int => String::from("int"),
+            ParamType::Float => String::from("float"),
+            ParamType::Bool => String::from("bool"),
+            ParamType::Array => String::from("array"),
+        }
     }
 }

@@ -240,14 +240,13 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
                 })
             },
         ShowCommand::Scripts => {
-           
             let handle = state.read().await;
             let scripts = handle.get_all_scripts().clone();
 
             match !scripts.is_empty() {
                 true => {
                     Ok(ConsoleResponse {
-                        output: scripts.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n"),
+                        output: scripts.iter().map(|s| s.signature()).collect::<Vec<String>>().join("\n\n"),
                         new_target: NewTarget::NoChange,
                     })
                 } 
@@ -269,7 +268,7 @@ async fn show(state: SharedState, command: ShowCommand) -> Result<ConsoleRespons
 
 async fn run(state: SharedState, current_target: Option<TargetIdentifier>, command: RunCommand) -> Result<ConsoleResponse, ConsoleError> {
     match command {
-        RunCommand::Script { target, script_name } => {
+        RunCommand::Script { target, script_name, params } => {
             let target = expect_target(current_target, target)?;
 
             let script = {

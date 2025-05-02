@@ -7,6 +7,7 @@ use sysinfo::Disks;
 use sysinfo::System;
 use talaria::api::*;
 use talaria::protocol::*;
+use talaria::scripting::Script;
 use tokio::sync::RwLock;
 
 use crate::config::Config;
@@ -206,6 +207,13 @@ impl State {
 
     pub fn get_all_scripts(&self) -> Vec<&Script> {
         self.scripts.values().collect()
+    }
+
+    pub fn add_script(&mut self, script: Script) -> bool {
+        match self.scripts.insert(script.name.clone(), script) {
+            Some(_) => true,
+            None => false,
+        }
     }
 
     pub fn from(config: Config) -> State {
