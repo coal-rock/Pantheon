@@ -69,22 +69,25 @@ pub mod sys {
     /// Checks if user has admin privilidges or admin like privilidges
     /// > [!CAUTION]
     /// > Untested on Windows machines.
+    // TODO: Change this to return just a bool, however the #[export_module]
+    // requies the returns to be an iterator.. unsure what to do tbh - ruby
     #[rhai_fn(return_raw)]
     pub fn is_admin() -> Result<bool, Box<EvalAltResult>> {
-        let family = consts::FAMILY;
-        let res = match family {
-            // could use /proc/self/ for unix, but this will suffice
-            // WARNING: UNTESTED on windows
-            "unix" | "windows" => Ok(elevated_command::Command::is_elevated()),
-            _ => Err(Error::new(
-                ErrorKind::Unsupported,
-                format!("unsupported OS {}", consts::FAMILY),
-            )),
-        };
+        #[cfg(target_family = "unix")]
+        {
+            unsafe extern "C" {
+                fn getuid() -> u32;
+            }
 
-        match res {
-            Ok(result) => Ok(result),
-            Err(error) => Err(error.to_string().into()),
+            unsafe {
+                return Ok(getuid() == 0);
+            }
+        }
+
+        // WARNING: UNTESTED on windows
+        #[cfg(target_family = "windows")]
+        {
+            return Ok(elevated_command::Command::is_elevated());
         }
     }
 
