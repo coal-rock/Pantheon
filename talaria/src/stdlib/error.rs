@@ -4,7 +4,18 @@ use strum_macros::IntoStaticStr;
 #[export_module]
 pub mod error {
     #[derive(Debug, Clone, IntoStaticStr)]
-    pub enum Error {}
+    pub enum Error {
+        FsError(String),
+    }
+
+    impl<T> Into<Result<T, Box<EvalAltResult>>> for Error {
+        fn into(self) -> Result<T, Box<EvalAltResult>> {
+            Err(Box::new(EvalAltResult::ErrorRuntime(
+                Dynamic::from(self),
+                Position::NONE,
+            )))
+        }
+    }
 
     /// Returns a deterministic string that can be matched upon to identify error type
     #[rhai_fn(get = "name", pure)]
