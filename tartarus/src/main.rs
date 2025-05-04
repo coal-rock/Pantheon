@@ -10,17 +10,16 @@ mod console_interface;
 mod console_lib;
 mod console_net;
 mod cors;
-mod scripting;
 mod state;
 mod statistics;
 
 use crate::console_interface::start_console;
 use config::Config;
-use scripting::Script;
 use state::{SharedState, State};
 
 use cors::CORS;
 use rocket::{Build, Rocket};
+use talaria::scripting::Script;
 
 async fn rocket(shared_state: SharedState) -> Rocket<Build> {
     let config = shared_state.read().await.config.clone();
@@ -46,33 +45,32 @@ async fn main() -> Result<(), rocket::Error> {
 
     let config = Config::new("tartarus.toml");
 
-    println!(
-        "{:#?}",
-        Script::from_str(
-            r#"
----
-name = "Test Script"
-description = "This script is a test"
-
-[[params]]
-name = "Parameter 1"
-arg_name = "param1"
-description = "param1 description"
-type = "string"
-placeholder = "hello"
----
-
-print("hello, world")
-            "#
-        )
-    );
-
     println!("\nConfiguration:");
     println!("--------------------------");
     print!("{}", toml::to_string_pretty(&config.clone()).unwrap());
     println!("--------------------------\n");
 
     let shared_state = State::from(config).to_shared_state();
+
+    let script = Script::from_str(
+        r#"---
+    name = "script" 
+    description = "this is a script" 
+    
+    [[params]]
+    name = "param 1"
+    arg_name = "param_1"
+    description = "this is a string param"
+    type = "string"
+    placeholder = "example_string"
+---
+
+    "#,
+    );
+
+    println!("{:#?}", script);
+
+    shared_state.write().await.add_script(script.unwrap());
 
     let rocket = tokio::spawn(rocket(shared_state.clone()).await.launch());
     let console = tokio::spawn(start_console(shared_state.clone()));

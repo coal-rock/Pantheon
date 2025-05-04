@@ -18,3 +18,4 @@ bytesize = "2.0.1"
 rhai = { version = "1.21", featues = ["sync"] }
 whoami = "1.6.0"
 elevated-command = "1.1.2"
+toml = "0.8.22"

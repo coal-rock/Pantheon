@@ -1,22 +1,8 @@
+use crate::scripting::Script;
+
 use anyhow::Result;
 use bincode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Encode, Decode, Serialize, Deserialize)]
-pub struct Script {
-    pub source: String,
-    pub description: String,
-    pub title: String,
-}
-
-impl ToString for Script {
-    fn to_string(&self) -> String {
-        format!(
-            "Title: {}\nDescription: {}\n\n{}",
-            self.title, self.description, self.source
-        )
-    }
-}
 
 #[derive(Encode, Decode, Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct OS {
@@ -136,7 +122,7 @@ impl AgentInstructionBody {
                 format!("Command: {}\nArgs: {:#?}", command, args)
             }
             AgentInstructionBody::Ok => String::from("None"),
-            AgentInstructionBody::Script(script) => script.title.clone(),
+            AgentInstructionBody::Script(script) => script.name.clone(),
             AgentInstructionBody::Rhai(source) => source.clone(),
             AgentInstructionBody::Kill => String::from("None"),
         }
