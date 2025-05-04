@@ -3839,11 +3839,8 @@ dependencies = [
  "anyhow",
  "bincode",
  "bytesize",
-<<<<<<< HEAD
  "elevated-command",
-=======
- "libc",
->>>>>>> f0dcc68 (talaria(std-lib): add libc (773KiB) to deps. For gettiing admin perms. High priority to remove package for smaller bundle)
+ "elevated-command",
  "rhai",
  "serde",
  "serde_json",

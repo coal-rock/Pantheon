@@ -20,3 +20,7 @@ whoami = "1.6.0"
 elevated-command = "1.1.2"
 toml = "0.8.22"
 whoami = "1.6.0"
+<<<<<<< HEAD
+=======
+elevated-command = "1.1.2"
+>>>>>>> 5bcf17d (talaria(std-lib): add elevated-command crate for checking if use is admin or not. cross os compatible.)
