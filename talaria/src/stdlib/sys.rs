@@ -6,7 +6,6 @@ use rhai::Module;
 #[export_module]
 pub mod sys {
 
-    // TODO: clean up imports.
     use elevated_command; // 13.2 KiB (for elevation status)
     use std::{
         env::consts,
@@ -27,7 +26,6 @@ pub mod sys {
     }
 
     /// Returns `String`  that describes the agents OS.
-    ///
     /// > [!INFO]
     /// > If the agent is running something other than: Linux, Windows, MacOs, OpenBSD, or FreeBSD,
     /// > the type of OS will be stored as other
@@ -41,7 +39,6 @@ pub mod sys {
     }
 
     /// Returns `String` that describes the agetns Family type
-    ///
     /// > [!INFO]
     /// > If the agents family is something other than Unix or Windows, the family
     /// > of the OS will be stored as "other".
@@ -111,10 +108,8 @@ pub mod sys {
     /// Runs the `shutdown` command on a given machine.
     /// For Unix: `shutdown now`.
     /// For Windows: `shutdown /s`.
-    /// > [!CAUTION]
+    /// > [!WARING]
     /// > Untested on Windows machines.
-    // NOTE: For unix, this is not the most correct means of going about this.
-    // Would instead target the d-bus, but this should suffice.
     #[rhai_fn(return_raw)]
     pub fn shutdown() -> Result<(), Box<EvalAltResult>> {
         let res = match consts::FAMILY {
@@ -127,10 +122,6 @@ pub mod sys {
             )),
         };
 
-        // QUESTION:
-        // Do we return an enum of the status to determine success? Might be more useful
-        // So on _exit_status == 0, we would return CMD_STATUS.ok
-        // Or    _exit_status != 0, we would return CMD_STATUS.not_ok
         match res {
             Ok(_exit_status) => Ok(()),
             Err(error) => Err(error.to_string().into()),
@@ -177,8 +168,6 @@ pub mod sys {
     }
 
     /// Return `true` if the agent is running Linux
-    /// > ![INFO]
-    /// > Most flavors of linux are returned as just "linux".
     pub fn is_linux() -> bool {
         consts::OS == "linux"
     }
@@ -206,36 +195,58 @@ mod tests {
     #[test]
     fn get_os_name() {
         // How to test this?
-        let res: OsEnum = os_name();
-        assert_eq!(res, OsEnum::Linux);
+        let res: String = os_name();
+        assert_eq!(res, "linux");
     }
 
     #[cfg(target_os = "windows")]
     #[test]
     fn get_os_name() {
         // How to test this?
-        let res: OsEnum = os_name();
-        assert_eq!(res, OsEnum::Windows);
+        let res: String = os_name();
+        assert_eq!(res, "windows");
     }
 
     #[cfg(target_os = "macos")]
     #[test]
     fn get_os_name() {
         // How to test this?
-        let res: OsEnum = os_name();
-        assert_eq!(res, OsEnum::MacOs);
+        let res: String = os_name();
+        assert_eq!(res, "macos");
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn is_really_linux() {
+        assert_eq!(is_linux(), true);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn is_not_windows() {
+        assert_eq!(is_windows(), false);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn is_not_macos() {
+        assert_eq!(is_macos(), false);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn is_not_bsd() {
+        assert_eq!(is_bsd(), false);
     }
 
     #[test]
     fn get_username() {
-        let _ = username();
-        assert_eq!(1, 1);
+        assert!(username().is_ok());
     }
 
     #[test]
     fn get_hostname() {
-        let _ = hostname();
-        assert_eq!(1, 1);
+        assert!(hostname().is_ok());
     }
 
     #[cfg(target_family = "unix")]
