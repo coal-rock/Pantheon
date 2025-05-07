@@ -74,28 +74,13 @@ pub mod sys {
     }
 
     /// Checks if user has admin privilidges or admin like privilidges
-    /// > [!CAUTION]
+    /// > [!WARNING]
     /// > Untested on Windows machines.
     // TODO: Change this to return just a bool, however the #[export_module]
     // requies the returns to be an iterator.. unsure what to do tbh - ruby
     #[rhai_fn(return_raw)]
     pub fn is_admin() -> Result<bool, Box<EvalAltResult>> {
-        #[cfg(target_family = "unix")]
-        {
-            unsafe extern "C" {
-                fn getuid() -> u32;
-            }
-
-            unsafe {
-                return Ok(getuid() == 0);
-            }
-        }
-
-        // WARNING: UNTESTED on windows
-        #[cfg(target_family = "windows")]
-        {
-            return Ok(elevated_command::Command::is_elevated());
-        }
+        Ok(elevated_command::Command::is_elevated())
     }
 
     /// Runs the `reboot` command on a given machine
