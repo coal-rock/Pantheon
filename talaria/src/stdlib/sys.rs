@@ -52,9 +52,14 @@ pub mod sys {
         }
     }
     /// Returns the username of the agent
-    // TODO: whoes username? the user who is running Hermes?
-    pub fn username() -> String {
-        whoami::username()
+    /// >[!CAUTION]
+    /// This is failable
+    #[rhai_fn(return_raw)]
+    pub fn username() -> Result<String, Box<EvalAltResult>> {
+        match whoami::fallible::username() {
+            Ok(res) => Ok(res),
+            Err(error) => Err(error.to_string().into()),
+        }
     }
 
     /// Returns hostname of agent
