@@ -6,6 +6,8 @@ pub mod error {
     #[derive(Debug, Clone, IntoStaticStr)]
     pub enum Error {
         FsError(String),
+        SysError(String),
+        SysUnsupportedError(String),
     }
 
     impl<T> Into<Result<T, Box<EvalAltResult>>> for Error {
