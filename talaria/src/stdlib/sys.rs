@@ -26,26 +26,17 @@ pub mod sys {
         Other(String),
     }
 
-    /// Returns `OsEnum` that describes the agents OS.
+    /// Returns `String`  that describes the agents OS.
     ///
     /// > [!INFO]
     /// > If the agent is running something other than: Linux, Windows, MacOs, OpenBSD, or FreeBSD,
     /// > the type of OS will be stored in `OsEnum::Other`
-    ///
-    /// > [!INFO]
-    /// > Most flavors of linux (of course, not all tested) show up as "linux"
-    // NOTE: consts::FAMILY has been more useful than consts::OS
-    // consider switing this out?
-    pub fn os_name() -> OsEnum {
+    pub fn os_name() -> String {
         // possible values of consts::OS :
         //      https://doc.rust-lang.org/std/env/consts/constant.OS.html
         match consts::OS {
-            "linux" => OsEnum::Linux,
-            "windows" => OsEnum::Windows,
-            "macos" => OsEnum::MacOs,
-            "openbsd" => OsEnum::OpenBSD,
-            "freebsd" => OsEnum::FreeBSD,
-            other => OsEnum::Other(other.to_string()),
+            "linux" | "windows" | "macos" | "openbsd" | "freebsd" => consts::OS.to_string(),
+            _ => String::from("other"),
         }
     }
 
