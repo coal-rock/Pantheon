@@ -138,52 +138,32 @@ pub mod sys {
     }
 
     /// Checks the uptime a of the machine in seconds
-    /// > [!CAUTION}
+    /// > [!WARNING]
     /// > Only supports unix machines. Windows will come later
     #[rhai_fn(return_raw)]
     pub fn uptime() -> Result<f32, Box<EvalAltResult>> {
-        let time_vec;
-        let uptime;
-        let init_result;
-        let family = consts::FAMILY;
+        if os_family() == "unix" {
+            let proc_file = match std::fs::read_to_string("/proc/uptime") {
+                Ok(ok) => ok,
+                Err(error) => return Err(error.to_string().into()),
+            };
 
-        // idiomatic? unsure.
-        if family == "unix" {
-            // attempt to read from `/prov/uptime`
-            init_result = std::fs::read_to_string("/proc/uptime");
+            let time_vec = proc_file.trim().split(" ").collect::<Vec<&str>>();
 
-            // if `init_result` is Ok and is not empty, split into vector
-            if init_result.as_ref().is_ok_and(|s| !s.is_empty()) {
-                time_vec = init_result
-                    .as_ref()
-                    .unwrap()
-                    .trim()
-                    .split(" ")
-                    .collect::<Vec<&str>>();
-            } else {
-                return Err(init_result.unwrap_err().to_string().into());
-            }
+            let uptime = match time_vec.len() == 2 {
+                true => time_vec[0].parse::<f32>(),
+                false => return Err("uptime is malformed".to_string().into()),
+            };
 
-            // `/proc/uptime` carries both idle time and uptime.
-            // Our vec, then, must have lenght of 2, else something is wrong
-            if time_vec.len() == 2 {
-                // uptime lives in index 0
-                uptime = time_vec[0].parse::<f32>();
-            } else {
-                return Err("uptime is malformed. Expected [<uptime>, <idletime>]"
-                    .to_string()
-                    .into());
-            }
-
-            match uptime {
-                Ok(time) => Ok(time),
+            return match uptime {
+                Ok(ok) => Ok(ok),
                 Err(error) => Err(error.to_string().into()),
-            }
-        } else {
-            // Working on Windows next. Don't have it in me at the moment - ruby
-            // NOTE: Not in love that this error format is different than the rest - ruby
-            return Err(Box::new(format!("unsupported OS: {}", family).into()));
+            };
         }
+
+        Err(format!("unsupported os family: {}", os_family())
+            .to_string()
+            .into())
     }
 
     /// Returns CPU architecture
