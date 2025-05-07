@@ -30,16 +30,27 @@ pub mod sys {
     ///
     /// > [!INFO]
     /// > If the agent is running something other than: Linux, Windows, MacOs, OpenBSD, or FreeBSD,
-    /// > the type of OS will be stored in `OsEnum::Other`
+    /// > the type of OS will be stored as other
     pub fn os_name() -> String {
         // possible values of consts::OS :
         //      https://doc.rust-lang.org/std/env/consts/constant.OS.html
         match consts::OS {
-            "linux" | "windows" | "macos" | "openbsd" | "freebsd" => consts::OS.to_string(),
+            "linux" | "windows" | "macos" | "openbsd" | "freebsd" => String::from(consts::OS),
             _ => String::from("other"),
         }
     }
 
+    /// Returns `String` that describes the agetns Family type
+    ///
+    /// > [!INFO]
+    /// > If the agents family is something other than Unix or Windows, the family
+    /// > of the OS will be stored as "other".
+    pub fn os_family() -> String {
+        match consts::FAMILY {
+            "unix" | "windows" => String::from(consts::FAMILY),
+            _ => String::from("other"),
+        }
+    }
     /// Returns the username of the agent
     // TODO: whoes username? the user who is running Hermes?
     pub fn username() -> String {
