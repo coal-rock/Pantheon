@@ -83,11 +83,11 @@ pub mod sys {
         Ok(elevated_command::Command::is_elevated())
     }
 
-    /// Runs the `reboot` command on a given machine
-    /// > [!CAUTION]
+    /// Runs the `reboot` command on a given machine.
+    /// For Unix: `shutdown -r now`.
+    /// For Windows: `shutdown /r`.
+    /// > [!WARNING]
     /// > Untested on Windows machines.
-    // NOTE: For unix, this is not the most correct means of going about this.
-    // Would instead target the d-bus, but this should suffice.
     #[rhai_fn(return_raw)]
     pub fn reboot() -> Result<(), Box<EvalAltResult>> {
         let res = match consts::FAMILY {
@@ -102,17 +102,15 @@ pub mod sys {
             )),
         };
 
-        // QUESTION:
-        // Do we return an enum of the status to determine success? Might be more useful
-        // So on _exit_status == 0, we would return CMD_STATUS.ok
-        // Or    _exit_status != 0, we would return CMD_STATUS.not_ok
         match res {
             Ok(_exit_status) => Ok(()),
             Err(error) => Err(error.to_string().into()),
         }
     }
 
-    /// Runs the `shutdown` command on a given machine
+    /// Runs the `shutdown` command on a given machine.
+    /// For Unix: `shutdown now`.
+    /// For Windows: `shutdown /s`.
     /// > [!CAUTION]
     /// > Untested on Windows machines.
     // NOTE: For unix, this is not the most correct means of going about this.
