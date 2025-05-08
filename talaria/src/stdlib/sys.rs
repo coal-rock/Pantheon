@@ -16,16 +16,6 @@ pub mod sys {
     };
     use whoami; // 24.1 KiB (for username and hostname)
 
-    #[derive(Clone, PartialEq, Debug)]
-    pub enum OsEnum {
-        Linux,
-        Windows,
-        MacOs,
-        OpenBSD,
-        FreeBSD,
-        Other(String),
-    }
-
     /// Returns `String`  that describes the agents OS.
     /// > [!INFO]
     /// > If the agent is running something other than: Linux, Windows, MacOs, OpenBSD, or FreeBSD,
