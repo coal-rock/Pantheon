@@ -8,6 +8,9 @@ pub mod error {
         FsError(String),
         SysError(String),
         SysUnsupportedError(String),
+        EnvUnsupprotedError(String),
+        EnvMultiThreadedError(String),
+        EnvFailedError(String),
     }
 
     impl<T> Into<Result<T, Box<EvalAltResult>>> for Error {
