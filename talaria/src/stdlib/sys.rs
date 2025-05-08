@@ -16,10 +16,18 @@ pub mod sys {
     };
     use whoami; // 24.1 KiB (for username and hostname)
 
-    /// Returns `String`  that describes the agents OS
-    /// > [!INFO]
-    /// > If the agent is running something other than: Linux, Windows, MacOs, OpenBSD, or FreeBSD,
-    /// > the type of OS will be stored as other
+    /// Returns `String` that describes the agents OS
+    ///
+    /// <details>
+    /// <summary> Supported operating systems </summary>
+    ///
+    /// - "linux"
+    /// - "windows"
+    /// - "macos"
+    /// - "openbsd"
+    /// - "freebsd"
+    /// - "other"
+    /// </details>
     pub fn os_name() -> String {
         // possible values of consts::OS :
         //      https://doc.rust-lang.org/std/env/consts/constant.OS.html
@@ -37,7 +45,6 @@ pub mod sys {
     /// - "windows"
     /// - "other"
     /// </details>
-
     pub fn os_family() -> String {
         match consts::FAMILY {
             "unix" | "windows" => String::from(consts::FAMILY),
@@ -45,8 +52,8 @@ pub mod sys {
         }
     }
     /// Returns the username of the agent
-    /// >[!CAUTION]
-    /// This is failable
+    /// > [!CAUTION]
+    /// > Raises `SysError` exception if unable to read username
     #[rhai_fn(return_raw)]
     pub fn username() -> Result<String, Box<EvalAltResult>> {
         match whoami::fallible::username() {
@@ -57,7 +64,7 @@ pub mod sys {
 
     /// Returns hostname of agent
     /// > [!CAUTION]
-    /// > This is failable
+    /// > Raises `SysError` exception if unable to obtain hostname
     #[rhai_fn(return_raw)]
     pub fn hostname() -> Result<String, Box<EvalAltResult>> {
         match whoami::fallible::hostname() {
@@ -66,7 +73,7 @@ pub mod sys {
         }
     }
 
-    /// Returns `true` if user has admin or admin like privilidges
+    /// Returns `true` if agent has admin or admin like privilidges
     /// > [!WARNING]
     /// > Untested on Windows machines.
     pub fn is_admin() -> bool {
@@ -74,10 +81,26 @@ pub mod sys {
     }
 
     /// Runs the `reboot` command on a given machine.
-    /// For Unix: `shutdown -r now`.
-    /// For Windows: `shutdown /r`.
-    /// > [!WARNING]
-    /// > Untested on Windows machines.
+    /// <details>
+    /// <summary> Unix </summary>
+    ///
+    /// Invokes: `shutdown -r now`
+    ///
+    /// </details>
+    ///
+    /// <details>
+    /// <summary> Windows </summary>
+    ///
+    /// Invokes: `shutdown /r`
+    ///
+    /// </details>
+    ///
+    /// <details>
+    /// <summary> Other </summary>
+    ///
+    /// Raises `SysUnsupportedError` exception.
+    ///
+    /// </details>
     #[rhai_fn(return_raw)]
     pub fn reboot() -> Result<(), Box<EvalAltResult>> {
         let res = match consts::FAMILY {
@@ -102,10 +125,26 @@ pub mod sys {
     }
 
     /// Runs the `shutdown` command on a given machine.
-    /// For Unix: `shutdown now`.
-    /// For Windows: `shutdown /s`.
-    /// > [!WARING]
-    /// > Untested on Windows machines.
+    /// <details>
+    /// <summary> Unix </summary>
+    ///
+    /// Invokes: `shutdown now`
+    ///
+    /// </details>
+    ///
+    /// <details>
+    /// <summary> Windows </summary>
+    ///
+    /// Invokes: `shutdown /s`
+    ///
+    /// </details>
+    ///
+    /// <details>
+    /// <summary> Other </summary>
+    ///
+    /// Raises `SysUnsupportedError` exception.
+    ///
+    /// </details>
     #[rhai_fn(return_raw)]
     pub fn shutdown() -> Result<(), Box<EvalAltResult>> {
         let res = match consts::FAMILY {
@@ -129,7 +168,10 @@ pub mod sys {
 
     /// Checks the uptime a of the machine in seconds
     /// > [!WARNING]
-    /// > Only supports unix machines. Windows will come later
+    /// > Only supported on Unix machines.
+    ///
+    /// > [!CAUTION]
+    /// > Can raise `SysError` exception if `/proc/uptime` is malformed or inaccessible.
     #[rhai_fn(return_raw)]
     pub fn uptime() -> Result<f32, Box<EvalAltResult>> {
         if os_family() == "unix" {
