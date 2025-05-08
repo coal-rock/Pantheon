@@ -64,7 +64,7 @@ pub mod sys {
 
     /// Returns hostname of agent
     /// > [!CAUTION]
-    /// > Raises `SysError` exception if unable to obtain hostname
+    /// > Raises `SysError` exception if unable to obtain hostname.
     #[rhai_fn(return_raw)]
     pub fn hostname() -> Result<String, Box<EvalAltResult>> {
         match whoami::fallible::hostname() {
@@ -74,8 +74,6 @@ pub mod sys {
     }
 
     /// Returns `true` if agent has admin or admin like privilidges
-    /// > [!WARNING]
-    /// > Untested on Windows machines.
     pub fn is_admin() -> bool {
         elevated_command::Command::is_elevated()
     }
