@@ -198,7 +198,7 @@ pub mod sys {
         consts::OS == "macos"
     }
 
-    /// Returns `true` if the agent is running open bsd or free bsd
+    /// Returns `true` if the agent is running OpenBSD or FreeBSD
     pub fn is_bsd() -> bool {
         match consts::OS {
             "openbsd" | "freebsd" => true,
