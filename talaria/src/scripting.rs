@@ -18,6 +18,7 @@ impl ScriptingEngine {
         let mut modules = vec![];
 
         {
+            modules.push(("error", exported_module!(error::error)));
             modules.push(("crypto", exported_module!(crypto::crypto)));
             modules.push(("env", exported_module!(env::env)));
             modules.push(("fs", exported_module!(fs::fs)));

@@ -2,6 +2,7 @@ use rhai::Dynamic;
 
 pub mod crypto;
 pub mod env;
+pub mod error;
 pub mod fs;
 pub mod http;
 pub mod net;
