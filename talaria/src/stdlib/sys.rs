@@ -163,8 +163,34 @@ pub mod sys {
     }
 
     /// Returns CPU architecture
+    /// <details>
+    /// <summary> Supported architectures </summary>
+    ///
+    /// - "armv5"
+    /// - "armv6"
+    /// - "armv7"
+    /// - "arm64"
+    /// - "i386"
+    /// - "i586"
+    /// - "i686"
+    /// - "mips"
+    /// - "mipsel"
+    /// - "mips64"
+    /// - "mips64el"
+    /// - "powerpc"
+    /// - "powerpc64"
+    /// - "powerpc64le"
+    /// - "riscv32"
+    /// - "riscv64"
+    /// - "s390x"
+    /// - "sparc"
+    /// - "sparc64"
+    /// - "wasm32"
+    /// - "wasm64"
+    /// - "x86_64"
+    /// </details>
     pub fn cpu_architecture() -> String {
-        whoami::arch().to_string()
+        format!("{}", whoami::arch())
     }
 
     /// Return `true` if the agent is running Windows (any version)
