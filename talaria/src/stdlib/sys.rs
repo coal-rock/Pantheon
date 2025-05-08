@@ -16,7 +16,7 @@ pub mod sys {
     };
     use whoami; // 24.1 KiB (for username and hostname)
 
-    /// Returns `String`  that describes the agents OS.
+    /// Returns `String`  that describes the agents OS
     /// > [!INFO]
     /// > If the agent is running something other than: Linux, Windows, MacOs, OpenBSD, or FreeBSD,
     /// > the type of OS will be stored as other
@@ -29,10 +29,15 @@ pub mod sys {
         }
     }
 
-    /// Returns `String` that describes the agetns Family type
-    /// > [!INFO]
-    /// > If the agents family is something other than Unix or Windows, the family
-    /// > of the OS will be stored as "other".
+    /// Returns a `String` that describes the family of the agents' operating system
+    /// <details>
+    /// <summary> Supported families </summary>
+    ///
+    /// - "unix"
+    /// - "windows"
+    /// - "other"
+    /// </details>
+
     pub fn os_family() -> String {
         match consts::FAMILY {
             "unix" | "windows" => String::from(consts::FAMILY),
@@ -61,7 +66,7 @@ pub mod sys {
         }
     }
 
-    /// Checks if user has admin privilidges or admin like privilidges
+    /// Returns `true` if user has admin or admin like privilidges
     /// > [!WARNING]
     /// > Untested on Windows machines.
     pub fn is_admin() -> bool {
@@ -153,6 +158,10 @@ pub mod sys {
     }
 
     /// Returns CPU architecture
+    ///
+    /// > [!NOTE]  
+    /// > May return value not present in list if unknown architecture is detected.
+    ///
     /// <details>
     /// <summary> Supported architectures </summary>
     ///
