@@ -7,87 +7,81 @@ use rhai::Module;
 pub mod env {
     use crate::stdlib::error::error::Error as script_error;
 
-    use std::{env, num::NonZeroUsize};
+    use std::env;
 
-    pub fn get(key: &str) -> Option<String> {
+    /// Returns the value of a environment variable
+    ///
+    /// > [INFO]
+    /// > It is perfectly legal to have an empty environment variable.
+    #[rhai_fn(return_raw)]
+    pub fn get(key: &str) -> Result<String, Box<EvalAltResult>> {
+        if let Err(e) = supported_by_family() {
+            return e.into();
+        }
+
         match env::var(key) {
-            Ok(ok) => Some(ok),
-            Err(_) => None,
+            Ok(ok) => {
+                // Empty env variables are valid, and we should notify the user
+                if ok == "" {
+                    // Maybe throw an error? But what if this is intentional? IDK why
+                    // Maybe Result<(String, boolean)>, where boolean is is_empty?
+                    // gross.. but
+                    println!("Empty env");
+                }
+                Ok(ok)
+            }
+            Err(error) => script_error::EnvFailedError(error.to_string()).into(),
         }
     }
 
+    /// Removes an environment variable
+    /// > [!CAUTION]
+    /// > Race conditions can occur when calling `env::remove` and `env::set` at the same time.
+    /// > This is due to lack of thread safety.
     #[rhai_fn(return_raw)]
     pub fn remove(key: &str) -> Result<(), Box<EvalAltResult>> {
-        let _ = match env::consts::FAMILY {
-            "itron" | "wasm" | "" => {
-                return script_error::EnvUnsupprotedError(format!(
-                    "Unsupported family: {}",
-                    env::consts::FAMILY
-                ))
-                .into();
-            }
-            "unix" => match num_threads() {
-                Some(current_threads) => {
-                    if current_threads > NonZeroUsize::new(1).unwrap() {
-                        return script_error::EnvMultiThreadedError(
-                            "Hermes cannot remove env variable while multi threaded".to_string(),
-                        )
-                        .into();
-                    }
-                }
-                None => (),
-            },
-            _ => (),
-        };
+        if let Err(e) = supported_by_family() {
+            return e.into();
+        }
 
         unsafe {
             env::remove_var(key);
         }
 
         match get(key) {
-            Some(_) => {
+            Ok(_) => {
                 script_error::EnvFailedError(format!("Failed to remove ENV variable: {}", key))
                     .into()
             }
-            None => Ok(()),
+            // this should return an error
+            Err(_) => Ok(()),
         }
     }
 
+    /// Sets and environment variable
+    /// > [!CAUTION]
+    /// > Race conditions can occur when calling `env::remove` and `env::set` at the same time.
+    /// > This is due to lack of thread safety.
     #[rhai_fn(return_raw)]
     pub fn set(key: &str, value: &str) -> Result<(), Box<EvalAltResult>> {
-        let _ = match env::consts::FAMILY {
-            "itron" | "wasm" | "" => {
-                return script_error::EnvUnsupprotedError(format!(
-                    "Unsupported family: {}",
-                    env::consts::FAMILY
-                ))
-                .into();
-            }
-            "unix" => match num_threads() {
-                Some(current_threads) => {
-                    if current_threads > NonZeroUsize::new(1).unwrap() {
-                        return script_error::EnvMultiThreadedError(
-                            "Hermes cannot remove env variable while multi threaded".to_string(),
-                        )
-                        .into();
-                    }
-                }
-                None => (),
-            },
-            _ => (),
-        };
+        // TODO: Add checks for \0, =, and one other that I cannot remember...
+        if let Err(e) = supported_by_family() {
+            return e.into();
+        }
 
         unsafe {
             env::set_var(key, value);
         }
 
         match get(key) {
-            Some(set_value) => {
+            Ok(set_value) => {
                 if set_value != value {
-                    // this is a "ask god" when you get there kind of error
+                    // Can occur when calling concurrent env::set and env::remove calls.
+                    // Race condition
                     script_error::EnvFailedError(format!(
                         "Failed to set ENV variable: ({}: {}). \
-                        Unexpected variable. Current setting has \"{}\" as: {}",
+                        Unexpected value. Current setting has \"{}\" as: {}. \
+                        Most likely a race condition.",
                         key, value, key, set_value
                     ))
                     .into()
@@ -95,34 +89,68 @@ pub mod env {
                     Ok(())
                 }
             }
-            None => script_error::EnvFailedError(format!(
-                "Failed to set ENV variable: ({}: {})",
-                key, value
+            Err(error) => script_error::EnvFailedError(format!(
+                "Failed to set ENV variable: ({}: {}). ERROR: {}",
+                key, value, error
             ))
             .into(),
         }
     }
 
-    // Does not protect agains invalid UTF-8
-    pub fn list() -> Vec<(String, String)> {
-        // TODO: Add supported family thing? Probably just add a function...
-        let mut key_value: Vec<(String, String)> = Vec::new();
-        let _ = env::vars().for_each(|x| key_value.push((x.0, x.1)));
+    /// Returns environment keys and values
+    /// > [!CAUTION]
+    /// > Does not protect against invalid UTF-8 characters.
+    #[rhai_fn(return_raw)]
+    pub fn list() -> Result<Vec<Dynamic>, Box<EvalAltResult>> {
+        if let Err(e) = supported_by_family() {
+            return e.into();
+        }
 
-        key_value
+        let mut key_value: Vec<Dynamic> = Vec::new();
+        let _ = env::vars().for_each(|x| key_value.push(format!("{}={}", x.0, x.1).into()));
+
+        Ok(key_value)
     }
 
-    fn num_threads() -> Option<NonZeroUsize> {
-        std::fs::read_to_string("/proc/self/stat")
-            .ok()
-            .as_ref()
-            .and_then(|x| x.rsplit(')').next())
-            .and_then(|x| x.split_whitespace().nth(17))
-            .and_then(|x| x.parse::<usize>().ok())
-            .and_then(NonZeroUsize::new)
+    fn supported_by_family() -> Result<(), crate::stdlib::error::error::Error> {
+        match env::consts::FAMILY {
+            "itron" | "wasm" | "" => Err(script_error::EnvUnsupprotedError(format!(
+                "Unsupported family: {}",
+                env::consts::FAMILY
+            ))),
+            _ => Ok(()),
+        }
     }
 }
 
-// TODO:
 #[cfg(test)]
-pub mod test {}
+pub mod test {
+    use super::*;
+    use env::*;
+
+    #[test]
+    fn set_var() {
+        assert!(set("TEST_KEY_1", "TEST_VALUE_1").is_ok());
+    }
+
+    #[test]
+    fn set_and_get_var() {
+        let _ = set("TEST_KEY_2", "TEST_VALUE_2");
+        assert_eq!(get("TEST_KEY_2").unwrap(), "TEST_VALUE_2");
+    }
+
+    #[test]
+    fn set_get_and_remove() {
+        let _ = set("TEST_KEY_3", "TEST_VALUE_3");
+        assert_eq!(get("TEST_KEY_3").unwrap(), "TEST_VALUE_3");
+        let _ = remove("TEST_KEY_3");
+        assert!(!get("TEST_KEY_3").is_ok());
+    }
+
+    #[test]
+    fn list_env_vars() {
+        let res = list();
+        assert!(res.is_ok());
+        assert!(!res.unwrap().is_empty());
+    }
+}
