@@ -6,7 +6,7 @@ use rhai::Module;
 #[export_module]
 pub mod sys {
 
-    use crate::stdlib::error::error::Error as script_error;
+    use crate::stdlib::error::error::ScriptError;
 
     use elevated_command; // 13.2 KiB (for elevation status)
     use std::{
@@ -58,7 +58,7 @@ pub mod sys {
     pub fn username() -> Result<String, Box<EvalAltResult>> {
         match whoami::fallible::username() {
             Ok(res) => Ok(res),
-            Err(error) => script_error::SysError(error.to_string()).into(),
+            Err(error) => ScriptError::SysError(error.to_string()).into(),
         }
     }
 
@@ -69,7 +69,7 @@ pub mod sys {
     pub fn hostname() -> Result<String, Box<EvalAltResult>> {
         match whoami::fallible::hostname() {
             Ok(res) => Ok(res),
-            Err(error) => script_error::SysError(error.to_string()).into(),
+            Err(error) => ScriptError::SysError(error.to_string()).into(),
         }
     }
 
@@ -109,7 +109,7 @@ pub mod sys {
             "windows" => process::Command::new("shutdown").args(vec!["/r"]).status(),
             _ => {
                 // Return when unsupported family
-                return script_error::SysUnsupportedError(
+                return ScriptError::SysUnsupportedError(
                     format!("Unsupported family: {}", consts::FAMILY).to_string(),
                 )
                 .into();
@@ -118,7 +118,7 @@ pub mod sys {
 
         match res {
             Ok(_exit_status) => Ok(()),
-            Err(error) => script_error::SysError(error.to_string()).into(),
+            Err(error) => ScriptError::SysError(error.to_string()).into(),
         }
     }
 
@@ -151,7 +151,7 @@ pub mod sys {
             "windows" => process::Command::new("shutdown").args(vec!["/s"]).status(),
             // Return when unsupported family
             _ => {
-                return script_error::SysUnsupportedError(
+                return ScriptError::SysUnsupportedError(
                     format!("Unsupported family: {}", consts::FAMILY).to_string(),
                 )
                 .into()
@@ -160,7 +160,7 @@ pub mod sys {
 
         match res {
             Ok(_exit_status) => Ok(()),
-            Err(error) => script_error::SysError(error.to_string()).into(),
+            Err(error) => ScriptError::SysError(error.to_string()).into(),
         }
     }
 
@@ -175,23 +175,23 @@ pub mod sys {
         if os_family() == "unix" {
             let proc_file = match std::fs::read_to_string("/proc/uptime") {
                 Ok(ok) => ok,
-                Err(error) => return script_error::SysError(error.to_string()).into(),
+                Err(error) => return ScriptError::SysError(error.to_string()).into(),
             };
 
             let time_vec = proc_file.trim().split(" ").collect::<Vec<&str>>();
 
             let uptime = match time_vec.len() == 2 {
                 true => time_vec[0].parse::<f32>(),
-                false => return script_error::SysError("uptime is malformed".to_string()).into(),
+                false => return ScriptError::SysError("uptime is malformed".to_string()).into(),
             };
 
             return match uptime {
                 Ok(ok) => Ok(ok),
-                Err(error) => script_error::SysError(error.to_string()).into(),
+                Err(error) => ScriptError::SysError(error.to_string()).into(),
             };
         }
 
-        script_error::SysUnsupportedError(
+        ScriptError::SysUnsupportedError(
             format!("Unsupported family: {}", consts::FAMILY).to_string(),
         )
         .into()
