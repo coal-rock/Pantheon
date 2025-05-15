@@ -6,6 +6,7 @@ use std::path::Path as std_Path;
 /// Exposes cross-platform bindings for interacting with the filesystem
 #[export_module]
 pub mod fs {
+    use crate::stdlib::error::error::ScriptError;
     use rhai::Array;
     use rhai::Dynamic;
     use std::io::Write;
@@ -21,7 +22,30 @@ pub mod fs {
 
         match std_fs::read_to_string(path) {
             Ok(file_contents) => Ok(file_contents),
-            Err(err) => Err(err.to_string().into()),
+            Err(err) => match err.kind() {
+                std::io::ErrorKind::NotFound => ScriptError::FsFileNotFound {
+                    file_path: file_path.into(),
+                }
+                .into(),
+                std::io::ErrorKind::PermissionDenied => ScriptError::FsPermissionDenied {
+                    path: file_path.into(),
+                    permission: "read".into(),
+                }
+                .into(),
+                std::io::ErrorKind::IsADirectory => ScriptError::FsIsADirectory {
+                    path: file_path.into(),
+                }
+                .into(),
+                std::io::ErrorKind::InvalidInput => ScriptError::FsMalformedPath {
+                    path: file_path.into(),
+                }
+                .into(),
+                std::io::ErrorKind::InvalidData => ScriptError::FsInvalidUTF8 {
+                    path: file_path.into(),
+                }
+                .into(),
+                _ => ScriptError::FsError(err.to_string()).into(),
+            },
         }
     }
 
