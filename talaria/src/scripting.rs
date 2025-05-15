@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use bincode::{Decode, Encode};
-use bytesize::Display;
 use rhai::{plugin::*, Scope};
 use serde::{Deserialize, Serialize};
 
