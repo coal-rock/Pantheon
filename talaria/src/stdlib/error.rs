@@ -75,8 +75,21 @@ pub mod error {
 
         #[strum(props(class = "sys"))]
         SysUnsupportedError(String),
+
+        #[strum(props(class = "sys"))]
         EnvUnsupprotedError(String),
+
+        #[strum(props(class = "sys"))]
         EnvMultiThreadedError(String),
+
+        #[strum(
+            props(class = "env", name = "failedToRemoveVariable"),
+            to_string = "failed to remove env varialbe: \"{key}:{value}\""
+        )]
+        EnvFailedToRemoveVariable { key: String, value: String },
+
+        // TODO: probably remove for soemthing more specific
+        #[strum(props(class = "sys"))]
         EnvFailedError(String),
     }
 
