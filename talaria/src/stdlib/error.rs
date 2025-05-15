@@ -81,6 +81,59 @@ pub mod error {
 
         #[strum(props(class = "sys"))]
         SysUnsupportedError(String),
+
+        #[strum(
+            props(class = "env", name = "UnsupportedError"),
+            to_string = "OS family is unsupported: \"{os_family}\""
+        )]
+        EnvUnsupported { os_family: String },
+
+        #[strum(
+            props(class = "env", name = "VariableNotPresent"),
+            to_string = "the env variable \"{key}\" was not present"
+        )]
+        EnvVariableNotPresent { key: String },
+
+        #[strum(
+            props(class = "env", name = "NotUnicode"),
+            to_string = "the env variable (\"{key}\") was present, but is not valid unicode"
+        )]
+        EnvNotUnicode { key: String },
+
+        #[strum(
+            props(class = "env", name = "FailedToRemoveVariable"),
+            to_string = "failed to remove env variable: \"{key}\":\"{value}\""
+        )]
+        EnvFailedToRemoveVariable { key: String, value: String },
+
+        #[strum(
+            props(class = "env", name = "FailedToSetVariable"),
+            to_string = "failed to set env variable \"{key}\":\"{value}\""
+        )]
+        EnvFailedToSetVariable { key: String, value: String },
+
+        #[strum(
+            props(class = "env", name = "InvalidKey"),
+            to_string = "invalid key: \"{key}\""
+        )]
+        EnvInvalidKey { key: String },
+
+        #[strum(
+            props(class = "env", name = "InvalidValue"),
+            to_string = "invalid value: \"{value}\""
+        )]
+        EnvInvalidValue { value: String },
+
+        #[strum(
+            props(clase = "env", name = "PresumedRaceCondition"),
+            to_string = "a different env value is present than what should have been set. \
+            Expected \"{key}\":\"{expected_value}\", got \"{key}\":\"{actual_value}\""
+        )]
+        EnvPresumedRaceCondition {
+            key: String,
+            expected_value: String,
+            actual_value: String,
+        },
     }
 
     impl<T> Into<Result<T, Box<EvalAltResult>>> for ScriptError {
