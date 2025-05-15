@@ -5,7 +5,7 @@ use rhai::Module;
 
 #[export_module]
 pub mod env {
-    use crate::stdlib::error::error::Error as script_error;
+    use crate::stdlib::error::error::ScriptError as script_error;
 
     use std::env;
 
@@ -49,10 +49,11 @@ pub mod env {
         }
 
         match get(key) {
-            Ok(_) => {
-                script_error::EnvFailedError(format!("Failed to remove ENV variable: {}", key))
-                    .into()
+            Ok(value) => script_error::EnvFailedToRemoveVariable {
+                key: key.into(),
+                value: value.into(),
             }
+            .into(),
             // this should return an error
             Err(_) => Ok(()),
         }
@@ -112,7 +113,7 @@ pub mod env {
         Ok(key_value)
     }
 
-    fn supported_by_family() -> Result<(), crate::stdlib::error::error::Error> {
+    fn supported_by_family() -> Result<(), crate::stdlib::error::error::ScriptError> {
         match env::consts::FAMILY {
             "itron" | "wasm" | "" => Err(script_error::EnvUnsupprotedError(format!(
                 "Unsupported family: {}",
