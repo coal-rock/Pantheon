@@ -7,7 +7,7 @@ use rhai::Module;
 pub mod env {
     use crate::stdlib::error::error::ScriptError as script_error;
 
-    use std::env;
+    use std::env::{self, VarError};
 
     /// Returns the value of a environment variable
     ///
@@ -30,7 +30,12 @@ pub mod env {
                 }
                 Ok(ok)
             }
-            Err(error) => script_error::EnvFailedError(error.to_string()).into(),
+            Err(error) => match error {
+                VarError::NotPresent => {
+                    script_error::EnvVariableNotPresent { key: key.into() }.into()
+                }
+                VarError::NotUnicode(_) => script_error::EnvNotUnicode { key: key.into() }.into(),
+            },
         }
     }
 
@@ -48,14 +53,23 @@ pub mod env {
             env::remove_var(key);
         }
 
-        match get(key) {
+        // get(key) returns a potential Box<EvalAltResult> which would be weird to handle
+        match env::var(key) {
             Ok(value) => script_error::EnvFailedToRemoveVariable {
                 key: key.into(),
                 value: value.into(),
             }
             .into(),
-            // this should return an error
-            Err(_) => Ok(()),
+            Err(error) => match error {
+                VarError::NotUnicode(_) => script_error::EnvFailedToRemoveVariable {
+                    key: key.into(),
+                    // WEIRD EDGECASE...
+                    // So what if we fail to remove a variable and it has invalide unicode?
+                    value: "".into(),
+                }
+                .into(),
+                VarError::NotPresent => Ok(()),
+            },
         }
     }
 
@@ -65,36 +79,49 @@ pub mod env {
     /// > This is due to lack of thread safety.
     #[rhai_fn(return_raw)]
     pub fn set(key: &str, value: &str) -> Result<(), Box<EvalAltResult>> {
-        // TODO: Add checks for \0, =, and one other that I cannot remember...
         if let Err(e) = supported_by_family() {
             return e.into();
+        }
+
+        if key.contains('\0') || key.contains('=') {
+            return script_error::EnvInvalidKey { key: key.into() }.into();
+        }
+
+        if value.contains('\0') {
+            return script_error::EnvInvalidValue {
+                value: value.into(),
+            }
+            .into();
         }
 
         unsafe {
             env::set_var(key, value);
         }
 
-        match get(key) {
+        // get(key) returns a potential Box<EvalAltResult> which would be weird to handle
+        match env::var(key) {
             Ok(set_value) => {
                 if set_value != value {
                     // Can occur when calling concurrent env::set and env::remove calls.
                     // Race condition
-                    script_error::EnvFailedError(format!(
-                        "Failed to set ENV variable: ({}: {}). \
-                        Unexpected value. Current setting has \"{}\" as: {}. \
-                        Most likely a race condition.",
-                        key, value, key, set_value
-                    ))
+                    script_error::EnvPresumedRaceCondition {
+                        key: key.into(),
+                        expected_value: value.into(),
+                        actual_value: set_value.into(),
+                    }
                     .into()
                 } else {
                     Ok(())
                 }
             }
-            Err(error) => script_error::EnvFailedError(format!(
-                "Failed to set ENV variable: ({}: {}). ERROR: {}",
-                key, value, error
-            ))
-            .into(),
+            Err(error) => match error {
+                VarError::NotUnicode(_) => script_error::EnvNotUnicode { key: key.into() }.into(),
+                VarError::NotPresent => script_error::EnvFailedToSetVariable {
+                    key: key.into(),
+                    value: value.into(),
+                }
+                .into(),
+            },
         }
     }
 
@@ -102,23 +129,22 @@ pub mod env {
     /// > [!CAUTION]
     /// > Does not protect against invalid UTF-8 characters.
     #[rhai_fn(return_raw)]
-    pub fn list() -> Result<Vec<Dynamic>, Box<EvalAltResult>> {
+    pub fn list() -> Result<Vec<(Dynamic, Dynamic)>, Box<EvalAltResult>> {
         if let Err(e) = supported_by_family() {
             return e.into();
         }
 
-        let mut key_value: Vec<Dynamic> = Vec::new();
-        let _ = env::vars().for_each(|x| key_value.push(format!("{}={}", x.0, x.1).into()));
+        let mut key_value: Vec<(Dynamic, Dynamic)> = Vec::new();
+        let _ = env::vars().for_each(|x| key_value.push((x.0.into(), x.1.into())));
 
         Ok(key_value)
     }
 
     fn supported_by_family() -> Result<(), crate::stdlib::error::error::ScriptError> {
         match env::consts::FAMILY {
-            "itron" | "wasm" | "" => Err(script_error::EnvUnsupprotedError(format!(
-                "Unsupported family: {}",
-                env::consts::FAMILY
-            ))),
+            "itron" | "wasm" | "" => Err(script_error::EnvUnsupprotedError {
+                os_family: env::consts::FAMILY.into(),
+            }),
             _ => Ok(()),
         }
     }
