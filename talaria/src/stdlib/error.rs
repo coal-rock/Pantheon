@@ -60,7 +60,7 @@ pub mod error {
 
         #[strum(
             props(class = "fs", name = "InvalidUTF8"),
-            to_string = "file: \"{path}\" contains invalid UTF-8"
+            to_string = "file: \"{path}\" contains invalid utf-8"
         )]
         FsInvalidUTF8 { path: String },
 
@@ -93,6 +93,17 @@ pub mod error {
     }
 
     /// Returns a pretty print of the error
+    ///
+    /// # Example
+    ///
+    /// ```typescript
+    /// try {
+    ///     let homework = fs::read("/home/ruby/homework/calc1.mp4");
+    /// }
+    /// catch (error) {
+    ///     print(error.pretty); // `[fs] InvalidUTF8 - file: "/home/ruby/homework/calc1.mp4" contains invalid utf-8`
+    /// }
+    /// ```
     #[rhai_fn(get = "pretty", pure)]
     pub fn get_error_pretty(error: &mut ScriptError) -> String {
         let class = get_error_type(error);
@@ -108,14 +119,17 @@ pub mod error {
     ///
     /// ```typescript
     /// try {
-    ///     file_contents = fs::read("/home/coal/.config/nvim/")
-    ///     print(file_contents)
+    ///     fs::remove("/"); // rm -rf :P
+    ///     sys::reboot();   // it's so joever for them!!!
     /// }
     /// catch (error) {
-    ///     print(error.name);
+    ///     switch(error.class) {
+    ///         "sys" => print("there was some error relating to the sys module"),
+    ///         "fs" => print("there was some error relating to the fs module"),
+    ///         _ => print("some other error occurred"),
+    ///     }
     /// }
     /// ```
-    /// <div>
     #[rhai_fn(get = "class", pure)]
     pub fn get_error_type(error: &mut ScriptError) -> String {
         String::from(match error.get_str("class") {
@@ -125,6 +139,26 @@ pub mod error {
     }
 
     /// Returns a deterministic string that can be matched upon to identify error type
+    ///
+    /// # Example
+    ///
+    /// ```typescript
+    /// try {
+    ///     let seed = fs::read("/home/coal/Important/MoneroSeed");
+    ///     print("all your monero is mine!!");
+    ///     print(seed);
+    /// }
+    /// catch (error) {
+    ///     switch(error.name) {
+    ///         "FileNotFound" => print("the monero seed does not exist"),
+    ///         "PermissionDenied" => print("no permission to read the monero seed"),
+    ///         "IsADirectory" => print("monero seed path is a directory"),
+    ///         "InvalidUTF8" => print("monero seed does not contain valid UTF-8"),
+    ///         "OtherFs" => print("some other filesystem error occurred:" + error.msg),
+    ///         _ => print("some other error occurred"),
+    ///     }
+    /// }
+    /// ```
     #[rhai_fn(get = "name", pure)]
     pub fn get_error_name(error: &mut ScriptError) -> String {
         String::from(match error.get_str("name") {
@@ -133,7 +167,18 @@ pub mod error {
         })
     }
 
-    /// Returns message including both error context and message
+    /// Returns message containing human readable description of the error
+    ///
+    /// # Example
+    ///
+    /// ```typescript
+    /// try {
+    ///     let homework = fs::read("/home/ruby/homework/calc1.mp4");
+    /// }
+    /// catch (error) {
+    ///     print(error.msg); // `file: "/home/ruby/homework/calc1.mp4" contains invalid utf-8`
+    /// }
+    /// ```
     #[rhai_fn(get = "msg", pure)]
     pub fn get_error_msg(error: &mut ScriptError) -> String {
         error.to_string()

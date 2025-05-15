@@ -200,11 +200,11 @@ pub mod fs {
     /// <details>
     /// <summary> exceptions </summary>
     ///
-    /// - `filenotfound`
-    /// - `permissiondenied`
-    /// - `readonlyfilesystem`
-    /// - `invalidfilename`
-    /// - `otherfs`
+    /// - `FileNotFound`
+    /// - `PermissionDenied`
+    /// - `ReadOnlyFilesystem`
+    /// - `InvalidFilename`
+    /// - `OtherFs`
     /// </details>
     #[rhai_fn(return_raw)]
     pub fn remove(file_path: &str) -> Result<(), Box<EvalAltResult>> {
