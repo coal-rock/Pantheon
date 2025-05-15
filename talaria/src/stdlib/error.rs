@@ -7,65 +7,71 @@ use strum_macros::{EnumProperty, IntoStaticStr};
 pub mod error {
     #[derive(Display, Debug, Clone, IntoStaticStr, EnumProperty)]
     pub enum ScriptError {
-        #[strum(props(class = "fs", name = "otherFs"), to_string = "{0}")]
+        #[strum(props(class = "fs", name = "OtherFs"), to_string = "{0}")]
         FsError(String),
 
         #[strum(
-            props(class = "fs", name = "fileNotFound"),
+            props(class = "fs", name = "FileNotFound"),
             to_string = "could not find file at path: \"{file_path}\""
         )]
         FsFileNotFound { file_path: String },
 
         #[strum(
-            props(class = "fs", name = "directoryNotFound"),
+            props(class = "fs", name = "DirectoryNotFound"),
             to_string = "could not find directory at path: \"{path}\""
         )]
         FsDirectoryNotFound { path: String },
 
         #[strum(
-            props(class = "fs", name = "permissionDenied"),
+            props(class = "fs", name = "PermissionDenied"),
             to_string = "user does not have permission to {permission} \"{path}\""
         )]
         FsPermissionDenied { path: String, permission: String },
 
         #[strum(
-            props(class = "fs", name = "filenameTooLong"),
+            props(class = "fs", name = "FilenameTooLong"),
             to_string = "filename \"{filename}\" is too long"
         )]
         FsFilenameTooLong { filename: String },
 
         #[strum(
-            props(class = "fs", name = "isADirectory"),
+            props(class = "fs", name = "IsADirectory"),
             to_string = "path: \"{path}\" is a directory"
         )]
         FsIsADirectory { path: String },
 
         #[strum(
-            props(class = "fs", name = "notADirectory"),
+            props(class = "fs", name = "NotADirectory"),
             to_string = "path: \"{path}\" is not a directory"
         )]
         FsNotADirectory { path: String },
 
         #[strum(
-            props(class = "fs", name = "malformedPath"),
+            props(class = "fs", name = "MalformedPath"),
             to_string = "path: \"{path}\" is malformed"
         )]
         FsMalformedPath { path: String },
 
         #[strum(
-            props(class = "fs", name = "invalidUTF8"),
+            props(class = "fs", name = "InvalidFilename"),
+            to_string = "path: \"{file_path}\" is not a valid filename"
+        )]
+        FsInvalidFilename { file_path: String },
+
+        #[strum(
+            props(class = "fs", name = "InvalidUTF8"),
             to_string = "file: \"{path}\" contains invalid UTF-8"
         )]
         FsInvalidUTF8 { path: String },
 
         #[strum(
-            props(class = "fs", name = "storageDeviceFull"),
+            props(class = "fs", name = "StorageDeviceFull"),
             to_string = "storage device is full"
         )]
         FsStorageFull,
 
         #[strum(
-            props(class = "fs", name = "readOnlyFilesystem"),
+            props(class = "fs", name = "ReadOnlyFilesystem"),
             to_string = "file system is readonly"
         )]
         FsReadOnlyFilesystem,
@@ -97,6 +103,19 @@ pub mod error {
     }
 
     /// Returns the class that this error belongs to
+    //
+    /// # Example
+    ///
+    /// ```typescript
+    /// try {
+    ///     file_contents = fs::read("/home/coal/.config/nvim/")
+    ///     print(file_contents)
+    /// }
+    /// catch (error) {
+    ///     print(error.name);
+    /// }
+    /// ```
+    /// <div>
     #[rhai_fn(get = "class", pure)]
     pub fn get_error_type(error: &mut ScriptError) -> String {
         String::from(match error.get_str("class") {
