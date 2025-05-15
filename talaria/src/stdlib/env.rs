@@ -10,9 +10,19 @@ pub mod env {
     use std::env::{self, VarError};
 
     /// Returns the value of a environment variable
-    ///
-    /// > [INFO]
+    /// > [!INFO]
     /// > It is perfectly legal to have an empty environment variable.
+    ///
+    /// > [!CAUTION]
+    /// > Can throw exception if `key` is not present, or is not unicode
+    ///
+    /// <details>
+    /// <summary> Exceptions </summary>
+    ///
+    /// - `EnvUnsupproted`
+    /// - `EnvVariableNotPresent`
+    /// - `EnvNotUnicode`
+    /// </details>
     #[rhai_fn(return_raw)]
     pub fn get(key: &str) -> Result<String, Box<EvalAltResult>> {
         if let Err(e) = supported_by_family() {
@@ -42,7 +52,15 @@ pub mod env {
     /// Removes an environment variable
     /// > [!CAUTION]
     /// > Race conditions can occur when calling `env::remove` and `env::set` at the same time.
-    /// > This is due to lack of thread safety.
+    /// > This is due to lack of thread safety and writing/removing ENV variables in most operating
+    /// > systems except Windows.
+    ///
+    /// <details>
+    /// <summary> Exceptions </summary>
+    ///
+    /// - `EnvUnsupported`
+    /// - `EnvFailedToRemoveVariable`
+    /// </details>
     #[rhai_fn(return_raw)]
     pub fn remove(key: &str) -> Result<(), Box<EvalAltResult>> {
         if let Err(e) = supported_by_family() {
@@ -64,7 +82,7 @@ pub mod env {
                 VarError::NotUnicode(_) => script_error::EnvFailedToRemoveVariable {
                     key: key.into(),
                     // WEIRD EDGECASE...
-                    // So what if we fail to remove a variable and it has invalide unicode?
+                    // So what if we fail to remove a variable AND it has invalid unicode?
                     value: "".into(),
                 }
                 .into(),
@@ -73,10 +91,25 @@ pub mod env {
         }
     }
 
-    /// Sets and environment variable
+    /// Sets an environment variable
     /// > [!CAUTION]
     /// > Race conditions can occur when calling `env::remove` and `env::set` at the same time.
-    /// > This is due to lack of thread safety.
+    /// > This is due to lack of thread safety and writing/removing ENV variables in most operating
+    /// > systems except Windows.
+    ///
+    /// > [!CAUTION]
+    /// > Can throw exception if key or value have invalid characters, or fails to set variable
+    ///
+    /// <details>
+    /// <summary> Exceptions </summary>
+    ///
+    /// - `EnvUnsupported`
+    /// - `EnvInvalidKey`
+    /// - `EnvInvalidValue`
+    /// - `EnvPresumedRaceCondition`
+    /// - `EnvNotUnicode`
+    /// - `EnvFailedToSetVariable`
+    /// </details>
     #[rhai_fn(return_raw)]
     pub fn set(key: &str, value: &str) -> Result<(), Box<EvalAltResult>> {
         if let Err(e) = supported_by_family() {
@@ -126,8 +159,14 @@ pub mod env {
     }
 
     /// Returns environment keys and values
-    /// > [!CAUTION]
-    /// > Does not protect against invalid UTF-8 characters.
+    /// > [!INFO]
+    /// > Only throws an exception for unsupported OS family
+    ///
+    /// <details>
+    /// <summary> Exceptions </summary>
+    ///
+    /// - `EnvUnsupported`
+    /// </details>
     #[rhai_fn(return_raw)]
     pub fn list() -> Result<Vec<(Dynamic, Dynamic)>, Box<EvalAltResult>> {
         if let Err(e) = supported_by_family() {
@@ -135,14 +174,18 @@ pub mod env {
         }
 
         let mut key_value: Vec<(Dynamic, Dynamic)> = Vec::new();
-        let _ = env::vars().for_each(|x| key_value.push((x.0.into(), x.1.into())));
+
+        env::vars_os().for_each(|x| {
+            key_value.push((x.0.to_str().unwrap().into(), x.1.to_str().unwrap().into()))
+        });
 
         Ok(key_value)
     }
 
+    // Checks if systems OS family is supported, else returns EnvUnsupported
     fn supported_by_family() -> Result<(), crate::stdlib::error::error::ScriptError> {
         match env::consts::FAMILY {
-            "itron" | "wasm" | "" => Err(script_error::EnvUnsupprotedError {
+            "itron" | "wasm" | "" => Err(script_error::EnvUnsupported {
                 os_family: env::consts::FAMILY.into(),
             }),
             _ => Ok(()),
@@ -152,12 +195,21 @@ pub mod env {
 
 #[cfg(test)]
 pub mod test {
+
     use super::*;
     use env::*;
 
     #[test]
     fn set_var() {
         assert!(set("TEST_KEY_1", "TEST_VALUE_1").is_ok());
+    }
+
+    #[test]
+    fn get_var_that_doesnt_exist() {
+        let key = "TEST_KEY_THAT_HOPEFULLY_DOESNT_EXIST";
+        let res = get(key);
+
+        assert!(res.is_err(), "returned a value when it shouldn't");
     }
 
     #[test]

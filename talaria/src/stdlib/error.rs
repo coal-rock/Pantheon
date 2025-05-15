@@ -86,7 +86,7 @@ pub mod error {
             props(class = "env", name = "UnsupportedError"),
             to_string = "OS family is unsupported: \"{os_family}\""
         )]
-        EnvUnsupprotedError { os_family: String },
+        EnvUnsupported { os_family: String },
 
         #[strum(
             props(class = "env", name = "VariableNotPresent"),
