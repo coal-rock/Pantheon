@@ -102,7 +102,7 @@ pub mod error {
             props(class = "env", name = "UnsupportedError"),
             to_string = "OS family is unsupported: \"{os_family}\""
         )]
-        EnvUnsupprotedError {
+        EnvUnsupported {
             os_family: String,
         },
 
