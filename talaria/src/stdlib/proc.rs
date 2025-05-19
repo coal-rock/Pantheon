@@ -62,7 +62,7 @@ pub mod proc {
         // 123456 has the type i64 by default, where we need usize for all pids.
         // this allows us to avoid casting in rhai directly.
         if pid <= 0 || pid >= usize::MAX.try_into().unwrap() {
-            return ScriptError::ProcBadPid { pid: pid as usize }.into();
+            return ScriptError::ProcBadPid { pid }.into();
         }
 
         let pid = pid as usize;

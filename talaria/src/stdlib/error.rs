@@ -119,7 +119,7 @@ pub mod error {
         ProcFailedToStartProcess { command: String },
 
         #[strum(props(class = "proc", name = "BadPid"), to_string = "bad pid: {pid}")]
-        ProcBadPid { pid: usize },
+        ProcBadPid { pid: i64 },
     }
 
     impl<T> Into<Result<T, Box<EvalAltResult>>> for ScriptError {
