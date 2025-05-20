@@ -81,6 +81,45 @@ pub mod error {
 
         #[strum(props(class = "sys"))]
         SysUnsupportedError(String),
+
+        #[strum(
+            props(class = "proc", name = "ProcessDoesNotExist"),
+            to_string = "process [{pid}] does not exists"
+        )]
+        ProcProcessDoesNotExist { pid: usize },
+
+        #[strum(
+            props(class = "proc", name = "FailedToKill"),
+            to_string = "process [{pid}] could not be killed"
+        )]
+        ProcFailedToKill { pid: usize },
+
+        #[strum(
+            props(class = "proc", name = "FailedToSendSignal"),
+            to_string = "process [{pid}] did not recieve kill signal"
+        )]
+        ProcFailedToSendSignal { pid: usize },
+
+        #[strum(
+            props(class = "proc", name = "TimeOut"),
+            to_string = "process [{pid}] timedout when when attempting to kill"
+        )]
+        ProcTimeOut { pid: usize },
+
+        #[strum(
+            props(class = "proc", name = "BadArguments"),
+            to_string = "could not parse arguments"
+        )]
+        ProcBadArguments,
+
+        #[strum(
+            props(class = "proc", name = "FailedToStartProcess"),
+            to_string = "failed to start process: {command}"
+        )]
+        ProcFailedToStartProcess { command: String },
+
+        #[strum(props(class = "proc", name = "BadPid"), to_string = "bad pid: {pid}")]
+        ProcBadPid { pid: i64 },
     }
 
     impl<T> Into<Result<T, Box<EvalAltResult>>> for ScriptError {
